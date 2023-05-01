@@ -1,0 +1,11 @@
+[Unit]
+Description=The OTNode API!
+
+[Service]
+Type=simple
+WorkingDirectory=/root/otnode-api
+ExecStart=/root/otnode-api/otnode-api.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
