@@ -2,15 +2,14 @@ require('dotenv').config()
 var express = require('express')
 var router = express.Router()
 const purl = require('url')
-const queryTypes = require('../../../../public/util/queryTypes')
+const queryTypes = require('../../../public/util/queryTypes')
 const mysql = require('mysql')
-const connection = mysql.createConnection({
+const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.USER,
   password: process.env.PASSWORD,
-  database: process.env.OTP_DB
+  database: 'otp'
 })
-const apiSpamProtection = await queryTypes.apiSpamProtection();
 
 router.get('/', async function (req, res) {
   url_params = purl.parse(req.url, true).query
@@ -33,6 +32,7 @@ router.get('/', async function (req, res) {
   type = 'v_nodes'
   api_key = url_params.api_key
 
+  const apiSpamProtection = await queryTypes.apiSpamProtection()
   permission = await apiSpamProtection
     .getData(type, api_key)
     .then(async ({ permission }) => {
@@ -60,7 +60,7 @@ router.get('/', async function (req, res) {
   }
 
   limit = url_params.limit
-  if(!limit){
+  if (!limit) {
     limit = 500
   }
 
@@ -68,50 +68,47 @@ router.get('/', async function (req, res) {
   conditions = []
   params = []
 
-  if(url_params.nodeId){
+  if (url_params.nodeId) {
     conditions.push(`nodeId = ?`)
     params.push(url_params.nodeId)
   }
 
-  if(url_params.networkId){
+  if (url_params.networkId) {
     conditions.push(`networkId = ?`)
     params.push(url_params.networkId)
   }
 
-  if(url_params.tokenName){
+  if (url_params.tokenName) {
     conditions.push(`tokenName = ?`)
     params.push(url_params.tokenName)
   }
 
-  if(url_params.TokenSymbol){
+  if (url_params.TokenSymbol) {
     conditions.push(`TokenSymbol = ?`)
     params.push(url_params.TokenSymbol)
   }
 
-  if(url_params.nodeOwner){
+  if (url_params.nodeOwner) {
     conditions.push(`nodeOwner = ?`)
     params.push(url_params.nodeOwner)
   }
 
-  if(url_params.nodeGroup){
+  if (url_params.nodeGroup) {
     conditions.push(`nodeGroup = ?`)
     params.push(url_params.nodeGroup)
   }
-  
-  whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
-  sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`;
+
+  whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
+  sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
 
   shardTable = []
-  await connection.query(
-    sqlQuery, params,
-    function (error, row) {
-      if (error) {
-        throw error
-      } else {
-        setValue(row)
-      }
+  await otp_connection.query(sqlQuery, params, function (error, row) {
+    if (error) {
+      throw error
+    } else {
+      setValue(row)
     }
-  )
+  })
 
   function setValue (value) {
     shardTable = value

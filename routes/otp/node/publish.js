@@ -1,11 +1,8 @@
 require('dotenv').config()
 var express = require('express')
 var router = express.Router()
-const db = require('better-sqlite3')(OTNODE_DB, {
-  verbose: console.log
-})
 const purl = require('url')
-const queryTypes = require('../../../../public/util/queryTypes')
+//const queryTypes = require('../../../../public/util/queryTypes')
 
 router.get('/', async function (req, res) {
   url_params = purl.parse(req.url, true).query

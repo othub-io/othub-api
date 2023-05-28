@@ -1,62 +1,176 @@
-const db = require('better-sqlite3')(process.env.OTNODE_DB)
+require('dotenv').config()
+const mysql = require('mysql')
+
+const otnodedb_connection = mysql.createConnection({
+  host: process.env.DBHOST,
+  user: process.env.USER,
+  password: process.env.PASSWORD,
+  database: 'otnodedb'
+})
+
+function executeOTNODEQuery (query, params) {
+  return new Promise((resolve, reject) => {
+    otnodedb_connection.query(query, params, (error, results) => {
+      if (error) {
+        reject(error)
+      } else {
+        resolve(results)
+      }
+    })
+  })
+}
+
+async function getOTNODEData (query, params) {
+  try {
+    const results = await executeOTNODEQuery(query, params)
+    return results
+  } catch (error) {
+    console.error('Error executing query:', error)
+    throw error
+  }
+}
 
 module.exports = apiSpam = async (type, api_key) => {
   console.log(`Checking if visitor:${api_key} is spamming.`)
   //check for spam
-
-  user = await db
-    .prepare('SELECT * FROM user_header WHERE api_key = ?')
-    .get(api_key)
-
-  if (!user) {
-    return {
-      permission: `no_user`
-    }
-  }
-
-  row = await db
-    .prepare('SELECT * FROM request_history WHERE request = ? AND api_key = ?')
-    .get(type, api_key)
-
-  if (!row) {
-    console.log(`Vistor:${api_key} is allow to ${type}.`)
+  if (api_key == process.env.GOD_KEY) {
+    console.log(`Vistor:${api_key} IS USING THE GOD KEY.`)
 
     //insert a new time stamp
     time_stamp = new Date()
     time_stamp = Math.abs(time_stamp)
-    await db
-      .prepare('REPLACE INTO request_history VALUES (?,?,?,?)')
-      .run(type, time_stamp, null, api_key)
+
+    query =
+      'INSERT INTO request_history (request,date_last_used,ip_used,api_key) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE request = ?, date_last_used = ?'
+    params = [type, time_stamp, null, api_key, type, time_stamp]
+    await getOTNODEData(query, params)
+      .then(results => {
+        //console.log('Query results:', results);
+        return results
+        // Use the results in your variable or perform further operations
+      })
+      .catch(error => {
+        console.error('Error retrieving data:', error)
+      })
 
     return {
       permission: `allow`
     }
   }
 
-  if (row) {
+  query = 'SELECT * FROM user_header WHERE api_key = ?'
+  params = [api_key]
+  user = await getOTNODEData(query, params)
+    .then(results => {
+      //console.log('Query results:', results);
+      return results
+      // Use the results in your variable or perform further operations
+    })
+    .catch(error => {
+      console.error('Error retrieving data:', error)
+    })
+
+  console.log(user)
+  if (user != '[]') {
+    return {
+      permission: `no_user`
+    }
+  }
+
+  query = 'SELECT * FROM request_history WHERE api_key = ?'
+  params = [api_key]
+  request_history = await getOTNODEData(query, params)
+    .then(results => {
+      //console.log('Query results:', results);
+      return results
+      // Use the results in your variable or perform further operations
+    })
+    .catch(error => {
+      console.error('Error retrieving data:', error)
+    })
+
+  if (!request_history) {
+    console.log(`Vistor:${api_key} is allow to ${type}.`)
+
+    //insert a new time stamp
+    time_stamp = new Date()
+    time_stamp = Math.abs(time_stamp)
+
+    query =
+      'INSERT INTO request_history (request,date_last_used,ip_used,api_key) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE request = ?, date_last_used = ?'
+    params = [type, time_stamp, null, api_key, type, time_stamp]
+    await getOTNODEData(query, params)
+      .then(results => {
+        //console.log('Query results:', results);
+        return results
+        // Use the results in your variable or perform further operations
+      })
+      .catch(error => {
+        console.error('Error retrieving data:', error)
+      })
+
+    return {
+      permission: `allow`
+    }
+  }
+
+  if (request_history) {
     console.log(`Vistor:${api_key} found in request_history.`)
-    const spam_result = await db
-      .prepare(
-        'SELECT date_last_used FROM request_history WHERE request = ? AND api_key = ?'
-      )
-      .get(type, api_key)
+    cooldown = 5 * 60 * 1000 //5min
+
+    query = 'SELECT date_last_used FROM request_history WHERE api_key = ?'
+    params = [type, api_key]
+    spam_result = await getOTNODEData(query, params)
+      .then(results => {
+        //console.log('Query results:', results);
+        return results
+        // Use the results in your variable or perform further operations
+      })
+      .catch(error => {
+        console.error('Error retrieving data:', error)
+      })
+
+    query = `SELECT * FROM node_operators as no 
+      INNER JOIN user_header as uh on uh.admin_key = no.adminKey 
+      WHERE uh.api_key = ? and no.nodeGroup = ?`
+    params = [api_key, 'Alliance']
+    is_alliance = await getOTNODEData(query, params)
+      .then(results => {
+        //console.log('Query results:', results);
+        return results
+        // Use the results in your variable or perform further operations
+      })
+      .catch(error => {
+        console.error('Error retrieving data:', error)
+      })
+
+    if (is_alliance) {
+      cooldown = 1 * 5 * 1000 //5sec
+      console.log(`Vistor:${api_key} is alliance member.`)
+    }
 
     expireDate = new Date(spam_result.date_last_used)
     currentDate = new Date()
 
     timeDif = Math.abs(currentDate - expireDate)
     expireDate = Math.abs(expireDate)
-    cooldown = 1 * 30 * 1000 //1min
 
     if (timeDif > cooldown) {
       console.log(`Vistor:${api_key} is allow to ${type}.`)
 
       //insert a new time stamp
-      time_stamp = new Date()
-      time_stamp = Math.abs(time_stamp)
-      await db
-        .prepare('REPLACE INTO request_history VALUES (?,?,?,?)')
-        .run(type, time_stamp, null, api_key)
+      query =
+        'INSERT INTO request_history (request,date_last_used,ip_used,api_key) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE request = ?, date_last_used = ?'
+      params = [type, time_stamp, null, api_key, type, time_stamp]
+      await getOTNODEData(query, params)
+        .then(results => {
+          //console.log('Query results:', results);
+          return results
+          // Use the results in your variable or perform further operations
+        })
+        .catch(error => {
+          console.error('Error retrieving data:', error)
+        })
 
       return {
         permission: `allow`

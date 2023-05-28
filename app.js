@@ -5,29 +5,35 @@ const path = require('path')
 const cookieParser = require('cookie-parser')
 const logger = require('morgan')
 
-//docs
-const docsRouter_otp = require('./routes/otp/docs')
+//const indexRouter = require('./routes/index')
+//const usersRouter = require('./routes/users')
+//const exploreRouter = require('./routes/explore')
+//const apiPortalRouter = require('./routes/apiPortal')
+//const apiRouter = require('./routes/api')
+//const homeRouter = require('./routes/dashboard')
 
-//node
-const apiPublishRouter_otp = require('./routes/otp/node/publish')
-const getRouter_otp = require('./routes/otp/node/get')
-const apiQueryRouter_otp = require('./routes/otp/node/query')
-//const apiUpdateRouter = require('./routes/api/otp/node/update')
-//const apiSearchRouter = require('./routes/api/otp/node/search')
+//const dashboardRouter = require('./routes/dashboard')
+//const lookupRouter = require('./routes/lookup')
+//const publishRouter = require('./routes/publish')
+//const searchRouter = require('./routes/search')
 
-//views
-const v_dbg_txs_staging_checkRouter_otp = require('./routes/otp/views/v_dbg_txs_staging_check')
-const v_latest_synched_blockRouter_otp  = require('./routes/otp/views/v_latest_synched_block')
-const v_nodesRouter_otp = require('./routes/otp/views/v_nodes')
-const v_nodes_statsRouter_otp = require('./routes/otp/views/v_nodes_stats')
-const v_sys_events_failed_txRouter_otp  = require('./routes/otp/views/v_sys_events_failed_tx')
-const v_sys_events_uselessRouter_otp  = require('./routes/otp/views/v_sys_events_useless')
-const v_sys_txs_failedRouter_otp  = require('./routes/otp/views/v_sys_txs_failed')
+//mynodes
+//const mynodesSettingsRouter = require('./routes/myNodes/settings')
 
 //alliance
-const spicyTacosRouter = require('./routes/alliance/spicyTacosXXL')
+//const allianceMembersRouter = require('./routes/alliance/members')
+//const allianceRegisterRouter = require('./routes/alliance/register')
+//const allianceDashboardRouter = require('./routes/alliance/dashboard')
+//const daoRouter = require('./routes/alliance/dao')
+
+const v_nodes_statsRouter_otp = require('./routes/otp/views/v_nodes_stats')
+const v_nodesRouter_otp = require('./routes/otp/views/v_nodes')
 
 const app = express()
+
+// view engine setup
+//app.set('views', path.join(__dirname, 'views'))
+//app.set('view engine', 'ejs')
 
 app.use(logger('dev'))
 app.use(express.json())
@@ -35,25 +41,32 @@ app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.static(path.join(__dirname, 'node_modules')))
+app.use('/dkg', express.static(__dirname + 'node_modules/dkg.js'))
 app.use('/util', express.static(__dirname + 'public/util'))
 
-app.use('/otp/docs', docsRouter_otp)
-app.use('/otp/node/get', getRouter_otp)
-app.use('/otp/node/publish', apiPublishRouter_otp)
-app.use('/otp/node/query', apiQueryRouter_otp)
-//app.use('/api/otp/node/update', apiUpdateRouter)
-//app.use('/api/otp/node/search', apiSearchRouter)
+//app.use('/', homeRouter)
+//app.use('/dashboard', dashboardRouter)
+//app.use('/users', usersRouter)
+//app.use('/explore', exploreRouter)
+//app.use('/apiPortal', apiPortalRouter)
+//app.use('/api', apiRouter)
 
-app.use('/otp/views/v_dbg_txs_staging_check', v_dbg_txs_staging_checkRouter_otp)
-app.use('/otp/views/v_latest_synched_block', v_latest_synched_blockRouter_otp)
-app.use('/otp/views/v_nodes', v_nodesRouter_otp) 
-app.use('/otp/views/v_nodes_stats', v_nodes_statsRouter_otp) 
-app.use('/otp/views/v_sys_events_failed_tx', v_sys_events_failed_txRouter_otp)
-app.use('/otp/views/v_sys_events_useless ', v_sys_events_uselessRouter_otp)
-app.use('/otp/views/v_sys_txs_failed  ', v_sys_txs_failedRouter_otp)
+//app.use('/lookup', lookupRouter)
+//app.use('/publish', publishRouter)
+//app.use('/search', searchRouter)
 
-//misc
-app.use('/spicyTacosXXL', spicyTacosRouter)
+//mynodes
+//app.use('/myNodes/settings', mynodesSettingsRouter)
+
+//alliance
+//app.use('/alliance/members', allianceMembersRouter)
+//app.use('/alliance/register', allianceRegisterRouter)
+//app.use('/alliance/dashboard', allianceDashboardRouter)
+//app.use('/alliance/dao', daoRouter)
+
+//api
+app.use('/otp/views/v_nodes_stats', v_nodes_statsRouter_otp)
+app.use('/otp/views/v_nodes', v_nodesRouter_otp)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

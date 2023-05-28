@@ -1,5 +1,5 @@
 [Unit]
-Description=The OTNode API!
+Description=API for OTP data
 
 [Service]
 Type=simple
