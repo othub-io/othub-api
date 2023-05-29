@@ -89,7 +89,7 @@ module.exports = apiSpam = async (type, api_key) => {
       console.error('Error retrieving data:', error)
     })
 
-  if (!request_history) {
+  if (request_history == '[]') {
     console.log(`Vistor:${api_key} is allow to ${type}.`)
 
     //insert a new time stamp
