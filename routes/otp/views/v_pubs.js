@@ -112,7 +112,7 @@ router.get('/', async function (req, res) {
 
   function setValue (value) {
     shardTable = value
-    res.send(shardTable)
+    res.json(shardTable)
   }
 })
 

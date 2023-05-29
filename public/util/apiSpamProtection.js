@@ -71,7 +71,7 @@ module.exports = apiSpam = async (type, api_key) => {
     })
 
   console.log(user)
-  if (user == '[]') {
+  if (user == '') {
     return {
       permission: `no_user`
     }
