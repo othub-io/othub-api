@@ -64,7 +64,7 @@ router.get('/', async function (req, res) {
     limit = 500
   }
 
-  query = `SELECT * FROM OTP.v_nodes`
+  query = `SELECT * FROM otp.v_nodes`
   conditions = []
   params = []
 
