@@ -53,7 +53,7 @@ router.get('/', async function (req, res) {
     console.log(`Request frequency limit hit from ${api_key}`)
     resp_object = {
       result:
-        'Request blocked by spam protection. Only 1 request is allow per 30 seconds without a premium authorization key.'
+        'Request blocked by spam protection. Only 1 request is allow per 5 minutes without a premium authorization key.'
     }
     res.send(resp_object)
     return
