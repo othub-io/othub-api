@@ -64,7 +64,7 @@ router.get('/', async function (req, res) {
     limit = 500
   }
 
-  query = `SELECT * FROM otp.v_nodes`
+  query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,createProfile_adminWallet,addedAdminWalletsHashes,removedWalletsHashes,NodeCreaton_ts,NodeCreaton_date FROM otp.v_nodes`
   conditions = []
   params = []
 
@@ -88,14 +88,34 @@ router.get('/', async function (req, res) {
     params.push(url_params.TokenSymbol)
   }
 
-  if (url_params.nodeOwner) {
-    conditions.push(`nodeOwner = ?`)
-    params.push(url_params.nodeOwner)
-  }
-
   if (url_params.nodeGroup) {
     conditions.push(`nodeGroup = ?`)
     params.push(url_params.nodeGroup)
+  }
+
+  if (url_params.createProfile_adminWallet) {
+    conditions.push(`createProfile_adminWallet = ?`)
+    params.push(url_params.createProfile_adminWallet)
+  }
+
+  if (url_params.addedAdminWalletsHashes) {
+    conditions.push(`addedAdminWalletsHashes = ?`)
+    params.push(url_params.addedAdminWalletsHashes)
+  }
+
+  if (url_params.removedWalletsHashes) {
+    conditions.push(`removedWalletsHashes = ?`)
+    params.push(url_params.removedWalletsHashes)
+  }
+
+  if (url_params.NodeCreaton_ts) {
+    conditions.push(`NodeCreaton_ts = ?`)
+    params.push(url_params.NodeCreaton_ts)
+  }
+
+  if (url_params.NodeCreaton_date) {
+    conditions.push(`NodeCreaton_date = ?`)
+    params.push(url_params.NodeCreaton_date)
   }
 
   whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''

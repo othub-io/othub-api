@@ -64,7 +64,7 @@ router.get('/', async function (req, res) {
     limit = 500
   }
 
-  query = `SELECT * FROM otp.v_nodes_stats`
+  query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,date,nodeStake,pubsCommited,pubsCommited_inclOutOfTop3,pubsCommited1stEpochOnly,pubsCommited1stEpochOnly_inclOutOfTop3,estimatedEarnings,cumulativeEstimatedEarnings,txFees,payouts,cumulativePayouts,Ask FROM otp.v_nodes_stats`
   conditions = []
   params = []
 
@@ -88,11 +88,6 @@ router.get('/', async function (req, res) {
     params.push(url_params.TokenSymbol)
   }
 
-  if (url_params.nodeOwner) {
-    conditions.push(`nodeOwner = ?`)
-    params.push(url_params.nodeOwner)
-  }
-
   if (url_params.nodeGroup) {
     conditions.push(`nodeGroup = ?`)
     params.push(url_params.nodeGroup)
@@ -113,14 +108,29 @@ router.get('/', async function (req, res) {
     params.push(url_params.pubsCommited)
   }
 
-  if (url_params.estimatedEarningsIfChosen) {
-    conditions.push(`estimatedEarningsIfChosen = ?`)
-    params.push(url_params.estimatedEarningsIfChosen)
+  if (url_params.pubsCommited_inclOutOfTop3) {
+    conditions.push(`pubsCommited_inclOutOfTop3 = ?`)
+    params.push(url_params.pubsCommited_inclOutOfTop3)
+  }
+
+  if (url_params.pubsCommited1stEpochOnly) {
+    conditions.push(`pubsCommited1stEpochOnly = ?`)
+    params.push(url_params.pubsCommited1stEpochOnly)
+  }
+
+  if (url_params.pubsCommited1stEpochOnly_inclOutOfTop3) {
+    conditions.push(`pubsCommited1stEpochOnly_inclOutOfTop3 = ?`)
+    params.push(url_params.pubsCommited1stEpochOnly_inclOutOfTop3)
   }
 
   if (url_params.estimatedEarnings) {
     conditions.push(`estimatedEarnings = ?`)
     params.push(url_params.estimatedEarnings)
+  }
+
+  if (url_params.cumulativeEstimatedEarnings) {
+    conditions.push(`cumulativeEstimatedEarnings = ?`)
+    params.push(url_params.cumulativeEstimatedEarnings)
   }
 
   if (url_params.txFees) {
@@ -129,13 +139,13 @@ router.get('/', async function (req, res) {
   }
 
   if (url_params.payouts) {
-    conditions.push(`Payouts = ?`)
+    conditions.push(`payouts = ?`)
     params.push(url_params.payouts)
   }
 
-  if (url_params.totalPayouts) {
-    conditions.push(`TotalPayouts = ?`)
-    params.push(url_params.totalPayouts)
+  if (url_params.cumulativePayouts) {
+    conditions.push(`cumulativePayouts = ?`)
+    params.push(url_params.cumulativePayouts)
   }
 
   if (url_params.ask) {
