@@ -89,7 +89,8 @@ module.exports = apiSpam = async (type, api_key) => {
       console.error('Error retrieving data:', error)
     })
 
-  if (request_history == '[]') {
+  console.log(request_history)
+  if (request_history == '') {
     console.log(`Vistor:${api_key} is allow to ${type}.`)
 
     //insert a new time stamp
@@ -118,8 +119,8 @@ module.exports = apiSpam = async (type, api_key) => {
     console.log(`Vistor:${api_key} found in request_history.`)
     cooldown = 5 * 60 * 1000 //5min
 
-    query = 'SELECT date_last_used FROM request_history WHERE api_key = ?'
-    params = [type, api_key]
+    query = 'SELECT * FROM request_history WHERE api_key = ?'
+    params = [api_key]
     spam_result = await getOTNODEData(query, params)
       .then(results => {
         //console.log('Query results:', results);
@@ -144,19 +145,21 @@ module.exports = apiSpam = async (type, api_key) => {
         console.error('Error retrieving data:', error)
       })
 
-    if (is_alliance) {
+    if (is_alliance[0].access == 'Premium') {
       cooldown = 1 * 5 * 1000 //5sec
-      console.log(`Vistor:${api_key} is alliance member.`)
+      console.log(`Vistor:${api_key} is a premium key.`)
     }
 
-    expireDate = new Date(spam_result.date_last_used)
-    currentDate = new Date()
-
-    timeDif = Math.abs(currentDate - expireDate)
-    expireDate = Math.abs(expireDate)
+    expireDate = spam_result[0].date_last_used
+    currentDate = Math.abs(new Date())
+    timeDif = currentDate - expireDate
+    //expireDate = Math.abs(expireDate)
 
     if (timeDif > cooldown) {
       console.log(`Vistor:${api_key} is allow to ${type}.`)
+
+      time_stamp = new Date()
+      time_stamp = Math.abs(time_stamp)
 
       //insert a new time stamp
       query =
@@ -178,6 +181,8 @@ module.exports = apiSpam = async (type, api_key) => {
     }
   }
 
+  console.log(cooldown)
+  console.log(timeDif)
   remaining = cooldown - timeDif
   console.log(`Visitor:${api_key} was blocked from ${type}ing.`)
   console.log(`Time remaining: ${remaining} milliseconds.`)

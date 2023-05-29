@@ -64,12 +64,12 @@ router.get('/', async function (req, res) {
     limit = 500
   }
 
-  query = `SELECT * FROM OTP.v_nodes`
+  query = `SELECT * FROM OTP.v_pubs`
   conditions = []
   params = []
 
   if (url_params.nodeId) {
-    conditions.push(`nodeId = ?`)
+    conditions.push(`date = ?`)
     params.push(url_params.nodeId)
   }
 
