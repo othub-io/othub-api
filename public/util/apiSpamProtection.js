@@ -33,6 +33,13 @@ async function getOTNODEData (query, params) {
 module.exports = apiSpam = async (type, api_key) => {
   console.log(`Checking if visitor:${api_key} is spamming.`)
   //check for spam
+
+  if (type == 'node_operators' && api_key != process.env.GOD_KEY) {
+    return {
+      permission: `restricted`
+    }
+  }
+
   if (api_key == process.env.GOD_KEY) {
     console.log(`Vistor:${api_key} IS USING THE GOD KEY.`)
 

@@ -26,6 +26,10 @@ const logger = require('morgan')
 //const allianceDashboardRouter = require('./routes/alliance/dashboard')
 //const daoRouter = require('./routes/alliance/dao')
 
+//otnode.com
+const node_operatorsRouter = require('./routes/alliance/node_operators')
+
+//stats
 const v_nodes_statsRouter_otp = require('./routes/otp/views/v_nodes_stats')
 const v_nodesRouter_otp = require('./routes/otp/views/v_nodes')
 
@@ -67,6 +71,8 @@ app.use('/util', express.static(__dirname + 'public/util'))
 //api
 app.use('/otp/views/v_nodes_stats', v_nodes_statsRouter_otp)
 app.use('/otp/views/v_nodes', v_nodesRouter_otp)
+
+app.use('/alliance/node_operators', node_operatorsRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
