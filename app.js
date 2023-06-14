@@ -31,13 +31,11 @@ const node_operatorsRouter = require('./routes/alliance/node_operators')
 
 //stats
 const v_nodes_statsRouter_otp = require('./routes/otp/views/v_nodes_stats')
+const v_nodes_stats_hourlyRouter_otp = require('./routes/otp/views/v_nodes_stats_hourly')
 const v_nodesRouter_otp = require('./routes/otp/views/v_nodes')
+const v_pubs_statsRouter_otp = require('./routes/otp/views/v_pubs_stats')
 
 const app = express()
-
-// view engine setup
-//app.set('views', path.join(__dirname, 'views'))
-//app.set('view engine', 'ejs')
 
 app.use(logger('dev'))
 app.use(express.json())
@@ -48,31 +46,11 @@ app.use(express.static(path.join(__dirname, 'node_modules')))
 app.use('/dkg', express.static(__dirname + 'node_modules/dkg.js'))
 app.use('/util', express.static(__dirname + 'public/util'))
 
-//app.use('/', homeRouter)
-//app.use('/dashboard', dashboardRouter)
-//app.use('/users', usersRouter)
-//app.use('/explore', exploreRouter)
-//app.use('/apiPortal', apiPortalRouter)
-//app.use('/api', apiRouter)
-
-//app.use('/lookup', lookupRouter)
-//app.use('/publish', publishRouter)
-//app.use('/search', searchRouter)
-
-//mynodes
-//app.use('/myNodes/settings', mynodesSettingsRouter)
-
-//alliance
-//app.use('/alliance/members', allianceMembersRouter)
-//app.use('/alliance/register', allianceRegisterRouter)
-//app.use('/alliance/dashboard', allianceDashboardRouter)
-//app.use('/alliance/dao', daoRouter)
-
 //api
 app.use('/otp/views/v_nodes_stats', v_nodes_statsRouter_otp)
+app.use('/otp/views/v_nodes_stats_hourly', v_nodes_stats_hourlyRouter_otp)
 app.use('/otp/views/v_nodes', v_nodesRouter_otp)
-
-app.use('/alliance/node_operators', node_operatorsRouter)
+app.use('/otp/views/v_pubs_stats', v_pubs_statsRouter_otp)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

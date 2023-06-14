@@ -4,6 +4,7 @@ var router = express.Router()
 const purl = require('url')
 const queryTypes = require('../../../public/util/queryTypes')
 const mysql = require('mysql')
+const { DESTRUCTION } = require('dns')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.USER,
@@ -21,7 +22,7 @@ router.get('/', async function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
 
   if (!url_params.api_key) {
-    console.log(`v_nodes request without authorization.`)
+    console.log(`v_nodes_stats request without authorization.`)
     resp_object = {
       result: 'Authorization key not provided.'
     }
@@ -29,7 +30,7 @@ router.get('/', async function (req, res) {
     return
   }
 
-  type = 'v_nodes'
+  type = 'v_nodes_stats_hourly'
   api_key = url_params.api_key
 
   const apiSpamProtection = await queryTypes.apiSpamProtection()
@@ -53,7 +54,7 @@ router.get('/', async function (req, res) {
     console.log(`Request frequency limit hit from ${api_key}`)
     resp_object = {
       result:
-        'Request blocked by spam protection. Only 1 request is allow per 30 seconds without a premium authorization key.'
+        'Request blocked by spam protection. Only 1 request is allowed per 5 minutes without a premium authorization key.'
     }
     res.send(resp_object)
     return
@@ -64,44 +65,33 @@ router.get('/', async function (req, res) {
     limit = 500
   }
 
-  query = `SELECT * FROM OTP.v_pubs`
+  if (limit > 2000) {
+    limit = 2000
+  }
+
+  ext = `_24h`
+  if (url_params.timeframe) {
+    if (url_params.timeframe == 'weekly') {
+      ext = `_7d`
+    } else {
+      ext = `_24h`
+    }
+  }
+
+  query = `SELECT nodeId,networkId,tokenName,tokenSymbol,nodeGroup,date,pubsCommited,pubsCommited_inclOutOfTop3,pubsCommited1stEpochOnly,pubsCommited1stEpochOnly_inclOutOfTop3,estimatedEarnings,txFees,payouts FROM otp.v_nodes_stats_hourly${ext}`
+  console.log(query)
   conditions = []
   params = []
 
   if (url_params.nodeId) {
-    conditions.push(`date = ?`)
+    conditions.push(`nodeId = ?`)
     params.push(url_params.nodeId)
   }
 
-  if (url_params.networkId) {
-    conditions.push(`networkId = ?`)
-    params.push(url_params.networkId)
-  }
-
-  if (url_params.tokenName) {
-    conditions.push(`tokenName = ?`)
-    params.push(url_params.tokenName)
-  }
-
-  if (url_params.TokenSymbol) {
-    conditions.push(`TokenSymbol = ?`)
-    params.push(url_params.TokenSymbol)
-  }
-
-  if (url_params.nodeOwner) {
-    conditions.push(`nodeOwner = ?`)
-    params.push(url_params.nodeOwner)
-  }
-
-  if (url_params.nodeGroup) {
-    conditions.push(`nodeGroup = ?`)
-    params.push(url_params.nodeGroup)
-  }
-
   whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
-  sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
+  sqlQuery = query + ' ' + whereClause + ` order by date desc LIMIT ${limit}`
 
-  shardTable = []
+  v_nodes_stats = []
   await otp_connection.query(sqlQuery, params, function (error, row) {
     if (error) {
       throw error
@@ -111,8 +101,8 @@ router.get('/', async function (req, res) {
   })
 
   function setValue (value) {
-    shardTable = value
-    res.json(shardTable)
+    v_nodes_stats = value
+    res.json(v_nodes_stats)
   }
 })
 

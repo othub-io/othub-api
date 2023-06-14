@@ -73,51 +73,6 @@ router.get('/', async function (req, res) {
     params.push(url_params.nodeId)
   }
 
-  if (url_params.networkId) {
-    conditions.push(`networkId = ?`)
-    params.push(url_params.networkId)
-  }
-
-  if (url_params.tokenName) {
-    conditions.push(`tokenName = ?`)
-    params.push(url_params.tokenName)
-  }
-
-  if (url_params.TokenSymbol) {
-    conditions.push(`TokenSymbol = ?`)
-    params.push(url_params.TokenSymbol)
-  }
-
-  if (url_params.nodeGroup) {
-    conditions.push(`nodeGroup = ?`)
-    params.push(url_params.nodeGroup)
-  }
-
-  if (url_params.createProfile_adminWallet) {
-    conditions.push(`createProfile_adminWallet = ?`)
-    params.push(url_params.createProfile_adminWallet)
-  }
-
-  if (url_params.addedAdminWalletsHashes) {
-    conditions.push(`addedAdminWalletsHashes = ?`)
-    params.push(url_params.addedAdminWalletsHashes)
-  }
-
-  if (url_params.removedWalletsHashes) {
-    conditions.push(`removedWalletsHashes = ?`)
-    params.push(url_params.removedWalletsHashes)
-  }
-
-  if (url_params.NodeCreaton_ts) {
-    conditions.push(`NodeCreaton_ts = ?`)
-    params.push(url_params.NodeCreaton_ts)
-  }
-
-  if (url_params.NodeCreaton_date) {
-    conditions.push(`NodeCreaton_date = ?`)
-    params.push(url_params.NodeCreaton_date)
-  }
-
   whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
   sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
 
