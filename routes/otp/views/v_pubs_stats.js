@@ -86,7 +86,7 @@ router.get('/', async function (req, res) {
   //sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
   sqlQuery = query + ' ' + `LIMIT ${limit}`
 
-  shardTable = []
+  v_pubs_stats = []
   await otp_connection.query(sqlQuery, params, function (error, row) {
     if (error) {
       throw error
@@ -96,8 +96,8 @@ router.get('/', async function (req, res) {
   })
 
   function setValue (value) {
-    shardTable = value
-    res.json(shardTable)
+    v_pubs_stats = value
+    res.json(v_pubs_stats)
   }
 })
 

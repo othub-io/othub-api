@@ -82,7 +82,7 @@ router.get('/', async function (req, res) {
   sqlQuery = query + ' ' + whereClause + ` order by date desc LIMIT ${limit}`
 
   console.log(sqlQuery)
-  v_node_stats = []
+  v_nodes_stats = []
   await otp_connection.query(sqlQuery, params, function (error, row) {
     if (error) {
       throw error
@@ -92,8 +92,8 @@ router.get('/', async function (req, res) {
   })
 
   function setValue (value) {
-    v_node_stats = value
-    res.json(v_node_stats)
+    v_nodes_stats = value
+    res.json(v_nodes_stats)
   }
 })
 

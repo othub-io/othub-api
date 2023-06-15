@@ -76,7 +76,7 @@ router.get('/', async function (req, res) {
   whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
   sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
 
-  shardTable = []
+  v_nodes = []
   await otp_connection.query(sqlQuery, params, function (error, row) {
     if (error) {
       throw error
@@ -86,8 +86,8 @@ router.get('/', async function (req, res) {
   })
 
   function setValue (value) {
-    shardTable = value
-    res.json(shardTable)
+    v_nodes = value
+    res.json(v_nodes)
   }
 })
 
