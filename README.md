@@ -1,5 +1,3 @@
 # Girraph
 
-otp testnet only
-
-
+otnode.io api
