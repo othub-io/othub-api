@@ -3,8 +3,8 @@ Description=API for OTP data
 
 [Service]
 Type=simple
-WorkingDirectory=/root/otnode-api
-ExecStart=/root/otnode-api/otnode-api.sh
+WorkingDirectory=/root/othub-api
+ExecStart=/root/othub-api/othub-api.sh
 Restart=on-failure
 
 [Install]
