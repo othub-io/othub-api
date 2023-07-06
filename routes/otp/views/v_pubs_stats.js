@@ -8,7 +8,7 @@ const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.USER,
   password: process.env.PASSWORD,
-  database: 'otp'
+  database: process.env.SYNC_DB
 })
 
 router.get('/', async function (req, res) {
