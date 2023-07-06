@@ -8,3 +8,5 @@ DBHOST=localhost
 USER=root
 PASSWORD=admin
 GOD_KEY=
+OTHUB_DB=
+SYNC_DB=
