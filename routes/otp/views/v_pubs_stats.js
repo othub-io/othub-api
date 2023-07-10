@@ -6,8 +6,8 @@ const queryTypes = require('../../../public/util/queryTypes')
 const mysql = require('mysql')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
-  user: process.env.USER,
-  password: process.env.PASSWORD,
+  user: process.env.DBUSER,
+  password: process.env.DBPASSWORD,
   database: process.env.SYNC_DB
 })
 
@@ -68,16 +68,10 @@ router.get('/', async function (req, res) {
     limit = 2000
   }
 
-  timeframe = 'daily'
-  if (url_params.timeframe) {
-    if (url_params.timeframe == 'hourly') {
-      timeframe = 'hourly'
-    }
-  }
-
-  query = `SELECT * FROM otp.v_pubs_stats`
+  timeframe = url_params.timeFrame
+  query = `SELECT * FROM otp_sync_rpc.v_pubs_stats`
   if (timeframe == 'hourly') {
-    query = `SELECT * FROM otp.v_pubs_stats_hourly_24h`
+    query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_hourly_24h`
   }
   conditions = []
   params = []

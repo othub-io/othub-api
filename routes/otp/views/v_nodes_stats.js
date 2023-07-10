@@ -6,8 +6,8 @@ const queryTypes = require('../../../public/util/queryTypes')
 const mysql = require('mysql')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
-  user: process.env.USER,
-  password: process.env.PASSWORD,
+  user: process.env.DBUSER,
+  password: process.env.DBPASSWORD,
   database: process.env.SYNC_DB
 })
 
@@ -67,7 +67,13 @@ router.get('/', async function (req, res) {
   if (limit > 2000) {
     limit = 2000
   }
-  query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,date,nodeStake,pubsCommited,pubsCommited_inclOutOfTop3,pubsCommited1stEpochOnly,pubsCommited1stEpochOnly_inclOutOfTop3,estimatedEarnings,cumulativeEstimatedEarnings,txFees,payouts,cumulativePayouts,ask FROM otp.v_nodes_stats`
+
+  timeframe = url_params.timeFrame
+  query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,date,nodeStake,pubsCommited,pubsCommited1stEpochOnly,estimatedEarnings,cumulativeEstimatedEarnings,payouts,cumulativePayouts,ask FROM otp_sync_rpc.v_nodes_stats`
+  if(timeframe == 'latest'){
+    query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,date,nodeStake,pubsCommited,pubsCommited1stEpochOnly,estimatedEarnings,cumulativeEstimatedEarnings,payouts,cumulativePayouts,ask FROM otp_sync_rpc.v_nodes_stats_latest`
+  }
+
 
   conditions = []
   params = []

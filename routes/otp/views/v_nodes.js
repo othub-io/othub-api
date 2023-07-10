@@ -6,8 +6,8 @@ const queryTypes = require('../../../public/util/queryTypes')
 const mysql = require('mysql')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
-  user: process.env.USER,
-  password: process.env.PASSWORD,
+  user: process.env.DBUSER,
+  password: process.env.DBPASSWORD,
   database: process.env.SYNC_DB
 })
 
@@ -64,7 +64,7 @@ router.get('/', async function (req, res) {
     limit = 500
   }
 
-  query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,createProfile_adminWallet,addedAdminWalletsHashes,removedWalletsHashes,NodeCreaton_ts,NodeCreaton_date FROM otp.v_nodes`
+  query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,createProfile_adminWallet,createProfile_adminWallet_hash,current_adminWallet_hashes, createProfile_blockNumber, createProfile_txHash, createProfile_ts, createProfile_date, nodeStake, nodeAsk FROM otp_sync_rpc.v_nodes`
   conditions = []
   params = []
 

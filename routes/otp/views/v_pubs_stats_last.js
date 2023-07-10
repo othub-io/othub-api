@@ -21,7 +21,7 @@ router.get('/', async function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
 
   if (!url_params.api_key) {
-    console.log(`v_nodes_stats request without authorization.`)
+    console.log(`v_nodes request without authorization.`)
     resp_object = {
       result: 'Authorization key not provided.'
     }
@@ -29,7 +29,7 @@ router.get('/', async function (req, res) {
     return
   }
 
-  type = 'v_nodes_stats_hourly'
+  type = 'v_pubs_stats_last'
   api_key = url_params.api_key
 
   const apiSpamProtection = await queryTypes.apiSpamProtection()
@@ -53,7 +53,7 @@ router.get('/', async function (req, res) {
     console.log(`Request frequency limit hit from ${api_key}`)
     resp_object = {
       result:
-        'Request blocked by spam protection. Only 1 request is allowed per 5 minutes without a premium authorization key.'
+        'Request blocked by spam protection. Only 1 request is allow per 30 seconds without a premium authorization key.'
     }
     res.send(resp_object)
     return
@@ -61,36 +61,36 @@ router.get('/', async function (req, res) {
 
   limit = url_params.limit
   if (!limit) {
-    limit = 500
+    limit = 1000
   }
 
   if (limit > 2000) {
     limit = 2000
   }
 
-  ext = `_24h`
-  if (url_params.timeframe) {
-    if (url_params.timeframe == 'weekly') {
-      ext = `_7d`
-    } else {
-      ext = `_24h`
-    }
+  timeframe = url_params.timeFrame
+  query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_last1h`
+  if (timeframe == 'hourly') {
+    query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_last1h`
+  }
+  if (timeframe == 'daily') {
+    query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_last24h`
+  }
+  if (timeframe == 'weekly') {
+    query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_last7d`
+  }
+  if (timeframe == 'monthly') {
+    query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_last30d`
   }
 
-  query = `SELECT nodeId,networkId,tokenName,tokenSymbol,nodeGroup,date,pubsCommited,pubsCommited_inclOutOfTop3,pubsCommited1stEpochOnly,pubsCommited1stEpochOnly_inclOutOfTop3,estimatedEarnings,txFees,payouts FROM otp.v_nodes_stats_hourly${ext}`
-  console.log(query)
   conditions = []
   params = []
 
-  if (url_params.nodeId) {
-    conditions.push(`nodeId = ?`)
-    params.push(url_params.nodeId)
-  }
+  //whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
+  //sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
+  sqlQuery = query + ' ' + `LIMIT ${limit}`
 
-  whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
-  sqlQuery = query + ' ' + whereClause + ` order by date desc LIMIT ${limit}`
-
-  v_nodes_stats = []
+  v_pubs_stats_last = []
   await otp_connection.query(sqlQuery, params, function (error, row) {
     if (error) {
       throw error
@@ -100,8 +100,8 @@ router.get('/', async function (req, res) {
   })
 
   function setValue (value) {
-    v_nodes_stats = value
-    res.json(v_nodes_stats)
+    v_pubs_stats_last = value
+    res.json(v_pubs_stats_last)
   }
 })
 
