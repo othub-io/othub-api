@@ -5,8 +5,8 @@ OT_NODE_HOSTNAME=https://otnode.io
 OT_NODE_PORT=8900
 
 DBHOST=localhost
-USER=root
-PASSWORD=admin
+DBUSER=root
+DBPASSWORD=admin
 GOD_KEY=
 OTHUB_DB=
 SYNC_DB=
