@@ -68,10 +68,13 @@ router.get('/', async function (req, res) {
     limit = 2000
   }
 
-  timeframe = url_params.timeFrame
-  query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,date,nodeStake,pubsCommited,pubsCommited1stEpochOnly,estimatedEarnings,cumulativeEstimatedEarnings,payouts,cumulativePayouts,ask FROM otp_sync_rpc.v_nodes_stats`
-  if(timeframe == 'latest'){
-    query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,date,nodeStake,pubsCommited,pubsCommited1stEpochOnly,estimatedEarnings,cumulativeEstimatedEarnings,payouts,cumulativePayouts,ask FROM otp_sync_rpc.v_nodes_stats_latest`
+  type = url_params.type
+  query = `SELECT * FROM otp_sync_rpc.v_nodes_stats`
+  if(type == 'latest'){
+    query = `SELECT * FROM otp_sync_rpc.v_nodes_stats_latest`
+  }
+  if(type == 'avgnode'){
+    query = `SELECT * FROM otp_sync_rpc.v_nodes_stats_latest_avgnode`
   }
 
 

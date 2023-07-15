@@ -3,8 +3,8 @@ const mysql = require('mysql')
 
 const otnodedb_connection = mysql.createConnection({
   host: process.env.DBHOST,
-  user: process.env.USER,
-  password: process.env.PASSWORD,
+  user: process.env.DBUSER,
+  password: process.env.DBPASSWORD,
   database: process.env.OTHUB_DB
 })
 
@@ -124,7 +124,7 @@ module.exports = apiSpam = async (type, api_key) => {
 
   if (request_history) {
     console.log(`Vistor:${api_key} found in request_history.`)
-    cooldown = 5 * 60 * 1000 //5min
+    cooldown = 1 * Number(process.env.BASIC_RATE) * 1000
 
     query = 'SELECT * FROM request_history WHERE api_key = ?'
     params = [api_key]
@@ -153,7 +153,7 @@ module.exports = apiSpam = async (type, api_key) => {
       })
 
     if (is_alliance[0].access == 'Premium') {
-      cooldown = 1 * 5 * 1000 //5sec
+      cooldown = 1 * Number(process.env.PREMIUM_RATE) * 1000 //5sec
       console.log(`Vistor:${api_key} is a premium key.`)
     }
 
