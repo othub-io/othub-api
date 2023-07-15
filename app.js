@@ -8,7 +8,7 @@ const logger = require('morgan')
 //stats
 const v_nodes_statsRouter_otp = require('./routes/otp/views/v_nodes_stats')
 const v_nodes_stats_lastRouter_otp = require('./routes/otp/views/v_nodes_stats_last')
-//const v_nodes_stats_hourlyRouter_otp = require('./routes/otp/views/v_nodes_stats_hourly')
+const v_nodes_rank_lastRouter_otp = require('./routes/otp/views/v_nodes_rank_last')
 const v_nodesRouter_otp = require('./routes/otp/views/v_nodes')
 
 const v_pubs_statsRouter_otp = require('./routes/otp/views/v_pubs_stats')
@@ -28,11 +28,13 @@ app.use('/util', express.static(__dirname + 'public/util'))
 //api
 app.use('/otp/views/v_nodes_stats', v_nodes_statsRouter_otp)
 app.use('/otp/views/v_nodes_stats_last', v_nodes_stats_lastRouter_otp)
-//app.use('/otp/views/v_nodes_stats_hourly', v_nodes_stats_hourlyRouter_otp)
+app.use('/otp/views/v_nodes_rank_last', v_nodes_rank_lastRouter_otp)
 app.use('/otp/views/v_nodes', v_nodesRouter_otp)
 
 app.use('/otp/views/v_pubs_stats', v_pubs_statsRouter_otp)
 app.use('/otp/views/v_pubs_stats_last', v_pubs_stats_lastRouter_otp)
+
+
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

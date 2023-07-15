@@ -29,7 +29,7 @@ router.get('/', async function (req, res) {
     return
   }
 
-  type = 'v_nodes_stats_last'
+  type = 'v_nodes_rank_last'
   api_key = url_params.api_key
 
   const apiSpamProtection = await queryTypes.apiSpamProtection()
@@ -69,19 +69,19 @@ router.get('/', async function (req, res) {
   }
 
   timeframe = url_params.timeFrame
-  query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,nodeStake, nodeAsk, cumulativePayouts ,estimatedEarnings, pubsCommited, pubsCommited1stEpochOnly FROM otp_sync_rpc.v_nodes_stats_last1h`
-  if (timeframe == 'hourly') {
-    query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,nodeStake, nodeAsk, cumulativePayouts ,estimatedEarnings, pubsCommited, pubsCommited1stEpochOnly FROM otp_sync_rpc.v_nodes_stats_last1h`
-  }
-  if (timeframe == 'daily') {
-    query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,nodeStake, nodeAsk, cumulativePayouts ,estimatedEarnings, pubsCommited, pubsCommited1stEpochOnly FROM otp_sync_rpc.v_nodes_stats_last24h`
-  }
-  if (timeframe == 'weekly') {
-    query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,nodeStake, nodeAsk, cumulativePayouts ,estimatedEarnings, pubsCommited, pubsCommited1stEpochOnly FROM otp_sync_rpc.v_nodes_stats_last7d`
-  }
-  if (timeframe == 'monthly') {
-    query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,nodeStake, nodeAsk, cumulativePayouts ,estimatedEarnings, pubsCommited, pubsCommited1stEpochOnly FROM otp_sync_rpc.v_nodes_stats_last30d`
-  }
+  query = `SELECT * FROM otp_sync_rpc.v_nodes_rank_last24h`
+//   if (timeframe == 'hourly') {
+//     query = `SELECT * FROM otp_sync_rpc.v_nodes_rank_last1h`
+//   }
+//   if (timeframe == 'daily') {
+//     query = `SELECT * FROM otp_sync_rpc.v_nodes_rank_last24h`
+//   }
+//   if (timeframe == 'weekly') {
+//     query = `SELECT * FROM otp_sync_rpc.v_nodes_rank_last7d`
+//   }
+//   if (timeframe == 'monthly') {
+//     query = `SELECT * FROM otp_sync_rpc.v_nodes_rank_last30d`
+//   }
 
   conditions = []
   params = []
