@@ -3,18 +3,9 @@
 OTHub API is a community managed NodeJS App Interface to provide access to indexed OriginTrail Parachain data synchronized by using the [otp-sync](https://github.com/othub-io/otp-sync) repository.
 
 ### OTHub API:
-- Provides free rate access to anyone who connects a wallet and generates an API key;
-- Allows app developers to develop their own DKG tools that provide great value to the community;
-- Provides netowrk data as well as the ability to get and queue publishes
+- Provides an API key to all users to view network activity and get, update, publish knowledge assets;
+- Allows app developers to develop their own DKG tools that provide great value to the community.
 
-### Timeline
-- Q3 2023 - Add additional data streams as more otp-sync tables are finalized
-- Q4 2023 - Improve on access to variety of data
-- Q1 2024 - Improve filter capabilites of requests
-- Q2 2024 - Add ability to perform get via othub-api as well as queue publishes/updateS to be signed on [OTHub](othub.io) hosted by othub-react
-- Q3 2024 - Improved rates if demand requires
-
-### Expected Impact
 OTHub API is how the OTHub team will attempt to kick start the DKG tooling app development race. The OTHub API can be the first of many independently hosted APIs that provide future app developers of the DKG with the data they need. We hope open sourcing our api encourages others to bring up their own instance.
 
 ### Instructions
