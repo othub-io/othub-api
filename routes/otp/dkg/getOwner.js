@@ -200,7 +200,7 @@ router.get('/', async function (req, res) {
       })
 
       query =
-        'INSERT INTO txn_header (txn_id, status, admin_key, api_key, request, network, app_group, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        'INSERT INTO txn_header (txn_id, progress, admin_key, api_key, request, network, app_group, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
       await othubdb_connection.query(
         query,
         ['COMPLETE',user[0].admin_key, url_params.api_key, type, url_params.network, url_params.app_group, url_params.txn_description, null, url_params.ual, null, null, null, null, 0, null],
