@@ -134,6 +134,16 @@ router.get('/', async function (req, res) {
             return
         }
 
+        if (!url_params.admin_key || !ethers.utils.isAddress(url_params.admin_key)) {
+            console.log(`Update request with invalid admin key from ${url_params.api_key}`)
+            resp_object = {
+              result:
+                'Invalid admin key (evm address) provided.'
+            }
+            res.send(resp_object)
+            return
+          }
+
         if (!url_params.network || (url_params.network !== 'otp::testnet' && url_params.network !== 'otp::mainnet')) {
             console.log(`Get request with invalid network from ${url_params.api_key}`)
             resp_object = {
@@ -192,10 +202,10 @@ router.get('/', async function (req, res) {
             })
 
             query =
-                `INSERT INTO txn_header (txn_id, progress, admin_key, api_key, request, network, app_group, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+                `INSERT INTO txn_header (txn_id, progress, admin_key, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
             await othubdb_connection.query(
                 query,
-                ['PENDING',user[0].admin_key, url_params.api_key, type, url_params.network, url_params.app_group, url_params.txn_description, url_params.txn_data, null, keywords, null, null, null, url_params.trac_fee, epochs],
+                ['PENDING',url_params.admin_key, url_params.api_key, type, url_params.network, user[0].app_name, url_params.txn_description, url_params.txn_data, null, keywords, null, null, null, url_params.trac_fee, epochs],
                 function (error, results, fields) {
                 if (error) throw error
                 }
@@ -216,7 +226,7 @@ router.get('/', async function (req, res) {
         resp_object = {
             result: 'Update transaction queued successfully.',
             admin_key: user[0].admin_key,
-            update_url: `https://api.othub.io/portal?txn_id=${txn[0].txn_id}`
+            update_url: `https://api.othub.io/portal/gateway?txn_id=${txn[0].txn_id}`
         }
 
         res.json(resp_object)
