@@ -63,7 +63,7 @@ router.get('/', async function (req, res) {
       ip = req.headers['x-forwarded-for']
     }
 
-    type = `transfer`
+    type = `Transfer`
 
     res.setHeader('Access-Control-Allow-Origin', '*')
 
@@ -161,6 +161,11 @@ router.get('/', async function (req, res) {
         receiver: url_params.receiver
       }
 
+    txn_description = url_params.txn_description
+    if(!url_params.txn_description){
+      txn_description = 'No description available.'
+    }
+
     query = `select * from user_header where api_key = ?`
       params = [url_params.api_key]
       user = await getOTHUBData(query, params)
@@ -177,13 +182,13 @@ router.get('/', async function (req, res) {
           `INSERT INTO txn_header (txn_id, progress, public_address, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
         await othubdb_connection.query(
           query,
-          ['PENDING',url_params.public_address, url_params.api_key, type, url_params.network, user[0].app_name, url_params.txn_description, JSON.stringify(receiver), null, null, null, null, null, null, null],
+          ['PENDING',url_params.public_address, url_params.api_key, type, url_params.network, user[0].app_name, txn_description, JSON.stringify(receiver), url_params.ual, null, null, null, null, null, null],
           function (error, results, fields) {
             if (error) throw error
           }
         )
 
-        query = `select * from txn_header where api_key = ? and request = ? order by created_at asc`
+        query = `select * from txn_header where api_key = ? and request = ? order by created_at desc`
         params = [url_params.api_key, type]
         txn = await getOTHUBData(query, params)
           .then(results => {
@@ -198,7 +203,7 @@ router.get('/', async function (req, res) {
     resp_object = {
       result: 'Transfer transaction queued successfully.',
       public_address: url_params.public_address,
-      url: `https://api.othub.io/portal/gateway?txn_id=${txn[0].txn_id}`
+      url: `${process.env.WEB_HOST}/portal/gateway?txn_id=${txn[0].txn_id}`
     }
 
     res.json(resp_object)

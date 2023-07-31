@@ -145,6 +145,11 @@ router.get('/', async function (req, res) {
       data = JSON.stringify('Invalid Query')
     }
 
+    txn_description = url_params.txn_description
+    if(!url_params.txn_description){
+      txn_description = 'No description available.'
+    }
+
     query = `select * from user_header where api_key = ?`
       params = [url_params.api_key]
       user = await getOTHUBData(query, params)
@@ -161,7 +166,7 @@ router.get('/', async function (req, res) {
           'INSERT INTO txn_header (txn_id, progress, public_address, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
         await othubdb_connection.query(
           query,
-          ['COMPLETE',null, url_params.api_key, 'query', url_params.network, user[0].app_name, url_params.txn_description, sparquery, url_params.ual, null, null, null, null, 0, null],
+          ['COMPLETE',null, url_params.api_key, 'query', url_params.network, user[0].app_name, txn_description, sparquery, url_params.ual, null, null, null, null, 0, null],
           function (error, results, fields) {
             if (error) throw error
           }
