@@ -58,9 +58,9 @@ module.exports = apiSpam = async (type, api_key) => {
     }
   }
 
-  query = 'SELECT * FROM user_header WHERE api_key = ?'
+  query = 'SELECT * FROM app_header WHERE api_key = ?'
   params = [api_key]
-  user = await getOTHUBData(query, params)
+  app = await getOTHUBData(query, params)
     .then(results => {
       //console.log('Query results:', results);
       return results
@@ -70,10 +70,9 @@ module.exports = apiSpam = async (type, api_key) => {
       console.error('Error retrieving data:', error)
     })
 
-  console.log(user)
-  if (user == '') {
+  if (app == '') {
     return {
-      permission: `no_user`
+      permission: `no_app`
     }
   }
 

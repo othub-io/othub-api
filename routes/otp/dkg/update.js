@@ -87,8 +87,8 @@ router.get("/", async function (req, res) {
       })
       .catch((error) => console.log(`Error : ${error}`));
 
-    if (permission == `no_user`) {
-      console.log(`No user found for api key ${url_params.api_key}`);
+    if (permission == `no_app`) {
+      console.log(`No app found for api key ${url_params.api_key}`);
       resp_object = {
         result: "Unauthorized key provided.",
       };
@@ -269,9 +269,9 @@ router.get("/", async function (req, res) {
       txn_description = "No description available.";
     }
 
-    query = `select * from user_header where api_key = ?`;
+    query = `select * from app_header where api_key = ?`;
     params = [url_params.api_key];
-    user = await getOTHUBData(query, params)
+    app = await getOTHUBData(query, params)
       .then((results) => {
         //console.log('Query results:', results);
         return results;
@@ -290,7 +290,7 @@ router.get("/", async function (req, res) {
         url_params.api_key,
         type,
         url_params.network,
-        user[0].app_name,
+        app[0].app_name,
         txn_description,
         url_params.txn_data,
         url_params.ual,
