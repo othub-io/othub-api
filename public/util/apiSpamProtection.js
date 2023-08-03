@@ -33,8 +33,8 @@ async function getOTHUBData (query, params) {
 module.exports = apiSpam = async (type, api_key) => {
   console.log(`Checking if visitor:${api_key} is spamming.`)
 
-  if (api_key == process.env.GOD_KEY) {
-    console.log(`Vistor:${api_key} IS USING THE GOD KEY.`)
+    if (api_key == process.env.NODE_OPS_KEY && type ==='stats') {
+    console.log(`Request received with the node ops key.`)
 
     //insert a new time stamp
     time_stamp = new Date()

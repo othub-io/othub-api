@@ -29,7 +29,7 @@ router.get('/', async function (req, res) {
     return
   }
 
-  type = 'v_nodes_rank_last'
+  type = 'stats'
   api_key = url_params.api_key
 
   const apiSpamProtection = await queryTypes.apiSpamProtection()
