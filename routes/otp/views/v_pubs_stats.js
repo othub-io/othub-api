@@ -53,7 +53,7 @@ router.get('/', async function (req, res) {
     console.log(`Request frequency limit hit from ${api_key}`)
     resp_object = {
       result:
-        'Request blocked by spam protection. Only 1 request is allow per 1 seconds.'
+            'The rate limit for this api key has been reached. Please upgrade your key to increase your limit.'
     }
     res.send(resp_object)
     return

@@ -38,11 +38,11 @@ module.exports = apiSpam = async (type, api_key) => {
 
         //insert a new time stamp
         time_stamp = new Date()
-        time_stamp = Math.abs(time_stamp)
+        time_stamp = Math.abs(time_stamp) / 1000
 
         query =
-          'INSERT INTO request_history (request,date_last_used,ip_used,api_key) VALUES (?,?,?,?)'
-        params = [type, time_stamp, null, api_key]
+          'INSERT INTO request_history (request,date_stamp,api_key) VALUES (?,?,?)'
+        params = [type, time_stamp, api_key]
         await getOTHUBData(query, params)
           .then(results => {
             //console.log('Query results:', results);
@@ -76,7 +76,7 @@ module.exports = apiSpam = async (type, api_key) => {
     }
   }
 
-  query = 'SELECT * FROM request_history WHERE api_key = ? AND UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(date_last_used) <= 1;'
+  query = 'SELECT * FROM request_history WHERE api_key = ? AND UNIX_TIMESTAMP(NOW()) - date_stamp <= 1;'
   params = [api_key]
   request_frequency = await getOTHUBData(query, params)
     .then(results => {
@@ -88,8 +88,8 @@ module.exports = apiSpam = async (type, api_key) => {
       console.error('Error retrieving data:', error)
     })
 
-    console.log(request_history)
-    rate = process.env.BASIC
+    console.log(request_frequency)
+    rate = process.env.BASIC_RATE
 
     if (app[0].access === 'Super') {
         rate = process.env.SUPER_RATE
@@ -103,11 +103,33 @@ module.exports = apiSpam = async (type, api_key) => {
         rate = process.env.GIGA_RATE
     }
 
+    console.log(`Requests last 1 second: ${request_frequency.length}`)
+    console.log(`Rate limit ${rate} per 1 second.`)
+
     if (Number(rate) < Number(request_frequency.length)) {
         return {
             permission: `block`
         }
     }
+
+    console.log(`Vistor:${api_key} is allow to ${type}.`)
+
+    //insert a new time stamp
+    time_stamp = new Date()
+    time_stamp = Math.abs(time_stamp) / 1000
+
+    query =
+        'INSERT INTO request_history (request,date_stamp,api_key) VALUES (?,?,?)'
+    params = [type, time_stamp, api_key]
+    await getOTHUBData(query, params)
+        .then(results => {
+            //console.log('Query results:', results);
+            return results
+            // Use the results in your variable or perform further operations
+        })
+        .catch(error => {
+            console.error('Error retrieving data:', error)
+        })
 
   return {
     permission: `allow`
