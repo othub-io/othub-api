@@ -65,7 +65,7 @@ router.get('/', async function (req, res) {
 
     res.setHeader('Access-Control-Allow-Origin', '*')
 
-    if (!url_params.api_key) {
+    if (!url_params.api_key || url_params.api_key === '') {
       console.log(`getLatestStateIssuer request without authorization.`)
       resp_object = {
         result: 'Authorization key not provided.'
@@ -103,7 +103,7 @@ router.get('/', async function (req, res) {
       return
     }
 
-    if (!url_params.ual) {
+    if (!url_params.ual || url_params.ual === '') {
       console.log(`getLatestStateIssuer request with no ual from ${url_params.api_key}`)
       resp_object = {
         result: 'No UAL provided.'
@@ -137,7 +137,7 @@ router.get('/', async function (req, res) {
     }
 
     state = url_params.state 
-    if (!url_params.state) {
+    if (!url_params.state || url_params.state === '') {
       state = 'LATEST_FINALIZED'
     }
 
@@ -195,7 +195,7 @@ router.get('/', async function (req, res) {
     }
 
     txn_description = url_params.txn_description
-    if(!url_params.txn_description){
+    if (!url_params.txn_description || url_params.txn_description === ''){
       txn_description = 'No description available.'
     }
 

@@ -66,7 +66,7 @@ router.get('/', async function (req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*')
 
     type = 'query'
-    if (!url_params.api_key) {
+    if (!url_params.api_key || url_params.api_key === '') {
       console.log(`Query request without authorization.`)
       resp_object = {
         result: 'Authorization key not provided.'
@@ -104,7 +104,7 @@ router.get('/', async function (req, res) {
       return
     }
 
-    if (!url_params.query) {
+    if (!url_params.query || url_params.query === '') {
       console.log(`Query request with no query from ${url_params.api_key}`)
       resp_object = {
         result: 'No query provided.'
@@ -126,7 +126,7 @@ router.get('/', async function (req, res) {
       }
 
     type = url_params.type
-    if (!url_params.type) {
+    if (!url_params.type || url_params.type === '') {
       type = 'SELECT'
     }
 
@@ -138,15 +138,13 @@ router.get('/', async function (req, res) {
       queryResult = await mainnet_dkg.graph.query(sparquery, type)
     }
 
-    console.log(JSON.stringify(queryResult))
-
     data = JSON.stringify(queryResult.data)
-    if (queryResult.status == 'FAILED') {
+    if (queryResult.status === 'FAILED') {
       data = JSON.stringify('Invalid Query')
     }
 
     txn_description = url_params.txn_description
-    if(!url_params.txn_description){
+    if (!url_params.txn_description || url_params.txn_description === ''){
       txn_description = 'No description available.'
     }
 

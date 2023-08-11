@@ -68,7 +68,7 @@ router.get("/", async function (req, res) {
     console.log(url_params);
     res.setHeader("Access-Control-Allow-Origin", "*");
 
-    if (!url_params.api_key) {
+    if (!url_params.api_key || url_params.api_key === '') {
       console.log(`Update request without authorization.`);
       resp_object = {
         result: "Authorization key not provided.",
@@ -106,7 +106,7 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    if (!url_params.txn_data) {
+    if (!url_params.txn_data || url_params.txn_data === '') {
       console.log(`Get request with no data from ${url_params.api_key}`);
       resp_object = {
         result: "No data provided.",
@@ -201,16 +201,16 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    // if (dkg_get_result.address !== url_params.receiver) {
-    //   console.log(
-    //     `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
-    //   );
-    //   resp_object = {
-    //     result: "This public_address does not own this asset.",
-    //   };
-    //   res.send(resp_object);
-    //   return;
-    // }
+     if (dkg_get_result.address !== url_params.receiver) {
+       console.log(
+         `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
+       );
+       resp_object = {
+         result: "This public_address does not own this asset.",
+       };
+       res.send(resp_object);
+       return;
+     }
 
     if (
       !url_params.network ||
@@ -228,7 +228,7 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    if (!url_params.ual) {
+    if (!url_params.ual || url_params.ual === '') {
       console.log(`Get request with no ual from ${url_params.api_key}`);
       resp_object = {
         result: "No UAL provided.",
@@ -251,7 +251,7 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    if (!url_params.keywords) {
+    if (!url_params.keywords || url_params.keywords === '') {
       keywords = `othub-api`;
     } else {
       keywords = url_params.keywords.replace("'", "");
@@ -260,12 +260,12 @@ router.get("/", async function (req, res) {
     }
 
     epochs = url_params.epochs;
-    if (!url_params.epochs) {
+    if (!url_params.epochs || url_params.epochs === '') {
       epochs = 5;
     }
 
     txn_description = url_params.txn_description;
-    if (!url_params.txn_description) {
+    if (!url_params.txn_description || url_params.txn_description === '') {
       txn_description = "No description available.";
     }
 
