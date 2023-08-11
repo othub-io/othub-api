@@ -267,6 +267,11 @@ router.get("/", async function (req, res) {
     txn_description = url_params.txn_description;
     if (!url_params.txn_description || url_params.txn_description === '') {
       txn_description = "No description available.";
+      }
+
+    trac_fee = url_params.trac_fee
+    if (!url_params.trac_fee || url_params.trac_fee === '') {
+      trac_fee = null
     }
 
     query = `select * from app_header where api_key = ?`;
@@ -298,7 +303,7 @@ router.get("/", async function (req, res) {
         null,
         null,
         null,
-        url_params.trac_fee,
+        trac_fee,
         epochs,
       ],
       function (error, results, fields) {

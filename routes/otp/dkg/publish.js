@@ -172,6 +172,11 @@ router.get('/', async function (req, res) {
       txn_description = 'No description available.'
     }
 
+    trac_fee = url_params.trac_fee
+      if (!url_params.trac_fee || url_params.trac_fee === '') {
+        trac_fee = null
+    }
+
     query = `select * from app_header where api_key = ?`
       params = [url_params.api_key]
       app = await getOTHUBData(query, params)
@@ -188,7 +193,7 @@ router.get('/', async function (req, res) {
           `INSERT INTO txn_header (txn_id, progress, public_address, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
         await othubdb_connection.query(
           query,
-          ['PENDING',url_params.public_address, url_params.api_key, type, url_params.network, app[0].app_name, txn_description, url_params.txn_data, null, keywords, null, null, null, url_params.trac_fee, epochs],
+          ['PENDING',url_params.public_address, url_params.api_key, type, url_params.network, app[0].app_name, txn_description, url_params.txn_data, null, keywords, null, null, null, trac_fee, epochs],
           function (error, results, fields) {
             if (error) throw error
           }

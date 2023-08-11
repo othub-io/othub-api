@@ -65,7 +65,7 @@ router.get('/', async function (req, res) {
 
     res.setHeader('Access-Control-Allow-Origin', '*')
 
-    type = 'query'
+    type = 'Query'
     if (!url_params.api_key || url_params.api_key === '') {
       console.log(`Query request without authorization.`)
       resp_object = {
