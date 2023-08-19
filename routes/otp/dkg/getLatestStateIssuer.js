@@ -211,7 +211,6 @@ router.get('/', async function (req, res) {
         console.error('Error retrieving data:', error)
       })
 
-      console.log(dkg_get_result)
       query =
         'INSERT INTO txn_header (txn_id, progress, public_address, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
       await othubdb_connection.query(

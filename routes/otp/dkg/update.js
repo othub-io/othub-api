@@ -34,26 +34,26 @@ async function getOTHUBData(query, params) {
   }
 }
 
-const DKGClient = require('dkg.js')
-const OT_NODE_TESTNET_PORT = process.env.OT_NODE_TESTNET_PORT
-const OT_NODE_MAINNET_PORT = process.env.OT_NODE_MAINNET_PORT
+const DKGClient = require("dkg.js");
+const OT_NODE_TESTNET_PORT = process.env.OT_NODE_TESTNET_PORT;
+const OT_NODE_MAINNET_PORT = process.env.OT_NODE_MAINNET_PORT;
 
 const testnet_node_options = {
   endpoint: process.env.OT_NODE_HOSTNAME,
   port: OT_NODE_TESTNET_PORT,
   useSSL: true,
-  maxNumberOfRetries: 100
-}
+  maxNumberOfRetries: 100,
+};
 
 const mainnet_node_options = {
   endpoint: process.env.OT_NODE_HOSTNAME,
   port: OT_NODE_MAINNET_PORT,
   useSSL: true,
-  maxNumberOfRetries: 100
-}
+  maxNumberOfRetries: 100,
+};
 
-const testnet_dkg = new DKGClient(testnet_node_options)
-const mainnet_dkg = new DKGClient(mainnet_node_options)
+const testnet_dkg = new DKGClient(testnet_node_options);
+const mainnet_dkg = new DKGClient(mainnet_node_options);
 
 router.get("/", async function (req, res) {
   try {
@@ -68,7 +68,7 @@ router.get("/", async function (req, res) {
     console.log(url_params);
     res.setHeader("Access-Control-Allow-Origin", "*");
 
-    if (!url_params.api_key || url_params.api_key === '') {
+    if (!url_params.api_key || url_params.api_key === "") {
       console.log(`Update request without authorization.`);
       resp_object = {
         result: "Authorization key not provided.",
@@ -100,13 +100,13 @@ router.get("/", async function (req, res) {
       console.log(`Request frequency limit hit from ${url_params.api_key}`);
       resp_object = {
         result:
-              'The rate limit for this api key has been reached. Please upgrade your key to increase your limit.'
+          "The rate limit for this api key has been reached. Please upgrade your key to increase your limit.",
       };
       res.send(resp_object);
       return;
     }
 
-    if (!url_params.txn_data || url_params.txn_data === '') {
+    if (!url_params.txn_data || url_params.txn_data === "") {
       console.log(`Get request with no data from ${url_params.api_key}`);
       resp_object = {
         result: "No data provided.",
@@ -201,16 +201,16 @@ router.get("/", async function (req, res) {
       return;
     }
 
-     if (dkg_get_result.address !== url_params.receiver) {
-       console.log(
-         `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
-       );
-       resp_object = {
-         result: "This public_address does not own this asset.",
-       };
-       res.send(resp_object);
-       return;
-     }
+    //  if (dkg_get_result.address !== url_params.receiver) {
+    //    console.log(
+    //      `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
+    //    );
+    //    resp_object = {
+    //      result: "This public_address does not own this asset.",
+    //    };
+    //    res.send(resp_object);
+    //    return;
+    //  }
 
     if (
       !url_params.network ||
@@ -228,7 +228,7 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    if (!url_params.ual || url_params.ual === '') {
+    if (!url_params.ual || url_params.ual === "") {
       console.log(`Get request with no ual from ${url_params.api_key}`);
       resp_object = {
         result: "No UAL provided.",
@@ -251,7 +251,7 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    if (!url_params.keywords || url_params.keywords === '') {
+    if (!url_params.keywords || url_params.keywords === "") {
       keywords = `othub-api`;
     } else {
       keywords = url_params.keywords.replace("'", "");
@@ -260,18 +260,18 @@ router.get("/", async function (req, res) {
     }
 
     epochs = url_params.epochs;
-    if (!url_params.epochs || url_params.epochs === '') {
+    if (!url_params.epochs || url_params.epochs === "") {
       epochs = 5;
     }
 
     txn_description = url_params.txn_description;
-    if (!url_params.txn_description || url_params.txn_description === '') {
+    if (!url_params.txn_description || url_params.txn_description === "") {
       txn_description = "No description available.";
-      }
+    }
 
-    trac_fee = url_params.trac_fee
-    if (!url_params.trac_fee || url_params.trac_fee === '') {
-      trac_fee = null
+    trac_fee = url_params.trac_fee;
+    if (!url_params.trac_fee || url_params.trac_fee === "") {
+      trac_fee = null;
     }
 
     query = `select * from app_header where api_key = ?`;
@@ -286,28 +286,30 @@ router.get("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
-      query = `select * from enabled_apps where public_address = ?`
-      params = [url_params.public_address]
-      enabled_apps = await getOTHUBData(query, params)
-          .then(results => {
-              //console.log('Query results:', results);
-              return results
-              // Use the results in your variable or perform further operations
-          })
-          .catch(error => {
-              console.error('Error retrieving data:', error)
-          })
+    query = `select * from enabled_apps where public_address = ?`;
+    params = [url_params.public_address];
+    enabled_apps = await getOTHUBData(query, params)
+      .then((results) => {
+        //console.log('Query results:', results);
+        return results;
+        // Use the results in your variable or perform further operations
+      })
+      .catch((error) => {
+        console.error("Error retrieving data:", error);
+      });
 
-      white_listed = 'no'
-      if (enabled_apps.some((obj) => obj.app_name === app[0].app_name)) {
-          white_listed = 'yes'
-      }
+    white_listed = "no";
+    if (enabled_apps.some((obj) => obj.app_name === app[0].app_name)) {
+      white_listed = "yes";
+    }
 
-      if (white_listed === 'no') {
-          resp_object = {
-              result: 'This user has not whitelisted your application.'
-          }
-      }
+    if (white_listed === "no") {
+      resp_object = {
+        result: "This user has not whitelisted your application.",
+      };
+      res.json(resp_object)
+      return;
+    }
 
     query = `INSERT INTO txn_header (txn_id, progress, public_address, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
     await othubdb_connection.query(
