@@ -201,16 +201,16 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    //  if (dkg_get_result.address !== url_params.receiver) {
-    //    console.log(
-    //      `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
-    //    );
-    //    resp_object = {
-    //      result: "This public_address does not own this asset.",
-    //    };
-    //    res.send(resp_object);
-    //    return;
-    //  }
+      if (dkg_get_result.address !== url_params.receiver) {
+        console.log(
+          `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
+        );
+        resp_object = {
+          result: "This public_address does not own this asset.",
+        };
+        res.send(resp_object);
+        return;
+      }
 
     if (
       !url_params.network ||

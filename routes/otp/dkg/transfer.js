@@ -222,20 +222,25 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    //  if (dkg_get_result.address !== url_params.receiver) {
-    //    console.log(
-    //      `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
-    //    );
-    //    resp_object = {
-    //      result: "This public_address does not own this asset.",
-    //    };
-    //    res.send(resp_object);
-    //    return;
-    //  }
+      if (dkg_get_result.address !== url_params.receiver) {
+        console.log(
+          `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
+        );
+        resp_object = {
+          result: "This public_address does not own this asset.",
+        };
+        res.send(resp_object);
+        return;
+      }
 
     receiver = {
       receiver: url_params.receiver,
     };
+
+      epochs = url_params.epochs;
+      if (!url_params.epochs || url_params.epochs === "") {
+          epochs = 5;
+      }
 
     txn_description = url_params.txn_description;
     if (!url_params.txn_description || url_params.txn_description === "") {

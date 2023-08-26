@@ -70,7 +70,7 @@ module.exports = apiSpam = async (type, api_key) => {
       console.error('Error retrieving data:', error)
     })
 
-  if (app === '') {
+  if (app == '') {
     return {
       permission: `no_app`
     }
