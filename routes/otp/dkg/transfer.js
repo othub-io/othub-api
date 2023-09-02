@@ -222,7 +222,7 @@ router.get("/", async function (req, res) {
       return;
     }
 
-      if (dkg_get_result.address !== url_params.receiver) {
+      if (dkg_get_result.owner !== url_params.public_address) {
         console.log(
           `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
         );
