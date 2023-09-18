@@ -2,9 +2,8 @@ require("dotenv").config();
 var express = require("express");
 var router = express.Router();
 const purl = require("url");
-const queryTypes = require("../../../public/util/queryTypes");
-
 const mysql = require("mysql");
+const queryTypes = require("../../public/util/queryTypes");
 const othubdb_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
@@ -57,6 +56,7 @@ const mainnet_dkg = new DKGClient(mainnet_node_options);
 
 router.get("/", async function (req, res) {
   try {
+    type = "getStates";
     url_params = purl.parse(req.url, true).query;
     ip = req.socket.remoteAddress;
     if (process.env.SSL_KEY_PATH) {
@@ -65,9 +65,8 @@ router.get("/", async function (req, res) {
 
     res.setHeader("Access-Control-Allow-Origin", "*");
 
-    type = "Query";
     if (!url_params.api_key || url_params.api_key === "") {
-      console.log(`Query request without authorization.`);
+      console.log(`getStates request without authorization.`);
       resp_object = {
         result: "Authorization key not provided.",
       };
@@ -104,15 +103,30 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    if (!url_params.query || url_params.query === "") {
-      console.log(`Query request with no query from ${url_params.api_key}`);
+    if (!url_params.ual || url_params.ual === "") {
+      console.log(`getStates request with no ual from ${url_params.api_key}`);
       resp_object = {
-        result: "No query provided.",
+        result: "No UAL provided.",
       };
       res.send(resp_object);
       return;
     }
-    sparquery = url_params.query;
+
+    const segments = url_params.ual.split(":");
+    const argsString =
+      segments.length === 3 ? segments[2] : segments[2] + segments[3];
+    const args = argsString.split("/");
+
+    if (args.length !== 3) {
+      console.log(
+        `getStates request with invalid ual from ${url_params.api_key}`
+      );
+      resp_object = {
+        result: "Invalid UAL provided.",
+      };
+      res.send(resp_object);
+      return;
+    }
 
     console.log(url_params.network);
     if (
@@ -121,7 +135,7 @@ router.get("/", async function (req, res) {
         url_params.network !== "otp::mainnet")
     ) {
       console.log(
-        `Query request with invalid network from ${url_params.api_key}`
+        `getStates request with invalid network from ${url_params.api_key}`
       );
       resp_object = {
         result:
@@ -131,22 +145,57 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    type = url_params.type;
-    if (!url_params.type || url_params.type === "") {
-      type = "SELECT";
-    }
-
     if (url_params.network === "otp::testnet") {
-      queryResult = await testnet_dkg.graph.query(sparquery, type);
+      dkg_get_result = await testnet_dkg.asset
+        .getStates(url_params.ual, {
+          validate: true,
+          maxNumberOfRetries: 30,
+          frequency: 1,
+          blockchain: {
+            name: url_params.network,
+            publicKey: process.env.PUBLIC_KEY,
+            privateKey: process.env.PRIVATE_KEY,
+          },
+        })
+        .then((result) => {
+          //console.log(JSON.stringify(result))
+          return result;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
     }
 
     if (url_params.network === "otp::mainnet") {
-      queryResult = await mainnet_dkg.graph.query(sparquery, type);
+      dkg_get_result = await mainnet_dkg.asset
+        .getStates(url_params.ual, {
+          validate: true,
+          maxNumberOfRetries: 30,
+          frequency: 1,
+          blockchain: {
+            name: url_params.network,
+            publicKey: process.env.PUBLIC_KEY,
+            privateKey: process.env.PRIVATE_KEY,
+          },
+        })
+        .then((result) => {
+          //console.log(JSON.stringify(result))
+          return result;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
     }
 
-    data = JSON.stringify(queryResult.data);
-    if (queryResult.status === "FAILED") {
-      data = JSON.stringify("Invalid Query");
+    if (!dkg_get_result || dkg_get_result.errorType) {
+      console.log(
+        `getStates request with invalid ual from ${url_params.api_key}`
+      );
+      resp_object = {
+        result: "Error occured while getting asset data.",
+      };
+      res.send(resp_object);
+      return;
     }
 
     txn_description = url_params.txn_description;
@@ -174,7 +223,7 @@ router.get("/", async function (req, res) {
         "COMPLETE",
         null,
         url_params.api_key,
-        "query",
+        type,
         url_params.network,
         app[0].app_name,
         txn_description,
@@ -192,7 +241,7 @@ router.get("/", async function (req, res) {
       }
     );
 
-    res.send(queryResult);
+    res.json(dkg_get_result);
   } catch (e) {
     console.log(e);
     resp_object = {

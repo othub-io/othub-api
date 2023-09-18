@@ -3,7 +3,7 @@ var express = require('express')
 var router = express.Router()
 const purl = require('url')
 const mysql = require('mysql')
-const queryTypes = require('../../../public/util/queryTypes')
+const queryTypes = require('../../public/util/queryTypes')
 const othubdb_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,

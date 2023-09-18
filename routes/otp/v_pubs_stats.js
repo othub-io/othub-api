@@ -2,7 +2,7 @@ require('dotenv').config()
 var express = require('express')
 var router = express.Router()
 const purl = require('url')
-const queryTypes = require('../../../public/util/queryTypes')
+const queryTypes = require('../../public/util/queryTypes')
 const mysql = require('mysql')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
@@ -61,22 +61,26 @@ router.get('/', async function (req, res) {
 
   limit = url_params.limit
   if (!limit) {
-    limit = 500
+    limit = 1000
   }
 
-  query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,createProfile_adminWallet,createProfile_adminWallet_hash,current_adminWallet_hashes, createProfile_blockNumber, createProfile_txHash, createProfile_ts, createProfile_date, nodeStake, nodeAsk FROM otp_sync_rpc.v_nodes`
+  if (limit > 2000) {
+    limit = 2000
+  }
+
+  timeframe = url_params.timeFrame
+  query = `SELECT * FROM v_pubs_stats`
+  if (timeframe == 'hourly') {
+    query = `SELECT * FROM v_pubs_stats_hourly_24h`
+  }
   conditions = []
   params = []
 
-  if (url_params.nodeId) {
-    conditions.push(`nodeId = ?`)
-    params.push(url_params.nodeId)
-  }
+  //whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
+  //sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
+  sqlQuery = query + ' ' + `LIMIT ${limit}`
 
-  whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
-  sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
-
-  v_nodes = []
+  v_pubs_stats = []
   await otp_connection.query(sqlQuery, params, function (error, row) {
     if (error) {
       throw error
@@ -86,8 +90,8 @@ router.get('/', async function (req, res) {
   })
 
   function setValue (value) {
-    v_nodes = value
-    res.json(v_nodes)
+    v_pubs_stats = value
+    res.json(v_pubs_stats)
   }
 })
 

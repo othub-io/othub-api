@@ -2,13 +2,13 @@ require('dotenv').config()
 var express = require('express')
 var router = express.Router()
 const purl = require('url')
-const queryTypes = require('../../../public/util/queryTypes')
+const queryTypes = require('../../public/util/queryTypes')
 const mysql = require('mysql')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
   password: process.env.DBPASSWORD,
-  database: process.env.SYNC_DB
+  database: process.env.SYNC_DB_TESTNET
 })
 
 router.get('/', async function (req, res) {
@@ -69,32 +69,28 @@ router.get('/', async function (req, res) {
   }
 
   timeframe = url_params.timeFrame
-  query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,nodeStake, nodeAsk, cumulativePayouts ,estimatedEarnings, pubsCommited, pubsCommited1stEpochOnly FROM otp_sync_rpc.v_nodes_stats_last1h`
+  query = `SELECT * FROM v_pubs_stats_last1h`
   if (timeframe == 'hourly') {
-    query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,nodeStake, nodeAsk, cumulativePayouts ,estimatedEarnings, pubsCommited, pubsCommited1stEpochOnly FROM otp_sync_rpc.v_nodes_stats_last1h`
+    query = `SELECT * FROM v_pubs_stats_last1h`
   }
   if (timeframe == 'daily') {
-    query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,nodeStake, nodeAsk, cumulativePayouts ,estimatedEarnings, pubsCommited, pubsCommited1stEpochOnly FROM otp_sync_rpc.v_nodes_stats_last24h`
+    query = `SELECT * FROM v_pubs_stats_last24h`
   }
   if (timeframe == 'weekly') {
-    query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,nodeStake, nodeAsk, cumulativePayouts ,estimatedEarnings, pubsCommited, pubsCommited1stEpochOnly FROM otp_sync_rpc.v_nodes_stats_last7d`
+    query = `SELECT * FROM v_pubs_stats_last7d`
   }
   if (timeframe == 'monthly') {
-    query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,nodeStake, nodeAsk, cumulativePayouts ,estimatedEarnings, pubsCommited, pubsCommited1stEpochOnly FROM otp_sync_rpc.v_nodes_stats_last30d`
+    query = `SELECT * FROM v_pubs_stats_last30d`
   }
 
   conditions = []
   params = []
 
-  if (url_params.nodeId) {
-    conditions.push(`nodeId = ?`)
-    params.push(url_params.nodeId)
-  }
+  //whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
+  //sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
+  sqlQuery = query + ' ' + `LIMIT ${limit}`
 
-  whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
-  sqlQuery = query + ' ' + whereClause + ` LIMIT ${limit}`
-
-  v_nodes_stats_last = []
+  v_pubs_stats_last = []
   await otp_connection.query(sqlQuery, params, function (error, row) {
     if (error) {
       throw error
@@ -104,8 +100,8 @@ router.get('/', async function (req, res) {
   })
 
   function setValue (value) {
-    v_nodes_stats_last = value
-    res.json(v_nodes_stats_last)
+    v_pubs_stats_last = value
+    res.json(v_pubs_stats_last)
   }
 })
 

@@ -2,13 +2,13 @@ require('dotenv').config()
 var express = require('express')
 var router = express.Router()
 const purl = require('url')
-const queryTypes = require('../../../public/util/queryTypes')
+const queryTypes = require('../../public/util/queryTypes')
 const mysql = require('mysql')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
   password: process.env.DBPASSWORD,
-  database: process.env.SYNC_DB
+  database: process.env.SYNC_DB_TESTNET
 })
 
 router.get('/', async function (req, res) {
@@ -69,12 +69,12 @@ router.get('/', async function (req, res) {
   }
 
   type = url_params.type
-  query = `SELECT * FROM otp_sync_rpc.v_nodes_stats`
+  query = `SELECT * FROM v_nodes_stats`
   if(type == 'latest'){
-    query = `SELECT * FROM otp_sync_rpc.v_nodes_stats_latest`
+    query = `SELECT * FROM v_nodes_stats_latest`
   }
   if(type == 'avgnode'){
-    query = `SELECT * FROM otp_sync_rpc.v_nodes_stats_latest_avgnode`
+    query = `SELECT * FROM v_nodes_stats_latest_avgnode`
   }
 
 

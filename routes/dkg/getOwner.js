@@ -3,7 +3,7 @@ var express = require('express')
 var router = express.Router()
 const purl = require('url')
 const mysql = require('mysql')
-const queryTypes = require('../../../public/util/queryTypes')
+const queryTypes = require('../../public/util/queryTypes')
 const othubdb_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
@@ -56,7 +56,7 @@ const mainnet_dkg = new DKGClient(mainnet_node_options)
 
 router.get('/', async function (req, res) {
   try {
-    type = 'get'
+    type = 'getOwner'
     url_params = purl.parse(req.url, true).query
     ip = req.socket.remoteAddress
     if (process.env.SSL_KEY_PATH) {
@@ -66,7 +66,7 @@ router.get('/', async function (req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*')
 
     if (!url_params.api_key || url_params.api_key === '') {
-      console.log(`Get request without authorization.`)
+      console.log(`getOwner request without authorization.`)
       resp_object = {
         result: 'Authorization key not provided.'
       }
@@ -97,14 +97,14 @@ router.get('/', async function (req, res) {
       console.log(`Request frequency limit hit from ${url_params.api_key}`)
       resp_object = {
         result:
-          'The rate limit for this api key has been reached. Please upgrade your key to increase your limit.'
+              'The rate limit for this api key has been reached. Please upgrade your key to increase your limit.'
       }
       res.send(resp_object)
       return
-      }
+    }
 
     if (!url_params.ual || url_params.ual === '') {
-      console.log(`Get request with no ual from ${url_params.api_key}`)
+      console.log(`getOwner request with no ual from ${url_params.api_key}`)
       resp_object = {
         result: 'No UAL provided.'
       }
@@ -117,7 +117,7 @@ router.get('/', async function (req, res) {
       const args = argsString.split('/');
 
       if (args.length !== 3) {
-        console.log(`Get request with invalid ual from ${url_params.api_key}`)
+        console.log(`getOwner request with invalid ual from ${url_params.api_key}`)
         resp_object = {
           result: 'Invalid UAL provided.'
         }
@@ -127,7 +127,7 @@ router.get('/', async function (req, res) {
 
     console.log(url_params.network)
     if (!url_params.network || (url_params.network !== 'otp::testnet' && url_params.network !== 'otp::mainnet')) {
-      console.log(`Get request with invalid network from ${url_params.api_key}`)
+      console.log(`getOwner request with invalid network from ${url_params.api_key}`)
       resp_object = {
         result:
           'Invalid network provided. Current supported networks are: otp::testnet, otp::mainnet.'
@@ -136,18 +136,12 @@ router.get('/', async function (req, res) {
       return
     }
 
-    state = url_params.state 
-    if (!url_params.state || url_params.state === '') {
-      state = 'LATEST_FINALIZED'
-    }
-
     if(url_params.network === 'otp::testnet'){
       dkg_get_result = await testnet_dkg.asset
-      .get(url_params.ual, {
+      .getOwner(url_params.ual, {
         validate: true,
         maxNumberOfRetries: 30,
         frequency: 1,
-        state: state,
         blockchain: {
           name: url_params.network,
           publicKey: process.env.PUBLIC_KEY,
@@ -165,11 +159,10 @@ router.get('/', async function (req, res) {
 
     if(url_params.network === 'otp::mainnet'){
       dkg_get_result = await mainnet_dkg.asset
-      .get(url_params.ual, {
+      .getOwner(url_params.ual, {
         validate: true,
         maxNumberOfRetries: 30,
         frequency: 1,
-        state: state,
         blockchain: {
           name: url_params.network,
           publicKey: process.env.PUBLIC_KEY,
@@ -186,7 +179,7 @@ router.get('/', async function (req, res) {
     }
 
     if(!dkg_get_result || dkg_get_result.errorType){
-      console.log(`Get request with invalid ual from ${url_params.api_key}`)
+      console.log(`getOwner request with invalid ual from ${url_params.api_key}`)
         resp_object = {
           result: 'Error occured while getting asset data.'
         }
@@ -215,7 +208,7 @@ router.get('/', async function (req, res) {
         'INSERT INTO txn_header (txn_id, progress, public_address, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
       await othubdb_connection.query(
         query,
-        ['COMPLETE',null, url_params.api_key, type, url_params.network, app[0].app_name, txn_description, null, url_params.ual, null, dkg_get_result.assertionId, null, null, 0, null],
+        ['COMPLETE',null, url_params.api_key, type, url_params.network, app[0].app_name, txn_description, null, url_params.ual, null, null, null, null, 0, null],
         function (error, results, fields) {
           if (error) throw error
         }

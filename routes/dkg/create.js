@@ -1,9 +1,10 @@
 require("dotenv").config();
-var express = require("express");
-var router = express.Router();
+const express = require("express");
+const router = express.Router();
 const purl = require("url");
+const ethers = require("ethers");
+const queryTypes = require("../../public/util/queryTypes");
 const mysql = require("mysql");
-const queryTypes = require("../../../public/util/queryTypes");
 const othubdb_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
@@ -56,17 +57,19 @@ const mainnet_dkg = new DKGClient(mainnet_node_options);
 
 router.get("/", async function (req, res) {
   try {
-    type = "getStateIssuer";
     url_params = purl.parse(req.url, true).query;
     ip = req.socket.remoteAddress;
     if (process.env.SSL_KEY_PATH) {
       ip = req.headers["x-forwarded-for"];
     }
 
+    type = `Create`;
+
+    console.log(url_params);
     res.setHeader("Access-Control-Allow-Origin", "*");
 
     if (!url_params.api_key || url_params.api_key === "") {
-      console.log(`getStateIssuer request without authorization.`);
+      console.log(`Create request without authorization.`);
       resp_object = {
         result: "Authorization key not provided.",
       };
@@ -78,7 +81,7 @@ router.get("/", async function (req, res) {
 
     api_key = url_params.api_key;
     permission = await apiSpamProtection
-      .getData(type, api_key)
+      .getData(type, url_params.api_key)
       .then(async ({ permission }) => {
         return permission;
       })
@@ -103,41 +106,55 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    if (!url_params.ual || url_params.ual === "") {
-      console.log(
-        `getStateIssuer request with no ual from ${url_params.api_key}`
-      );
+    if (!url_params.txn_data || url_params.txn_data === "") {
+      console.log(`Create request with no data from ${url_params.api_key}`);
       resp_object = {
-        result: "No UAL provided.",
+        result: "No data provided.",
       };
       res.send(resp_object);
       return;
     }
 
-    const segments = url_params.ual.split(":");
-    const argsString =
-      segments.length === 3 ? segments[2] : segments[2] + segments[3];
-    const args = argsString.split("/");
-
-    if (args.length !== 3) {
+    if (
+      !url_params.public_address ||
+      !ethers.utils.isAddress(url_params.public_address)
+    ) {
       console.log(
-        `getStateIssuer request with invalid ual from ${url_params.api_key}`
+        `Create request with invalid public_address from ${url_params.api_key}`
       );
       resp_object = {
-        result: "Invalid UAL provided.",
+        result: "Invalid public_address (evm address) provided.",
       };
       res.send(resp_object);
       return;
     }
 
-    console.log(url_params.network);
+    function isJsonString(str) {
+      try {
+        JSON.parse(str);
+      } catch (e) {
+        return "false";
+      }
+      return "true";
+    }
+
+    valid_json = await isJsonString(url_params.txn_data);
+    if (valid_json == "false") {
+      console.log(`Create request with bad data from ${url_params.api_key}`);
+      resp_object = {
+        result: "Invalid Json.",
+      };
+      res.send(resp_object);
+      return;
+    }
+
     if (
       !url_params.network ||
       (url_params.network !== "otp::testnet" &&
         url_params.network !== "otp::mainnet")
     ) {
       console.log(
-        `getStateIssuer request with invalid network from ${url_params.api_key}`
+        `Create request with invalid network from ${url_params.api_key}`
       );
       resp_object = {
         result:
@@ -147,73 +164,27 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    if (!url_params.stateIndex || url_params.stateIndex === "") {
-      console.log(
-        `getStateIssuer request with invalid state index from ${url_params.api_key}`
-      );
-      resp_object = {
-        result: "State index not provided.",
-      };
-      res.send(resp_object);
-      return;
+    if (!url_params.keywords || url_params.keywords === "") {
+      keywords = `othub-api`;
+    } else {
+      keywords = url_params.keywords.replace("'", "");
+      keywords = keywords.replace('"', "");
+      keywords = keywords + ",othub-api";
     }
 
-    if (url_params.network === "otp::testnet") {
-      dkg_get_result = await testnet_dkg.asset
-        .getStateIssuer(url_params.ual, url_params.stateIndex, {
-          validate: true,
-          maxNumberOfRetries: 30,
-          frequency: 1,
-          blockchain: {
-            name: url_params.network,
-            publicKey: process.env.PUBLIC_KEY,
-            privateKey: process.env.PRIVATE_KEY,
-          },
-        })
-        .then((result) => {
-          //console.log(JSON.stringify(result))
-          return result;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
-
-    if (url_params.network === "otp::mainnet") {
-      dkg_get_result = await mainnet_dkg.asset
-        .getStateIssuer(url_params.ual, url_params.stateIndex, {
-          validate: true,
-          maxNumberOfRetries: 30,
-          frequency: 1,
-          blockchain: {
-            name: url_params.network,
-            publicKey: process.env.PUBLIC_KEY,
-            privateKey: process.env.PRIVATE_KEY,
-          },
-        })
-        .then((result) => {
-          //console.log(JSON.stringify(result))
-          return result;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
-
-    if (!dkg_get_result || dkg_get_result.errorType) {
-      console.log(
-        `getStateIssuer request with invalid ual from ${url_params.api_key}`
-      );
-      resp_object = {
-        result: "Error occured while getting asset data.",
-      };
-      res.send(resp_object);
-      return;
+    epochs = url_params.epochs;
+    if (!url_params.epochs || url_params.epochs === "") {
+      epochs = 5;
     }
 
     txn_description = url_params.txn_description;
     if (!url_params.txn_description || url_params.txn_description === "") {
       txn_description = "No description available.";
+    }
+
+    trac_fee = url_params.trac_fee;
+    if (!url_params.trac_fee || url_params.trac_fee === "") {
+      trac_fee = null;
     }
 
     query = `select * from app_header where api_key = ?`;
@@ -228,33 +199,75 @@ router.get("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
-    query =
-      "INSERT INTO txn_header (txn_id, progress, public_address, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    query = `select * from enabled_apps where public_address = ?`;
+    params = [url_params.public_address];
+    enabled_apps = await getOTHUBData(query, params)
+      .then((results) => {
+        //console.log('Query results:', results);
+        return results;
+        // Use the results in your variable or perform further operations
+      })
+      .catch((error) => {
+        console.error("Error retrieving data:", error);
+      });
+
+    white_listed = "no";
+    if (enabled_apps.some((obj) => obj.app_name === app[0].app_name)) {
+      white_listed = "yes";
+    }
+
+    if (white_listed === "no") {
+      resp_object = {
+        result: "This user has not whitelisted your application.",
+      };
+      res.json(resp_object);
+      return;
+    }
+
+    query = `INSERT INTO txn_header (txn_id, progress, public_address, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
     await othubdb_connection.query(
       query,
       [
-        "COMPLETE",
-        null,
+        "PENDING",
+        url_params.public_address,
         url_params.api_key,
         type,
         url_params.network,
         app[0].app_name,
         txn_description,
+        url_params.txn_data,
         null,
-        url_params.ual,
+        keywords,
         null,
         null,
         null,
-        null,
-        0,
-        null,
+        trac_fee,
+        epochs,
       ],
       function (error, results, fields) {
         if (error) throw error;
       }
     );
 
-    res.json(dkg_get_result);
+    query = `select * from txn_header where api_key = ? and request = ? order by created_at desc`;
+    params = [url_params.api_key, type];
+    txn = await getOTHUBData(query, params)
+      .then((results) => {
+        //console.log('Query results:', results);
+        return results;
+        // Use the results in your variable or perform further operations
+      })
+      .catch((error) => {
+        console.error("Error retrieving data:", error);
+      });
+
+    resp_object = {
+      result: "Create transaction queued successfully.",
+      public_address: url_params.public_address,
+      url: `${process.env.WEB_HOST}/portal/gateway?txn_id=${txn[0].txn_id}`,
+    };
+
+    res.json(resp_object);
   } catch (e) {
     console.log(e);
     resp_object = {

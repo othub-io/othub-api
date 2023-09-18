@@ -2,7 +2,7 @@ require('dotenv').config()
 var express = require('express')
 var router = express.Router()
 const purl = require('url')
-const queryTypes = require('../../../public/util/queryTypes')
+const queryTypes = require('../../public/util/queryTypes')
 const mysql = require('mysql')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
@@ -69,18 +69,18 @@ router.get('/', async function (req, res) {
   }
 
   timeframe = url_params.timeFrame
-  query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_last1h`
+  query = `SELECT * FROM v_pubs_stats_last1h`
   if (timeframe == 'hourly') {
-    query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_last1h`
+    query = `SELECT * FROM v_pubs_stats_last1h`
   }
   if (timeframe == 'daily') {
-    query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_last24h`
+    query = `SELECT * FROM v_pubs_stats_last24h`
   }
   if (timeframe == 'weekly') {
-    query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_last7d`
+    query = `SELECT * FROM v_pubs_stats_last7d`
   }
   if (timeframe == 'monthly') {
-    query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_last30d`
+    query = `SELECT * FROM v_pubs_stats_last30d`
   }
 
   conditions = []

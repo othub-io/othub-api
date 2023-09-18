@@ -2,13 +2,13 @@ require('dotenv').config()
 var express = require('express')
 var router = express.Router()
 const purl = require('url')
-const queryTypes = require('../../../public/util/queryTypes')
+const queryTypes = require('../../public/util/queryTypes')
 const mysql = require('mysql')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
   password: process.env.DBPASSWORD,
-  database: process.env.SYNC_DB
+  database: process.env.SYNC_DB_TESTNET
 })
 
 router.get('/', async function (req, res) {
@@ -21,7 +21,7 @@ router.get('/', async function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
 
   if (!url_params.api_key) {
-    console.log(`v_nodes_stats request without authorization.`)
+    console.log(`v_nodes request without authorization.`)
     resp_object = {
       result: 'Authorization key not provided.'
     }
@@ -61,24 +61,28 @@ router.get('/', async function (req, res) {
 
   limit = url_params.limit
   if (!limit) {
-    limit = 500
+    limit = 1000
   }
 
   if (limit > 2000) {
     limit = 2000
   }
 
-  ext = `_24h`
-  if (url_params.timeframe) {
-    if (url_params.timeframe == 'weekly') {
-      ext = `_7d`
-    } else {
-      ext = `_24h`
-    }
-  }
+  timeframe = url_params.timeFrame
+  query = `SELECT * FROM v_nodes_rank_last24h`
+//   if (timeframe == 'hourly') {
+//     query = `SELECT * FROM otp_sync_rpc.v_nodes_rank_last1h`
+//   }
+//   if (timeframe == 'daily') {
+//     query = `SELECT * FROM otp_sync_rpc.v_nodes_rank_last24h`
+//   }
+//   if (timeframe == 'weekly') {
+//     query = `SELECT * FROM otp_sync_rpc.v_nodes_rank_last7d`
+//   }
+//   if (timeframe == 'monthly') {
+//     query = `SELECT * FROM otp_sync_rpc.v_nodes_rank_last30d`
+//   }
 
-  query = `SELECT nodeId,networkId,tokenName,tokenSymbol,nodeGroup,date,pubsCommited,pubsCommited_inclOutOfTop3,pubsCommited1stEpochOnly,pubsCommited1stEpochOnly_inclOutOfTop3,estimatedEarnings,txFees,payouts FROM otp.v_nodes_stats_hourly${ext}`
-  console.log(query)
   conditions = []
   params = []
 
@@ -88,9 +92,9 @@ router.get('/', async function (req, res) {
   }
 
   whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
-  sqlQuery = query + ' ' + whereClause + ` order by date desc LIMIT ${limit}`
+  sqlQuery = query + ' ' + whereClause + ` LIMIT ${limit}`
 
-  v_nodes_stats = []
+  v_nodes_stats_last = []
   await otp_connection.query(sqlQuery, params, function (error, row) {
     if (error) {
       throw error
@@ -100,8 +104,8 @@ router.get('/', async function (req, res) {
   })
 
   function setValue (value) {
-    v_nodes_stats = value
-    res.json(v_nodes_stats)
+    v_nodes_stats_last = value
+    res.json(v_nodes_stats_last)
   }
 })
 

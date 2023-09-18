@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const purl = require("url");
 const ethers = require("ethers");
-const queryTypes = require("../../../public/util/queryTypes");
+const queryTypes = require("../../public/util/queryTypes");
 const mysql = require("mysql");
 const othubdb_connection = mysql.createConnection({
   host: process.env.DBHOST,
@@ -63,13 +63,12 @@ router.get("/", async function (req, res) {
       ip = req.headers["x-forwarded-for"];
     }
 
-    type = `Update`;
+    type = `Transfer`;
 
-    console.log(url_params);
     res.setHeader("Access-Control-Allow-Origin", "*");
 
     if (!url_params.api_key || url_params.api_key === "") {
-      console.log(`Update request without authorization.`);
+      console.log(`Get request without authorization.`);
       resp_object = {
         result: "Authorization key not provided.",
       };
@@ -106,29 +105,40 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    if (!url_params.txn_data || url_params.txn_data === "") {
-      console.log(`Get request with no data from ${url_params.api_key}`);
+    if (!url_params.ual || url_params.ual === "") {
+      console.log(`Get request with no ual from ${url_params.api_key}`);
       resp_object = {
-        result: "No data provided.",
+        result: "No UAL provided.",
       };
       res.send(resp_object);
       return;
     }
 
-    function isJsonString(str) {
-      try {
-        JSON.parse(str);
-      } catch (e) {
-        return "false";
-      }
-      return "true";
+    const segments = url_params.ual.split(":");
+    const argsString =
+      segments.length === 3 ? segments[2] : segments[2] + segments[3];
+    const args = argsString.split("/");
+
+    if (args.length !== 3) {
+      console.log(`Get request with invalid ual from ${url_params.api_key}`);
+      resp_object = {
+        result: "Invalid UAL provided.",
+      };
+      res.send(resp_object);
+      return;
     }
 
-    valid_json = await isJsonString(url_params.txn_data);
-    if (valid_json == "false") {
-      console.log(`Update request with bad data from ${url_params.api_key}`);
+    if (
+      !url_params.network ||
+      (url_params.network !== "otp::testnet" &&
+        url_params.network !== "otp::mainnet")
+    ) {
+      console.log(
+        `Get request with invalid network from ${url_params.api_key}`
+      );
       resp_object = {
-        result: "Invalid Json.",
+        result:
+          "Invalid network provided. Current supported networks are: otp::testnet, otp::mainnet.",
       };
       res.send(resp_object);
       return;
@@ -139,10 +149,21 @@ router.get("/", async function (req, res) {
       !ethers.utils.isAddress(url_params.public_address)
     ) {
       console.log(
-        `Update request with invalid public_address from ${url_params.api_key}`
+        `Publish request with invalid public_address from ${url_params.api_key}`
       );
       resp_object = {
         result: "Invalid public_address (evm address) provided.",
+      };
+      res.send(resp_object);
+      return;
+    }
+
+    if (!url_params.receiver || !ethers.utils.isAddress(url_params.receiver)) {
+      console.log(
+        `Transfer request with invalid receiver address from ${url_params.api_key}`
+      );
+      resp_object = {
+        result: "Invalid receiver (evm address) provided.",
       };
       res.send(resp_object);
       return;
@@ -203,7 +224,7 @@ router.get("/", async function (req, res) {
 
       if (dkg_get_result.owner !== url_params.public_address) {
         console.log(
-          `Update requested for an asset the public_address did not own from ${url_params.api_key}`
+          `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
         );
         resp_object = {
           result: "This public_address does not own this asset.",
@@ -212,66 +233,18 @@ router.get("/", async function (req, res) {
         return;
       }
 
-    if (
-      !url_params.network ||
-      (url_params.network !== "otp::testnet" &&
-        url_params.network !== "otp::mainnet")
-    ) {
-      console.log(
-        `Get request with invalid network from ${url_params.api_key}`
-      );
-      resp_object = {
-        result:
-          "Invalid network provided. Current supported networks are: otp::testnet, otp::mainnet.",
-      };
-      res.send(resp_object);
-      return;
-    }
+    receiver = {
+      receiver: url_params.receiver,
+    };
 
-    if (!url_params.ual || url_params.ual === "") {
-      console.log(`Get request with no ual from ${url_params.api_key}`);
-      resp_object = {
-        result: "No UAL provided.",
-      };
-      res.send(resp_object);
-      return;
-    }
-
-    const segments = url_params.ual.split(":");
-    const argsString =
-      segments.length === 3 ? segments[2] : segments[2] + segments[3];
-    const args = argsString.split("/");
-
-    if (args.length !== 3) {
-      console.log(`Get request with invalid ual from ${url_params.api_key}`);
-      resp_object = {
-        result: "Invalid UAL provided.",
-      };
-      res.send(resp_object);
-      return;
-    }
-
-    if (!url_params.keywords || url_params.keywords === "") {
-      keywords = `othub-api`;
-    } else {
-      keywords = url_params.keywords.replace("'", "");
-      keywords = keywords.replace('"', "");
-      keywords = keywords + ",othub-api";
-    }
-
-    epochs = url_params.epochs;
-    if (!url_params.epochs || url_params.epochs === "") {
-      epochs = 5;
-    }
+      epochs = url_params.epochs;
+      if (!url_params.epochs || url_params.epochs === "") {
+          epochs = 5;
+      }
 
     txn_description = url_params.txn_description;
     if (!url_params.txn_description || url_params.txn_description === "") {
       txn_description = "No description available.";
-    }
-
-    trac_fee = url_params.trac_fee;
-    if (!url_params.trac_fee || url_params.trac_fee === "") {
-      trac_fee = null;
     }
 
     query = `select * from app_header where api_key = ?`;
@@ -322,14 +295,14 @@ router.get("/", async function (req, res) {
         url_params.network,
         app[0].app_name,
         txn_description,
-        url_params.txn_data,
+        JSON.stringify(receiver),
         url_params.ual,
-        keywords,
         null,
         null,
         null,
-        trac_fee,
-        epochs,
+        null,
+        null,
+        null,
       ],
       function (error, results, fields) {
         if (error) throw error;
@@ -349,7 +322,7 @@ router.get("/", async function (req, res) {
       });
 
     resp_object = {
-      result: "Update transaction queued successfully.",
+      result: "Transfer transaction queued successfully.",
       public_address: url_params.public_address,
       url: `${process.env.WEB_HOST}/portal/gateway?txn_id=${txn[0].txn_id}`,
     };
@@ -360,6 +333,7 @@ router.get("/", async function (req, res) {
     resp_object = {
       result: "Oops, something went wrong! Please try again later.",
     };
+
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.json(resp_object);
   }

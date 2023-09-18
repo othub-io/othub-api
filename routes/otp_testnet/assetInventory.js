@@ -2,13 +2,13 @@ require('dotenv').config()
 var express = require('express')
 var router = express.Router()
 const purl = require('url')
-const queryTypes = require('../../../public/util/queryTypes')
+const queryTypes = require('../../public/util/queryTypes')
 const mysql = require('mysql')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
   password: process.env.DBPASSWORD,
-  database: process.env.SYNC_DB
+  database: process.env.SYNC_DB_TESTNET
 })
 
 router.get('/', async function (req, res) {
@@ -29,7 +29,7 @@ router.get('/', async function (req, res) {
     return
   }
 
-  type = 'stats'
+  type = 'inventory'
   api_key = url_params.api_key
 
   const apiSpamProtection = await queryTypes.apiSpamProtection()
@@ -61,26 +61,20 @@ router.get('/', async function (req, res) {
 
   limit = url_params.limit
   if (!limit) {
-    limit = 1000
+    limit = 500
   }
 
-  if (limit > 2000) {
-    limit = 2000
-  }
-
-  timeframe = url_params.timeFrame
-  query = `SELECT * FROM otp_sync_rpc.v_pubs_stats`
-  if (timeframe == 'hourly') {
-    query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_hourly_24h`
-  }
+  query = `SELECT * FROM v_pubs`
   conditions = []
   params = []
 
-  //whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
-  //sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
-  sqlQuery = query + ' ' + `LIMIT ${limit}`
+  conditions.push(`owner = ?`)
+  params.push(url_params.owner)
 
-  v_pubs_stats = []
+  whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
+  sqlQuery = query + ' ' + whereClause + ` LIMIT ${limit}`
+
+  inventory = []
   await otp_connection.query(sqlQuery, params, function (error, row) {
     if (error) {
       throw error
@@ -90,8 +84,8 @@ router.get('/', async function (req, res) {
   })
 
   function setValue (value) {
-    v_pubs_stats = value
-    res.json(v_pubs_stats)
+    inventory = value
+    res.json(inventory)
   }
 })
 

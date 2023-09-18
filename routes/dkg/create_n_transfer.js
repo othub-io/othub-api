@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const purl = require("url");
 const ethers = require("ethers");
-const queryTypes = require("../../../public/util/queryTypes");
+const queryTypes = require("../../public/util/queryTypes");
 const mysql = require("mysql");
 const othubdb_connection = mysql.createConnection({
   host: process.env.DBHOST,
@@ -63,12 +63,13 @@ router.get("/", async function (req, res) {
       ip = req.headers["x-forwarded-for"];
     }
 
-    type = `Transfer`;
+    type = `Create-n-Transfer`;
 
+    console.log(url_params);
     res.setHeader("Access-Control-Allow-Origin", "*");
 
     if (!url_params.api_key || url_params.api_key === "") {
-      console.log(`Get request without authorization.`);
+      console.log(`Create request without authorization.`);
       resp_object = {
         result: "Authorization key not provided.",
       };
@@ -105,40 +106,10 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    if (!url_params.ual || url_params.ual === "") {
-      console.log(`Get request with no ual from ${url_params.api_key}`);
+    if (!url_params.txn_data || url_params.txn_data === "") {
+      console.log(`Create request with no data from ${url_params.api_key}`);
       resp_object = {
-        result: "No UAL provided.",
-      };
-      res.send(resp_object);
-      return;
-    }
-
-    const segments = url_params.ual.split(":");
-    const argsString =
-      segments.length === 3 ? segments[2] : segments[2] + segments[3];
-    const args = argsString.split("/");
-
-    if (args.length !== 3) {
-      console.log(`Get request with invalid ual from ${url_params.api_key}`);
-      resp_object = {
-        result: "Invalid UAL provided.",
-      };
-      res.send(resp_object);
-      return;
-    }
-
-    if (
-      !url_params.network ||
-      (url_params.network !== "otp::testnet" &&
-        url_params.network !== "otp::mainnet")
-    ) {
-      console.log(
-        `Get request with invalid network from ${url_params.api_key}`
-      );
-      resp_object = {
-        result:
-          "Invalid network provided. Current supported networks are: otp::testnet, otp::mainnet.",
+        result: "No data provided.",
       };
       res.send(resp_object);
       return;
@@ -149,7 +120,7 @@ router.get("/", async function (req, res) {
       !ethers.utils.isAddress(url_params.public_address)
     ) {
       console.log(
-        `Publish request with invalid public_address from ${url_params.api_key}`
+        `Create request with invalid public_address from ${url_params.api_key}`
       );
       resp_object = {
         result: "Invalid public_address (evm address) provided.",
@@ -158,93 +129,61 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    if (!url_params.receiver || !ethers.utils.isAddress(url_params.receiver)) {
-      console.log(
-        `Transfer request with invalid receiver address from ${url_params.api_key}`
-      );
+    function isJsonString(str) {
+      try {
+        JSON.parse(str);
+      } catch (e) {
+        return "false";
+      }
+      return "true";
+    }
+
+    valid_json = await isJsonString(url_params.txn_data);
+    if (valid_json == "false") {
+      console.log(`Create request with bad data from ${url_params.api_key}`);
       resp_object = {
-        result: "Invalid receiver (evm address) provided.",
+        result: "Invalid Json.",
       };
       res.send(resp_object);
       return;
     }
 
-    if (url_params.network === "otp::testnet") {
-      dkg_get_result = await testnet_dkg.asset
-        .getOwner(url_params.ual, {
-          validate: true,
-          maxNumberOfRetries: 30,
-          frequency: 1,
-          blockchain: {
-            name: url_params.network,
-            publicKey: process.env.PUBLIC_KEY,
-            privateKey: process.env.PRIVATE_KEY,
-          },
-        })
-        .then((result) => {
-          //console.log(JSON.stringify(result))
-          return result;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
-
-    if (url_params.network === "otp::mainnet") {
-      dkg_get_result = await mainnet_dkg.asset
-        .getOwner(url_params.ual, {
-          validate: true,
-          maxNumberOfRetries: 30,
-          frequency: 1,
-          blockchain: {
-            name: url_params.network,
-            publicKey: process.env.PUBLIC_KEY,
-            privateKey: process.env.PRIVATE_KEY,
-          },
-        })
-        .then((result) => {
-          //console.log(JSON.stringify(result))
-          return result;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
-
-    if (!dkg_get_result || dkg_get_result.errorType) {
+    if (
+      !url_params.network ||
+      (url_params.network !== "otp::testnet")
+    ) {
       console.log(
-        `getOwner request with invalid ual from ${url_params.api_key}`
+        `Create request with invalid network from ${url_params.api_key}`
       );
       resp_object = {
-        result: "Error occured while getting asset owner.",
+        result:
+          "Invalid network provided. Current supported networks are: otp::testnet.",
       };
       res.send(resp_object);
       return;
     }
 
-      if (dkg_get_result.owner !== url_params.public_address) {
-        console.log(
-          `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
-        );
-        resp_object = {
-          result: "This public_address does not own this asset.",
-        };
-        res.send(resp_object);
-        return;
-      }
+    if (!url_params.keywords || url_params.keywords === "") {
+      keywords = `othub-api`;
+    } else {
+      keywords = url_params.keywords.replace("'", "");
+      keywords = keywords.replace('"', "");
+      keywords = keywords + ",othub-api";
+    }
 
-    receiver = {
-      receiver: url_params.receiver,
-    };
-
-      epochs = url_params.epochs;
-      if (!url_params.epochs || url_params.epochs === "") {
-          epochs = 5;
-      }
+    epochs = url_params.epochs;
+    if (!url_params.epochs || url_params.epochs === "") {
+      epochs = 5;
+    }
 
     txn_description = url_params.txn_description;
     if (!url_params.txn_description || url_params.txn_description === "") {
       txn_description = "No description available.";
+    }
+
+    trac_fee = url_params.trac_fee;
+    if (!url_params.trac_fee || url_params.trac_fee === "") {
+      trac_fee = null;
     }
 
     query = `select * from app_header where api_key = ?`;
@@ -280,29 +219,128 @@ router.get("/", async function (req, res) {
       resp_object = {
         result: "This user has not whitelisted your application.",
       };
-      res.json(resp_object)
+      res.json(resp_object);
       return;
     }
+  
+      receiver = {
+        receiver: url_params.public_address,
+      };
+
+      dkg_txn_data = JSON.parse(url_params.txn_data);
+
+      if (!dkg_txn_data["@context"]) {
+        dkg_txn_data["@context"] = "https://schema.org";
+      }
+
+      if (url_params.network === "otp::testnet") {
+        dkg_create_result = await testnet_dkg.asset
+          .create({
+            public: dkg_txn_data,
+            }, {
+            epochsNum: epochs,
+            maxNumberOfRetries: 30,
+            frequency: 2,
+            contentType: "all",
+            keywords: keywords,
+            blockchain: {
+              name: url_params.network,
+              publicKey: process.env.PUBLIC_KEY,
+              privateKey: process.env.PRIVATE_KEY,
+            },
+          })
+          .then((result) => {
+            //console.log(JSON.stringify(result))
+            return result;
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+
+          if(!dkg_create_result || dkg_create_result.errorType){
+            console.log(`Create n Transfer request errored from ${url_params.api_key}`)
+              resp_object = {
+                result: 'Error occured while creating the asset.'
+              }
+              res.send(resp_object)
+              return
+          }
+
+          console.log('Created UAL: '+ dkg_create_result.UAL)
+          
+          dkg_transfer_result = await testnet_dkg.asset
+          .transfer(
+            dkg_create_result.UAL,
+            url_params.public_address, {
+            epochsNum: epochs,
+            maxNumberOfRetries: 30,
+            frequency: 2,
+            contentType: "all",
+            keywords: keywords,
+            blockchain: {
+              name: url_params.network,
+              publicKey: process.env.PUBLIC_KEY,
+              privateKey: process.env.PRIVATE_KEY,
+            },
+          })
+          .then((result) => {
+            //console.log(JSON.stringify(result))
+            return result;
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+
+          if(!dkg_transfer_result || dkg_transfer_result.errorType){
+            console.log(`Create n Transfer request errored from ${url_params.api_key}`)
+              resp_object = {
+                result: 'Error occured while transferring the asset.'
+              }
+              res.send(resp_object)
+              return
+          }
+      }
+  
+    //   if (url_params.network === "otp::mainnet") {
+    //     dkg_get_result = await mainnet_dkg.asset
+    //       .getOwner(url_params.ual, {
+    //         validate: true,
+    //         maxNumberOfRetries: 30,
+    //         frequency: 1,
+    //         blockchain: {
+    //           name: url_params.network,
+    //           publicKey: process.env.PUBLIC_KEY,
+    //           privateKey: process.env.PRIVATE_KEY,
+    //         },
+    //       })
+    //       .then((result) => {
+    //         //console.log(JSON.stringify(result))
+    //         return result;
+    //       })
+    //       .catch((error) => {
+    //         console.log(error);
+    //       });
+    //   }
 
     query = `INSERT INTO txn_header (txn_id, progress, public_address, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
     await othubdb_connection.query(
       query,
       [
-        "PENDING",
+        'COMPLETED',
         url_params.public_address,
         url_params.api_key,
         type,
         url_params.network,
         app[0].app_name,
         txn_description,
-        JSON.stringify(receiver),
-        url_params.ual,
+        url_params.txn_data,
+        dkg_create_result.UAL,
+        keywords,
+        dkg_create_result.publicAssertionId,
         null,
         null,
-        null,
-        null,
-        null,
-        null,
+        trac_fee,
+        epochs,
       ],
       function (error, results, fields) {
         if (error) throw error;
@@ -322,8 +360,7 @@ router.get("/", async function (req, res) {
       });
 
     resp_object = {
-      result: "Transfer transaction queued successfully.",
-      public_address: url_params.public_address,
+      result: `Created ${dkg_create_result.UAL} and transfered it to ${url_params.public_address} successfully.`,
       url: `${process.env.WEB_HOST}/portal/gateway?txn_id=${txn[0].txn_id}`,
     };
 
