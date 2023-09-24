@@ -330,7 +330,7 @@ router.get("/", async function (req, res) {
     await othubdb_connection.query(
       query,
       [
-        'COMPLETED',
+        'COMPLETE',
         url_params.public_address,
         url_params.api_key,
         type,
