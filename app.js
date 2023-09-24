@@ -4,6 +4,7 @@ const express = require('express')
 const path = require('path')
 const cookieParser = require('cookie-parser')
 const logger = require('morgan')
+const bodyParser = require('body-parser')
 
 //dkg
 const getRouter_otp = require('./routes/dkg/get')
@@ -47,6 +48,9 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.static(path.join(__dirname, 'node_modules')))
 app.use('/dkg', express.static(__dirname + 'node_modules/dkg.js'))
 app.use('/util', express.static(__dirname + 'public/util'))
+app.use(bodyParser.json({limit: '50mb', extended: true}));
+app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}));
+app.use(bodyParser.text({ limit: '200mb' }));
 
 //dkg
 app.use('/dkg/get', getRouter_otp)
