@@ -2,13 +2,13 @@ require('dotenv').config()
 var express = require('express')
 var router = express.Router()
 const purl = require('url')
-const queryTypes = require('../../../public/util/queryTypes')
+const queryTypes = require('../../public/util/queryTypes')
 const mysql = require('mysql')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
   password: process.env.DBPASSWORD,
-  database: process.env.SYNC_DB
+  database: process.env.SYNC_DB_TESTNET
 })
 
 router.get('/', async function (req, res) {
@@ -29,7 +29,7 @@ router.get('/', async function (req, res) {
     return
   }
 
-  type = 'v_nodes'
+  type = 'stats'
   api_key = url_params.api_key
 
   const apiSpamProtection = await queryTypes.apiSpamProtection()
@@ -53,7 +53,7 @@ router.get('/', async function (req, res) {
     console.log(`Request frequency limit hit from ${api_key}`)
     resp_object = {
       result:
-        'Request blocked by spam protection. Only 1 request is allow per 1 seconds.'
+            'The rate limit for this api key has been reached. Please upgrade your key to increase your limit.'
     }
     res.send(resp_object)
     return
@@ -61,22 +61,36 @@ router.get('/', async function (req, res) {
 
   limit = url_params.limit
   if (!limit) {
-    limit = 500
+    limit = 1000
   }
 
-  query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,createProfile_adminWallet,createProfile_adminWallet_hash,current_adminWallet_hashes, createProfile_blockNumber, createProfile_txHash, createProfile_ts, createProfile_date, nodeStake, nodeAsk FROM otp_sync_rpc.v_nodes`
+  if (limit > 2000) {
+    limit = 2000
+  }
+
+  timeframe = url_params.timeFrame
+  query = `SELECT * FROM v_pubs_stats_last1h`
+  if (timeframe == 'hourly') {
+    query = `SELECT * FROM v_pubs_stats_last1h`
+  }
+  if (timeframe == 'daily') {
+    query = `SELECT * FROM v_pubs_stats_last24h`
+  }
+  if (timeframe == 'weekly') {
+    query = `SELECT * FROM v_pubs_stats_last7d`
+  }
+  if (timeframe == 'monthly') {
+    query = `SELECT * FROM v_pubs_stats_last30d`
+  }
+
   conditions = []
   params = []
 
-  if (url_params.nodeId) {
-    conditions.push(`nodeId = ?`)
-    params.push(url_params.nodeId)
-  }
+  //whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
+  //sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
+  sqlQuery = query + ' ' + `LIMIT ${limit}`
 
-  whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
-  sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
-
-  v_nodes = []
+  v_pubs_stats_last = []
   await otp_connection.query(sqlQuery, params, function (error, row) {
     if (error) {
       throw error
@@ -86,8 +100,8 @@ router.get('/', async function (req, res) {
   })
 
   function setValue (value) {
-    v_nodes = value
-    res.json(v_nodes)
+    v_pubs_stats_last = value
+    res.json(v_pubs_stats_last)
   }
 })
 

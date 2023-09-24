@@ -33,34 +33,34 @@ async function getOTHUBData (query, params) {
 module.exports = apiSpam = async (type, api_key) => {
   console.log(`Checking if visitor:${api_key} is spamming.`)
 
-  if (api_key == process.env.GOD_KEY) {
-    console.log(`Vistor:${api_key} IS USING THE GOD KEY.`)
+    if (api_key === process.env.NODE_OPS_KEY && type === 'stats') {
+        console.log(`Request received with the node ops key.`)
 
-    //insert a new time stamp
-    time_stamp = new Date()
-    time_stamp = Math.abs(time_stamp)
+        //insert a new time stamp
+        time_stamp = new Date()
+        time_stamp = Math.abs(time_stamp) / 1000
 
-    query =
-      'INSERT INTO request_history (request,date_last_used,ip_used,api_key) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE request = ?, date_last_used = ?'
-    params = [type, time_stamp, null, api_key, type, time_stamp]
-    await getOTHUBData(query, params)
-      .then(results => {
-        //console.log('Query results:', results);
-        return results
-        // Use the results in your variable or perform further operations
-      })
-      .catch(error => {
-        console.error('Error retrieving data:', error)
-      })
+        query =
+          'INSERT INTO request_history (request,date_stamp,api_key) VALUES (?,?,?)'
+        params = [type, time_stamp, api_key]
+        await getOTHUBData(query, params)
+          .then(results => {
+            //console.log('Query results:', results);
+            return results
+            // Use the results in your variable or perform further operations
+          })
+          .catch(error => {
+            console.error('Error retrieving data:', error)
+          })
 
-    return {
-      permission: `allow`
+        return {
+          permission: `allow`
+        }
     }
-  }
 
-  query = 'SELECT * FROM user_header WHERE api_key = ?'
+  query = 'SELECT * FROM app_header WHERE api_key = ?'
   params = [api_key]
-  user = await getOTHUBData(query, params)
+  app = await getOTHUBData(query, params)
     .then(results => {
       //console.log('Query results:', results);
       return results
@@ -70,16 +70,15 @@ module.exports = apiSpam = async (type, api_key) => {
       console.error('Error retrieving data:', error)
     })
 
-  console.log(user)
-  if (user == '') {
+  if (app == '') {
     return {
-      permission: `no_user`
+      permission: `no_app`
     }
   }
 
-  query = 'SELECT * FROM request_history WHERE api_key = ?'
+  query = 'SELECT * FROM request_history WHERE api_key = ? AND UNIX_TIMESTAMP(NOW()) - date_stamp <= 1;'
   params = [api_key]
-  request_history = await getOTHUBData(query, params)
+  request_frequency = await getOTHUBData(query, params)
     .then(results => {
       //console.log('Query results:', results);
       return results
@@ -89,88 +88,50 @@ module.exports = apiSpam = async (type, api_key) => {
       console.error('Error retrieving data:', error)
     })
 
-  console.log(request_history)
-  if (request_history == '') {
+    console.log(request_frequency)
+    rate = process.env.BASIC_RATE
+
+    if (app[0].access === 'Super') {
+        rate = process.env.SUPER_RATE
+    }
+
+    if (app[0].access === 'Turbo') {
+        rate = process.env.TURBO_RATE
+    }
+
+    if (app[0].access === 'Giga') {
+        rate = process.env.GIGA_RATE
+    }
+
+    console.log(`Requests last 1 second: ${request_frequency.length}`)
+    console.log(`Rate limit ${rate} per 1 second.`)
+
+    if (Number(rate) < Number(request_frequency.length)) {
+        return {
+            permission: `block`
+        }
+    }
+
     console.log(`Vistor:${api_key} is allow to ${type}.`)
 
     //insert a new time stamp
     time_stamp = new Date()
-    time_stamp = Math.abs(time_stamp)
+    time_stamp = Math.abs(time_stamp) / 1000
 
     query =
-      'INSERT INTO request_history (request,date_last_used,ip_used,api_key) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE request = ?, date_last_used = ?'
-    params = [type, time_stamp, null, api_key, type, time_stamp]
+        'INSERT INTO request_history (request,date_stamp,api_key) VALUES (?,?,?)'
+    params = [type, time_stamp, api_key]
     await getOTHUBData(query, params)
-      .then(results => {
-        //console.log('Query results:', results);
-        return results
-        // Use the results in your variable or perform further operations
-      })
-      .catch(error => {
-        console.error('Error retrieving data:', error)
-      })
-
-    return {
-      permission: `allow`
-    }
-  }
-
-  if (request_history) {
-    console.log(`Vistor:${api_key} found in request_history.`)
-    cooldown = 1 * Number(process.env.BASIC_RATE) * 1000
-
-    if(type == 'get' || type == 'getLatestStateIssuer' || type == 'getOwner' || type == 'getStateIssuer' || type == 'getStates' || type == 'publish' || type == 'query' || type == 'transfer' || type == 'update'){
-      cooldown = 1 * Number(process.env.DKG_RATE) * 1000
-    }
-    query = 'SELECT * FROM request_history WHERE api_key = ?'
-    params = [api_key]
-    spam_result = await getOTHUBData(query, params)
-      .then(results => {
-        //console.log('Query results:', results);
-        return results
-        // Use the results in your variable or perform further operations
-      })
-      .catch(error => {
-        console.error('Error retrieving data:', error)
-      })
-
-    expireDate = spam_result[0].date_last_used
-    currentDate = Math.abs(new Date())
-    timeDif = currentDate - expireDate
-
-    if (timeDif > cooldown) {
-      console.log(`Vistor:${api_key} is allow to ${type}.`)
-
-      time_stamp = new Date()
-      time_stamp = Math.abs(time_stamp)
-
-      //insert a new time stamp
-      query =
-        'INSERT INTO request_history (request,date_last_used,ip_used,api_key) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE request = ?, date_last_used = ?'
-      params = [type, time_stamp, null, api_key, type, time_stamp]
-      await getOTHUBData(query, params)
         .then(results => {
-          //console.log('Query results:', results);
-          return results
-          // Use the results in your variable or perform further operations
+            //console.log('Query results:', results);
+            return results
+            // Use the results in your variable or perform further operations
         })
         .catch(error => {
-          console.error('Error retrieving data:', error)
+            console.error('Error retrieving data:', error)
         })
 
-      return {
-        permission: `allow`
-      }
-    }
-  }
-
-  console.log(cooldown)
-  console.log(timeDif)
-  remaining = cooldown - timeDif
-  console.log(`Visitor:${api_key} was blocked from ${type}ing.`)
-  console.log(`Time remaining: ${remaining} milliseconds.`)
-
   return {
-    permission: `block`
+    permission: `allow`
   }
 }

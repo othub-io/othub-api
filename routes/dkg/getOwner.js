@@ -3,7 +3,7 @@ var express = require('express')
 var router = express.Router()
 const purl = require('url')
 const mysql = require('mysql')
-const queryTypes = require('../../../public/util/queryTypes')
+const queryTypes = require('../../public/util/queryTypes')
 const othubdb_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
@@ -56,7 +56,7 @@ const mainnet_dkg = new DKGClient(mainnet_node_options)
 
 router.get('/', async function (req, res) {
   try {
-    type = 'getStateIssuer'
+    type = 'getOwner'
     url_params = purl.parse(req.url, true).query
     ip = req.socket.remoteAddress
     if (process.env.SSL_KEY_PATH) {
@@ -65,8 +65,8 @@ router.get('/', async function (req, res) {
 
     res.setHeader('Access-Control-Allow-Origin', '*')
 
-    if (!url_params.api_key) {
-      console.log(`getStateIssuer request without authorization.`)
+    if (!url_params.api_key || url_params.api_key === '') {
+      console.log(`getOwner request without authorization.`)
       resp_object = {
         result: 'Authorization key not provided.'
       }
@@ -84,8 +84,8 @@ router.get('/', async function (req, res) {
       })
       .catch(error => console.log(`Error : ${error}`))
 
-    if (permission == `no_user`) {
-      console.log(`No user found for api key ${url_params.api_key}`)
+    if (permission == `no_app`) {
+      console.log(`No app found for api key ${url_params.api_key}`)
       resp_object = {
         result: 'Unauthorized key provided.'
       }
@@ -97,14 +97,14 @@ router.get('/', async function (req, res) {
       console.log(`Request frequency limit hit from ${url_params.api_key}`)
       resp_object = {
         result:
-          'Request blocked by spam protection. Only 1 request is allow per 10 seconds.'
+              'The rate limit for this api key has been reached. Please upgrade your key to increase your limit.'
       }
       res.send(resp_object)
       return
     }
 
-    if (!url_params.ual) {
-      console.log(`getStateIssuer request with no ual from ${url_params.api_key}`)
+    if (!url_params.ual || url_params.ual === '') {
+      console.log(`getOwner request with no ual from ${url_params.api_key}`)
       resp_object = {
         result: 'No UAL provided.'
       }
@@ -117,7 +117,7 @@ router.get('/', async function (req, res) {
       const args = argsString.split('/');
 
       if (args.length !== 3) {
-        console.log(`getStateIssuer request with invalid ual from ${url_params.api_key}`)
+        console.log(`getOwner request with invalid ual from ${url_params.api_key}`)
         resp_object = {
           result: 'Invalid UAL provided.'
         }
@@ -127,7 +127,7 @@ router.get('/', async function (req, res) {
 
     console.log(url_params.network)
     if (!url_params.network || (url_params.network !== 'otp::testnet' && url_params.network !== 'otp::mainnet')) {
-      console.log(`getStateIssuer request with invalid network from ${url_params.api_key}`)
+      console.log(`getOwner request with invalid network from ${url_params.api_key}`)
       resp_object = {
         result:
           'Invalid network provided. Current supported networks are: otp::testnet, otp::mainnet.'
@@ -136,19 +136,9 @@ router.get('/', async function (req, res) {
       return
     }
 
-    if (!url_params.stateIndex) {
-        console.log(`getStateIssuer request with invalid state index from ${url_params.api_key}`)
-        resp_object = {
-          result:
-            'State index not provided.'
-        }
-        res.send(resp_object)
-        return
-      }
-
     if(url_params.network === 'otp::testnet'){
       dkg_get_result = await testnet_dkg.asset
-      .getStateIssuer(url_params.ual, url_params.stateIndex, {
+      .getOwner(url_params.ual, {
         validate: true,
         maxNumberOfRetries: 30,
         frequency: 1,
@@ -169,7 +159,7 @@ router.get('/', async function (req, res) {
 
     if(url_params.network === 'otp::mainnet'){
       dkg_get_result = await mainnet_dkg.asset
-      .getStateIssuer(url_params.ual, url_params.stateIndex, {
+      .getOwner(url_params.ual, {
         validate: true,
         maxNumberOfRetries: 30,
         frequency: 1,
@@ -189,7 +179,7 @@ router.get('/', async function (req, res) {
     }
 
     if(!dkg_get_result || dkg_get_result.errorType){
-      console.log(`getStateIssuer request with invalid ual from ${url_params.api_key}`)
+      console.log(`getOwner request with invalid ual from ${url_params.api_key}`)
         resp_object = {
           result: 'Error occured while getting asset data.'
         }
@@ -197,9 +187,14 @@ router.get('/', async function (req, res) {
         return
     }
 
-    query = `select * from user_header where api_key = ?`
+    txn_description = url_params.txn_description
+    if (!url_params.txn_description || url_params.txn_description === ''){
+      txn_description = 'No description available.'
+    }
+
+    query = `select * from app_header where api_key = ?`
     params = [url_params.api_key]
-    user = await getOTHUBData(query, params)
+    app = await getOTHUBData(query, params)
       .then(results => {
         //console.log('Query results:', results);
         return results
@@ -213,7 +208,7 @@ router.get('/', async function (req, res) {
         'INSERT INTO txn_header (txn_id, progress, public_address, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
       await othubdb_connection.query(
         query,
-        ['COMPLETE',null, url_params.api_key, type, url_params.network, user[0].app_name, url_params.txn_description, null, url_params.ual, null, null, null, null, 0, null],
+        ['COMPLETE',null, url_params.api_key, type, url_params.network, app[0].app_name, txn_description, null, url_params.ual, null, null, null, null, 0, null],
         function (error, results, fields) {
           if (error) throw error
         }

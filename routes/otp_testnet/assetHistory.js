@@ -2,13 +2,13 @@ require('dotenv').config()
 var express = require('express')
 var router = express.Router()
 const purl = require('url')
-const queryTypes = require('../../../public/util/queryTypes')
+const queryTypes = require('../../public/util/queryTypes')
 const mysql = require('mysql')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
   password: process.env.DBPASSWORD,
-  database: process.env.SYNC_DB
+  database: process.env.SYNC_DB_TESTNET
 })
 
 router.get('/', async function (req, res) {
@@ -21,7 +21,7 @@ router.get('/', async function (req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
 
   if (!url_params.api_key) {
-    console.log(`v_nodes_stats request without authorization.`)
+    console.log(`v_nodes request without authorization.`)
     resp_object = {
       result: 'Authorization key not provided.'
     }
@@ -29,7 +29,7 @@ router.get('/', async function (req, res) {
     return
   }
 
-  type = 'v_nodes_stats'
+  type = 'history'
   api_key = url_params.api_key
 
   const apiSpamProtection = await queryTypes.apiSpamProtection()
@@ -53,44 +53,47 @@ router.get('/', async function (req, res) {
     console.log(`Request frequency limit hit from ${api_key}`)
     resp_object = {
       result:
-        'Request blocked by spam protection. Only 1 request is allow per 1 seconds.'
+            'The rate limit for this api key has been reached. Please upgrade your key to increase your limit.'
     }
     res.send(resp_object)
     return
   }
+
+  const segments = url_params.ual.split(":");
+    const argsString =
+      segments.length === 3 ? segments[2] : segments[2] + segments[3];
+    const args = argsString.split("/");
+
+    if (args.length !== 3) {
+      console.log(`Get request with invalid ual from ${url_params.api_key}`);
+      resp_object = {
+        result: "Invalid UAL provided.",
+      };
+      res.send(resp_object);
+      return;
+    }
 
   limit = url_params.limit
   if (!limit) {
     limit = 500
   }
 
-  if (limit > 2000) {
-    limit = 2000
-  }
-
-  type = url_params.type
-  query = `SELECT * FROM otp_sync_rpc.v_nodes_stats`
-  if(type == 'latest'){
-    query = `SELECT * FROM otp_sync_rpc.v_nodes_stats_latest`
-  }
-  if(type == 'avgnode'){
-    query = `SELECT * FROM otp_sync_rpc.v_nodes_stats_latest_avgnode`
-  }
-
-
+  query = `SELECT * FROM v_asset_history`
   conditions = []
   params = []
 
-  if (url_params.nodeId) {
-    conditions.push(`nodeId = ?`)
-    params.push(url_params.nodeId)
-  }
+  conditions.push(`asset_contract = ?`)
+  params.push(args[1])
+
+  conditions.push(`token_id = ?`)
+  params.push(args[2])
+
+  conditions.push(`(transfer_from != '0x0000000000000000000000000000000000000000' or transfer_from is null)`)
 
   whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
-  sqlQuery = query + ' ' + whereClause + ` order by date desc LIMIT ${limit}`
+  sqlQuery = query + ' ' + whereClause + `LIMIT ${limit}`
 
-  console.log(sqlQuery)
-  v_nodes_stats = []
+  history = []
   await otp_connection.query(sqlQuery, params, function (error, row) {
     if (error) {
       throw error
@@ -100,8 +103,8 @@ router.get('/', async function (req, res) {
   })
 
   function setValue (value) {
-    v_nodes_stats = value
-    res.json(v_nodes_stats)
+    history = value
+    res.json(history)
   }
 })
 

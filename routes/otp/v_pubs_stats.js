@@ -2,7 +2,7 @@ require('dotenv').config()
 var express = require('express')
 var router = express.Router()
 const purl = require('url')
-const queryTypes = require('../../../public/util/queryTypes')
+const queryTypes = require('../../public/util/queryTypes')
 const mysql = require('mysql')
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
@@ -29,7 +29,7 @@ router.get('/', async function (req, res) {
     return
   }
 
-  type = 'v_pubs_stats'
+  type = 'stats'
   api_key = url_params.api_key
 
   const apiSpamProtection = await queryTypes.apiSpamProtection()
@@ -53,7 +53,7 @@ router.get('/', async function (req, res) {
     console.log(`Request frequency limit hit from ${api_key}`)
     resp_object = {
       result:
-        'Request blocked by spam protection. Only 1 request is allow per 1 seconds.'
+            'The rate limit for this api key has been reached. Please upgrade your key to increase your limit.'
     }
     res.send(resp_object)
     return
@@ -69,9 +69,9 @@ router.get('/', async function (req, res) {
   }
 
   timeframe = url_params.timeFrame
-  query = `SELECT * FROM otp_sync_rpc.v_pubs_stats`
+  query = `SELECT * FROM v_pubs_stats`
   if (timeframe == 'hourly') {
-    query = `SELECT * FROM otp_sync_rpc.v_pubs_stats_hourly_24h`
+    query = `SELECT * FROM v_pubs_stats_hourly_24h`
   }
   conditions = []
   params = []
