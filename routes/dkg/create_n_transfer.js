@@ -300,6 +300,10 @@ router.get("/", async function (req, res) {
               return
           }
       }
+
+      receiver = {
+        receiver: url_params.public_address,
+      };
   
     //   if (url_params.network === "otp::mainnet") {
     //     dkg_get_result = await mainnet_dkg.asset
@@ -333,7 +337,7 @@ router.get("/", async function (req, res) {
         url_params.network,
         app[0].app_name,
         txn_description,
-        url_params.txn_data,
+        JSON.stringify(receiver),
         dkg_create_result.UAL,
         keywords,
         dkg_create_result.publicAssertionId,
@@ -361,7 +365,7 @@ router.get("/", async function (req, res) {
 
     resp_object = {
       result: `Created ${dkg_create_result.UAL} and transfered it to ${url_params.public_address} successfully.`,
-      url: `${process.env.WEB_HOST}/portal/gateway?txn_id=${txn[0].txn_id}`,
+      url: `${process.env.WEB_HOST}/portal/assets?ual=${dkg_create_result.UAL}`,
     };
 
     res.json(resp_object);

@@ -59,6 +59,15 @@ router.get('/', async function (req, res) {
     return
   }
 
+  if (!url_params.owner || url_params.owner === "") {
+    console.log(`No owner used from api key ${api_key}`)
+    resp_object = {
+      result: 'No owner provided.'
+    }
+    res.send(resp_object)
+    return
+  }
+
   limit = url_params.limit
   if (!limit) {
     limit = 500
