@@ -198,30 +198,30 @@ router.get("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
-    query = `select * from enabled_apps where public_address = ?`;
-    params = [url_params.public_address];
-    enabled_apps = await getOTHUBData(query, params)
-      .then((results) => {
-        //console.log('Query results:', results);
-        return results;
-        // Use the results in your variable or perform further operations
-      })
-      .catch((error) => {
-        console.error("Error retrieving data:", error);
-      });
+    // query = `select * from enabled_apps where public_address = ?`;
+    // params = [url_params.public_address];
+    // enabled_apps = await getOTHUBData(query, params)
+    //   .then((results) => {
+    //     //console.log('Query results:', results);
+    //     return results;
+    //     // Use the results in your variable or perform further operations
+    //   })
+    //   .catch((error) => {
+    //     console.error("Error retrieving data:", error);
+    //   });
 
-    white_listed = "no";
-    if (enabled_apps.some((obj) => obj.app_name === app[0].app_name)) {
-      white_listed = "yes";
-    }
+    // white_listed = "no";
+    // if (enabled_apps.some((obj) => obj.app_name === app[0].app_name)) {
+    //   white_listed = "yes";
+    // }
 
-    if (white_listed === "no") {
-      resp_object = {
-        result: "This user has not whitelisted your application.",
-      };
-      res.json(resp_object);
-      return;
-    }
+    // if (white_listed === "no") {
+    //   resp_object = {
+    //     result: "This user has not whitelisted your application.",
+    //   };
+    //   res.json(resp_object);
+    //   return;
+    // }
   
       receiver = {
         receiver: url_params.public_address,
