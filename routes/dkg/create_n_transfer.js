@@ -55,7 +55,7 @@ const mainnet_node_options = {
 const testnet_dkg = new DKGClient(testnet_node_options);
 const mainnet_dkg = new DKGClient(mainnet_node_options);
 
-router.get("/", async function (req, res) {
+router.post("/", async function (req, res) {
   try {
     url_params = purl.parse(req.url, true).query;
     ip = req.socket.remoteAddress;
@@ -133,6 +133,7 @@ router.get("/", async function (req, res) {
       try {
         JSON.parse(str);
       } catch (e) {
+        console.log(e)
         return "false";
       }
       return "true";
