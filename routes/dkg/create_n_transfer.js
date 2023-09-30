@@ -90,7 +90,8 @@ router.post("/", async function (req, res) {
     if (permission == `no_app`) {
       console.log(`No app found for api key ${url_params.api_key}`);
       resp_object = {
-        result: "Unauthorized key provided.",
+        status: "401",
+        result: "401 Unauthorized: Unauthorized key provided.",
       };
       res.send(resp_object);
       return;
@@ -99,8 +100,9 @@ router.post("/", async function (req, res) {
     if (permission == `block`) {
       console.log(`Request frequency limit hit from ${url_params.api_key}`);
       resp_object = {
+        status: "429",
         result:
-          "The rate limit for this api key has been reached. Please upgrade your key to increase your limit.",
+          "429 Too Many Requests: The rate limit for this api key has been reached. Please upgrade your key to increase your limit.",
       };
       res.send(resp_object);
       return;
@@ -109,7 +111,8 @@ router.post("/", async function (req, res) {
     if (!url_params.txn_data || url_params.txn_data === "") {
       console.log(`Create request with no data from ${url_params.api_key}`);
       resp_object = {
-        result: "No data provided.",
+        status: "400",
+        result: "400 Bad Request: No data provided.",
       };
       res.send(resp_object);
       return;
@@ -123,7 +126,8 @@ router.post("/", async function (req, res) {
         `Create request with invalid public_address from ${url_params.api_key}`
       );
       resp_object = {
-        result: "Invalid public_address (evm address) provided.",
+        status: "400",
+        result: "400 Bad Request: Invalid public_address (evm address) provided.",
       };
       res.send(resp_object);
       return;
@@ -143,7 +147,8 @@ router.post("/", async function (req, res) {
     if (valid_json == "false") {
       console.log(`Create request with bad data from ${url_params.api_key}`);
       resp_object = {
-        result: "Invalid Json.",
+        status: "400",
+        result: "400 Bad Request: Invalid Json.",
       };
       res.send(resp_object);
       return;
@@ -157,8 +162,8 @@ router.post("/", async function (req, res) {
         `Create request with invalid network from ${url_params.api_key}`
       );
       resp_object = {
-        result:
-          "Invalid network provided. Current supported networks are: otp::testnet.",
+        status: "400",
+        result: "400 Bad Request: Invalid network provided. Current supported networks are: otp::testnet.",
       };
       res.send(resp_object);
       return;
@@ -268,37 +273,40 @@ router.post("/", async function (req, res) {
           }
 
           console.log('Created UAL: '+ dkg_create_result.UAL)
-          
-          dkg_transfer_result = await testnet_dkg.asset
-          .transfer(
-            dkg_create_result.UAL,
-            url_params.public_address, {
-            epochsNum: epochs,
-            maxNumberOfRetries: 30,
-            frequency: 2,
-            contentType: "all",
-            keywords: keywords,
-            blockchain: {
-              name: url_params.network,
-              publicKey: process.env.PUBLIC_KEY,
-              privateKey: process.env.PRIVATE_KEY,
-            },
-          })
-          .then((result) => {
-            //console.log(JSON.stringify(result))
-            return result;
-          })
-          .catch((error) => {
-            console.log(error);
-          });
 
-          if(!dkg_transfer_result || dkg_transfer_result.errorType){
-            console.log(`Create n Transfer request errored from ${url_params.api_key}`)
-              resp_object = {
-                result: 'Error occured while transferring the asset.'
-              }
-              res.send(resp_object)
-              return
+          if(app[0].public_address.toUpperCase() !== url_params.public_address.toUpperCase()){
+            console.log(`Transfering to ${url_params.public_address}...`)
+            dkg_transfer_result = await testnet_dkg.asset
+            .transfer(
+              dkg_create_result.UAL,
+              url_params.public_address, {
+              epochsNum: epochs,
+              maxNumberOfRetries: 30,
+              frequency: 2,
+              contentType: "all",
+              keywords: keywords,
+              blockchain: {
+                name: url_params.network,
+                publicKey: process.env.PUBLIC_KEY,
+                privateKey: process.env.PRIVATE_KEY,
+              },
+            })
+            .then((result) => {
+              //console.log(JSON.stringify(result))
+              return result;
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+  
+            if(!dkg_transfer_result || dkg_transfer_result.errorType){
+              console.log(`Create n Transfer request errored from ${url_params.api_key}`)
+                resp_object = {
+                  result: 'Error occured while transferring the asset.'
+                }
+                res.send(resp_object)
+                return
+            } 
           }
       }
 
@@ -365,15 +373,20 @@ router.post("/", async function (req, res) {
       });
 
     resp_object = {
+      status: "200",
       result: `Created ${dkg_create_result.UAL} and transfered it to ${url_params.public_address} successfully.`,
       url: `${process.env.WEB_HOST}/portal/assets?ual=${dkg_create_result.UAL}`,
+      ual: dkg_create_result.UAL,
+      receiver: url_params.public_address
     };
 
     res.json(resp_object);
   } catch (e) {
     console.log(e);
     resp_object = {
-      result: "Oops, something went wrong! Please try again later.",
+      status: "500",
+      result: "500 Internal Server Error: Oops, something went wrong! Please try again later.",
+      error: e
     };
 
     res.setHeader("Access-Control-Allow-Origin", "*");
