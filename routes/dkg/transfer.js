@@ -70,7 +70,8 @@ router.post("/", async function (req, res) {
     if (!url_params.api_key || url_params.api_key === "") {
       console.log(`Get request without authorization.`);
       resp_object = {
-        result: "Authorization key not provided.",
+        status: "401",
+        result: "401 Unauthorized: Authorization key not provided.",
       };
       res.send(resp_object);
       return;
@@ -89,7 +90,8 @@ router.post("/", async function (req, res) {
     if (permission == `no_app`) {
       console.log(`No app found for api key ${url_params.api_key}`);
       resp_object = {
-        result: "Unauthorized key provided.",
+        status: "401",
+        result: "401 Unauthorized: Unauthorized key provided.",
       };
       res.send(resp_object);
       return;
@@ -98,8 +100,9 @@ router.post("/", async function (req, res) {
     if (permission == `block`) {
       console.log(`Request frequency limit hit from ${url_params.api_key}`);
       resp_object = {
+        status: "429",
         result:
-          "The rate limit for this api key has been reached. Please upgrade your key to increase your limit.",
+          "429 Too Many Requests: The rate limit for this api key has been reached. Please upgrade your key to increase your limit.",
       };
       res.send(resp_object);
       return;
@@ -108,7 +111,8 @@ router.post("/", async function (req, res) {
     if (!url_params.ual || url_params.ual === "") {
       console.log(`Get request with no ual from ${url_params.api_key}`);
       resp_object = {
-        result: "No UAL provided.",
+        status: "400",
+        result: "400 Bad Request: No UAL provided.",
       };
       res.send(resp_object);
       return;
@@ -122,7 +126,8 @@ router.post("/", async function (req, res) {
     if (args.length !== 3) {
       console.log(`Get request with invalid ual from ${url_params.api_key}`);
       resp_object = {
-        result: "Invalid UAL provided.",
+        status: "400",
+        result: "400 Bad Request: No UAL provided.",
       };
       res.send(resp_object);
       return;
@@ -137,8 +142,9 @@ router.post("/", async function (req, res) {
         `Get request with invalid network from ${url_params.api_key}`
       );
       resp_object = {
+        status: "400",
         result:
-          "Invalid network provided. Current supported networks are: otp::testnet, otp::mainnet.",
+          "400 Bad Request: Invalid network provided. Current supported networks are: otp::testnet, otp::mainnet.",
       };
       res.send(resp_object);
       return;
@@ -152,7 +158,9 @@ router.post("/", async function (req, res) {
         `Publish request with invalid public_address from ${url_params.api_key}`
       );
       resp_object = {
-        result: "Invalid public_address (evm address) provided.",
+        status: "400",
+        result:
+          "400 Bad Request: Invalid public_address (evm address) provided.",
       };
       res.send(resp_object);
       return;
@@ -163,6 +171,7 @@ router.post("/", async function (req, res) {
         `Transfer request with invalid receiver address from ${url_params.api_key}`
       );
       resp_object = {
+        status: "400",
         result: "Invalid receiver (evm address) provided.",
       };
       res.send(resp_object);
@@ -216,31 +225,33 @@ router.post("/", async function (req, res) {
         `getOwner request with invalid ual from ${url_params.api_key}`
       );
       resp_object = {
-        result: "Error occured while getting asset owner.",
+        status: "504",
+        result: "504 Gateway Timeout: Error occured while creating the asset.",
       };
       res.send(resp_object);
       return;
     }
 
-      if (dkg_get_result.owner !== url_params.public_address) {
-        console.log(
-          `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
-        );
-        resp_object = {
-          result: "This public_address does not own this asset.",
-        };
-        res.send(resp_object);
-        return;
-      }
+    if (dkg_get_result.owner !== url_params.public_address) {
+      console.log(
+        `Transfer requested for an asset the public_address did not own from ${url_params.api_key}`
+      );
+      resp_object = {
+        status: "400",
+        result: "400 Bad Request: This public_address does not own this asset.",
+      };
+      res.send(resp_object);
+      return;
+    }
 
     receiver = {
       receiver: url_params.receiver,
     };
 
-      epochs = url_params.epochs;
-      if (!url_params.epochs || url_params.epochs === "") {
-          epochs = 5;
-      }
+    epochs = url_params.epochs;
+    if (!url_params.epochs || url_params.epochs === "") {
+      epochs = 5;
+    }
 
     txn_description = url_params.txn_description;
     if (!url_params.txn_description || url_params.txn_description === "") {
@@ -278,9 +289,11 @@ router.post("/", async function (req, res) {
 
     if (white_listed === "no") {
       resp_object = {
-        result: "This user has not whitelisted your application.",
+        status: "403",
+        result:
+          "403 Forbidden: This user has not whitelisted your application.",
       };
-      res.json(resp_object)
+      res.json(resp_object);
       return;
     }
 
@@ -322,6 +335,7 @@ router.post("/", async function (req, res) {
       });
 
     resp_object = {
+      status: "200",
       result: "Transfer transaction queued successfully.",
       public_address: url_params.public_address,
       url: `${process.env.WEB_HOST}/portal/gateway?txn_id=${txn[0].txn_id}`,
@@ -331,7 +345,10 @@ router.post("/", async function (req, res) {
   } catch (e) {
     console.log(e);
     resp_object = {
-      result: "Oops, something went wrong! Please try again later.",
+      status: "500",
+      result:
+        "500 Internal Server Error: Oops, something went wrong! Please try again later.",
+      error: e,
     };
 
     res.setHeader("Access-Control-Allow-Origin", "*");

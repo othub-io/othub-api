@@ -68,7 +68,8 @@ router.get("/", async function (req, res) {
     if (!url_params.api_key || url_params.api_key === "") {
       console.log(`getStateIssuer request without authorization.`);
       resp_object = {
-        result: "Authorization key not provided.",
+        status: "401",
+        result: "401 Unauthorized: Authorization key not provided.",
       };
       res.send(resp_object);
       return;
@@ -87,7 +88,8 @@ router.get("/", async function (req, res) {
     if (permission == `no_app`) {
       console.log(`No app found for api key ${url_params.api_key}`);
       resp_object = {
-        result: "Unauthorized key provided.",
+        status: "401",
+        result: "401 Unauthorized: Unauthorized key provided.",
       };
       res.send(resp_object);
       return;
@@ -96,8 +98,9 @@ router.get("/", async function (req, res) {
     if (permission == `block`) {
       console.log(`Request frequency limit hit from ${url_params.api_key}`);
       resp_object = {
+        status: "429",
         result:
-          "The rate limit for this api key has been reached. Please upgrade your key to increase your limit.",
+          "429 Too Many Requests: The rate limit for this api key has been reached. Please upgrade your key to increase your limit.",
       };
       res.send(resp_object);
       return;
@@ -108,7 +111,8 @@ router.get("/", async function (req, res) {
         `getStateIssuer request with no ual from ${url_params.api_key}`
       );
       resp_object = {
-        result: "No UAL provided.",
+        status: "400",
+        result: "400 Bad Request: No UAL provided.",
       };
       res.send(resp_object);
       return;
@@ -124,7 +128,8 @@ router.get("/", async function (req, res) {
         `getStateIssuer request with invalid ual from ${url_params.api_key}`
       );
       resp_object = {
-        result: "Invalid UAL provided.",
+        status: "400",
+        result: "400 Bad Request: Invalid UAL provided.",
       };
       res.send(resp_object);
       return;
@@ -140,8 +145,9 @@ router.get("/", async function (req, res) {
         `getStateIssuer request with invalid network from ${url_params.api_key}`
       );
       resp_object = {
+        status: "400",
         result:
-          "Invalid network provided. Current supported networks are: otp::testnet, otp::mainnet.",
+          "400 Bad Request: Invalid network provided. Current supported networks are: otp::testnet, otp::mainnet.",
       };
       res.send(resp_object);
       return;
@@ -152,7 +158,8 @@ router.get("/", async function (req, res) {
         `getStateIssuer request with invalid state index from ${url_params.api_key}`
       );
       resp_object = {
-        result: "State index not provided.",
+        status: "400",
+        result: "400 Bad Request: Invalid state index provided.",
       };
       res.send(resp_object);
       return;
@@ -205,7 +212,8 @@ router.get("/", async function (req, res) {
         `getStateIssuer request with invalid ual from ${url_params.api_key}`
       );
       resp_object = {
-        result: "Error occured while getting asset data.",
+        status: "504",
+        result: "504 Gateway Timeout: Error occured while getting asset data.",
       };
       res.send(resp_object);
       return;
@@ -258,7 +266,10 @@ router.get("/", async function (req, res) {
   } catch (e) {
     console.log(e);
     resp_object = {
-      result: "Oops, something went wrong! Please try again later.",
+      status: "500",
+      result:
+        "500 Internal Server Error: Oops, something went wrong! Please try again later.",
+      error: e,
     };
 
     res.setHeader("Access-Control-Allow-Origin", "*");
