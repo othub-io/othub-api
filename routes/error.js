@@ -4,7 +4,8 @@ var router = express.Router()
 
 router.get('/', async function (req, res) {
   obj = {
-    result: `Invalid path.`
+    status: "400",
+    result: `404 Not Found: Invalid path.`
   }
   res.json(obj)
 })

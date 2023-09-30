@@ -71,7 +71,8 @@ router.post("/", async function (req, res) {
     if (!url_params.api_key || url_params.api_key === "") {
       console.log(`Create request without authorization.`);
       resp_object = {
-        result: "Authorization key not provided.",
+        status: "401",
+        result: "401 Unauthorized: Authorization key not provided.",
       };
       res.send(resp_object);
       return;
@@ -127,7 +128,8 @@ router.post("/", async function (req, res) {
       );
       resp_object = {
         status: "400",
-        result: "400 Bad Request: Invalid public_address (evm address) provided.",
+        result:
+          "400 Bad Request: Invalid public_address (evm address) provided.",
       };
       res.send(resp_object);
       return;
@@ -137,7 +139,7 @@ router.post("/", async function (req, res) {
       try {
         JSON.parse(str);
       } catch (e) {
-        console.log(e)
+        console.log(e);
         return "false";
       }
       return "true";
@@ -154,16 +156,14 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (
-      !url_params.network ||
-      (url_params.network !== "otp::testnet")
-    ) {
+    if (!url_params.network || url_params.network !== "otp::testnet") {
       console.log(
         `Create request with invalid network from ${url_params.api_key}`
       );
       resp_object = {
         status: "400",
-        result: "400 Bad Request: Invalid network provided. Current supported networks are: otp::testnet.",
+        result:
+          "400 Bad Request: Invalid network provided. Current supported networks are: otp::testnet.",
       };
       res.send(resp_object);
       return;
@@ -228,22 +228,66 @@ router.post("/", async function (req, res) {
     //   res.json(resp_object);
     //   return;
     // }
-  
-      receiver = {
-        receiver: url_params.public_address,
-      };
 
-      dkg_txn_data = JSON.parse(url_params.txn_data);
+    receiver = {
+      receiver: url_params.public_address,
+    };
 
-      if (!dkg_txn_data["@context"]) {
-        dkg_txn_data["@context"] = "https://schema.org";
+    dkg_txn_data = JSON.parse(url_params.txn_data);
+
+    if (!dkg_txn_data["@context"]) {
+      dkg_txn_data["@context"] = "https://schema.org";
+    }
+
+    if (url_params.network === "otp::testnet") {
+      dkg_create_result = await testnet_dkg.asset
+        .create(
+          {
+            public: dkg_txn_data,
+          },
+          {
+            epochsNum: epochs,
+            maxNumberOfRetries: 30,
+            frequency: 2,
+            contentType: "all",
+            keywords: keywords,
+            blockchain: {
+              name: url_params.network,
+              publicKey: process.env.PUBLIC_KEY,
+              privateKey: process.env.PRIVATE_KEY,
+            },
+          }
+        )
+        .then((result) => {
+          //console.log(JSON.stringify(result))
+          return result;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+
+      if (!dkg_create_result || dkg_create_result.errorType) {
+        console.log(
+          `Create n Transfer request errored from ${url_params.api_key}`
+        );
+        resp_object = {
+          status: "504",
+          result:
+            "504 Gateway Timeout: Error occured while creating the asset.",
+        };
+        res.send(resp_object);
+        return;
       }
 
-      if (url_params.network === "otp::testnet") {
-        dkg_create_result = await testnet_dkg.asset
-          .create({
-            public: dkg_txn_data,
-            }, {
+      console.log("Created UAL: " + dkg_create_result.UAL);
+
+      if (
+        app[0].public_address.toUpperCase() !==
+        url_params.public_address.toUpperCase()
+      ) {
+        console.log(`Transfering to ${url_params.public_address}...`);
+        dkg_transfer_result = await testnet_dkg.asset
+          .transfer(dkg_create_result.UAL, url_params.public_address, {
             epochsNum: epochs,
             maxNumberOfRetries: 30,
             frequency: 2,
@@ -263,57 +307,25 @@ router.post("/", async function (req, res) {
             console.log(error);
           });
 
-          if(!dkg_create_result || dkg_create_result.errorType){
-            console.log(`Create n Transfer request errored from ${url_params.api_key}`)
-              resp_object = {
-                result: 'Error occured while creating the asset.'
-              }
-              res.send(resp_object)
-              return
-          }
-
-          console.log('Created UAL: '+ dkg_create_result.UAL)
-
-          if(app[0].public_address.toUpperCase() !== url_params.public_address.toUpperCase()){
-            console.log(`Transfering to ${url_params.public_address}...`)
-            dkg_transfer_result = await testnet_dkg.asset
-            .transfer(
-              dkg_create_result.UAL,
-              url_params.public_address, {
-              epochsNum: epochs,
-              maxNumberOfRetries: 30,
-              frequency: 2,
-              contentType: "all",
-              keywords: keywords,
-              blockchain: {
-                name: url_params.network,
-                publicKey: process.env.PUBLIC_KEY,
-                privateKey: process.env.PRIVATE_KEY,
-              },
-            })
-            .then((result) => {
-              //console.log(JSON.stringify(result))
-              return result;
-            })
-            .catch((error) => {
-              console.log(error);
-            });
-  
-            if(!dkg_transfer_result || dkg_transfer_result.errorType){
-              console.log(`Create n Transfer request errored from ${url_params.api_key}`)
-                resp_object = {
-                  result: 'Error occured while transferring the asset.'
-                }
-                res.send(resp_object)
-                return
-            } 
-          }
+        if (!dkg_transfer_result || dkg_transfer_result.errorType) {
+          console.log(
+            `Create n Transfer request errored from ${url_params.api_key}`
+          );
+          resp_object = {
+            status: "504",
+            result:
+              "504 Gateway Timeout: Error occured while transferring the asset.",
+          };
+          res.send(resp_object);
+          return;
+        }
       }
+    }
 
-      receiver = {
-        receiver: url_params.public_address,
-      };
-  
+    receiver = {
+      receiver: url_params.public_address,
+    };
+
     //   if (url_params.network === "otp::mainnet") {
     //     dkg_get_result = await mainnet_dkg.asset
     //       .getOwner(url_params.ual, {
@@ -339,7 +351,7 @@ router.post("/", async function (req, res) {
     await othubdb_connection.query(
       query,
       [
-        'COMPLETE',
+        "COMPLETE",
         url_params.public_address,
         url_params.api_key,
         type,
@@ -377,7 +389,7 @@ router.post("/", async function (req, res) {
       result: `Created ${dkg_create_result.UAL} and transfered it to ${url_params.public_address} successfully.`,
       url: `${process.env.WEB_HOST}/portal/assets?ual=${dkg_create_result.UAL}`,
       ual: dkg_create_result.UAL,
-      receiver: url_params.public_address
+      receiver: url_params.public_address,
     };
 
     res.json(resp_object);
@@ -385,8 +397,9 @@ router.post("/", async function (req, res) {
     console.log(e);
     resp_object = {
       status: "500",
-      result: "500 Internal Server Error: Oops, something went wrong! Please try again later.",
-      error: e
+      result:
+        "500 Internal Server Error: Oops, something went wrong! Please try again later.",
+      error: e,
     };
 
     res.setHeader("Access-Control-Allow-Origin", "*");
