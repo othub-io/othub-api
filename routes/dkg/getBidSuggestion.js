@@ -72,11 +72,8 @@ router.post("/", async function (req, res) {
 
     type = "getBidSuggestion";
     data = req.body;
-    console.log(req.headers);
     api_key = req.headers["x-api-key"];
 
-    console.log(data);
-    console.log(api_key);
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
       res.status(401).json({
