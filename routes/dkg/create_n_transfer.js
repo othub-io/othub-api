@@ -1,9 +1,8 @@
 require("dotenv").config();
 const express = require("express");
 const router = express.Router();
-const purl = require("url");
 const ethers = require("ethers");
-const queryTypes = require("../../public/util/queryTypes");
+const queryTypes = require("../../util/queryTypes");
 const mysql = require("mysql");
 const othubdb_connection = mysql.createConnection({
   host: process.env.DBHOST,
@@ -57,81 +56,67 @@ const mainnet_dkg = new DKGClient(mainnet_node_options);
 
 router.post("/", async function (req, res) {
   try {
-    url_params = purl.parse(req.url, true).query;
     ip = req.socket.remoteAddress;
     if (process.env.SSL_KEY_PATH) {
       ip = req.headers["x-forwarded-for"];
     }
 
     type = `Create-n-Transfer`;
+    data = req.body;
+    api_key = req.headers["x-api-key"];
 
-    console.log(url_params);
-    res.setHeader("Access-Control-Allow-Origin", "*");
-
-    if (!url_params.api_key || url_params.api_key === "") {
+    if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
-      resp_object = {
-        status: "401",
-        result: "401 Unauthorized: Authorization key not provided.",
-      };
-      res.send(resp_object);
+      res.status(401).json({
+        success: false,
+        msg: "Authorization key not provided.",
+      });
       return;
     }
 
     apiSpamProtection = await queryTypes.apiSpamProtection();
 
-    api_key = url_params.api_key;
     permission = await apiSpamProtection
-      .getData(type, url_params.api_key)
+      .getData(type, api_key)
       .then(async ({ permission }) => {
         return permission;
       })
       .catch((error) => console.log(`Error : ${error}`));
 
     if (permission == `no_app`) {
-      console.log(`No app found for api key ${url_params.api_key}`);
-      resp_object = {
-        status: "401",
-        result: "401 Unauthorized: Unauthorized key provided.",
-      };
-      res.send(resp_object);
+      console.log(`No app found for api key ${api_key}`);
+      res.status(401).json({
+        success: false,
+        msg: "Unauthorized key provided.",
+      });
       return;
     }
 
     if (permission == `block`) {
-      console.log(`Request frequency limit hit from ${url_params.api_key}`);
-      resp_object = {
-        status: "429",
-        result:
-          "429 Too Many Requests: The rate limit for this api key has been reached. Please upgrade your key to increase your limit.",
-      };
-      res.send(resp_object);
+      console.log(`Request frequency limit hit from ${api_key}`);
+      res.status(429).json({
+        success: false,
+        msg: "The rate limit for this api key has been reached. Please upgrade your key to increase your limit.",
+      });
       return;
     }
 
-    if (!url_params.txn_data || url_params.txn_data === "") {
-      console.log(`Create request with no data from ${url_params.api_key}`);
-      resp_object = {
-        status: "400",
-        result: "400 Bad Request: No data provided.",
-      };
-      res.send(resp_object);
+    if (!data.asset || data.asset === "") {
+      console.log(`Create request with no data from ${api_key}`);
+      res.status(400).json({
+        success: false,
+        msg: "No asset provided.",
+      });
       return;
     }
 
-    if (
-      !url_params.public_address ||
-      !ethers.utils.isAddress(url_params.public_address)
-    ) {
-      console.log(
-        `Create request with invalid public_address from ${url_params.api_key}`
-      );
-      resp_object = {
-        status: "400",
-        result:
-          "400 Bad Request: Invalid public_address (evm address) provided.",
-      };
-      res.send(resp_object);
+    if (!data.receiver || !ethers.utils.isAddress(data.receiver)) {
+      console.log(`Create request with invalid receiver from ${api_key}`);
+
+      res.status(400).json({
+        success: false,
+        msg: "Invalid receiver (evm address) provided.",
+      });
       return;
     }
 
@@ -145,55 +130,51 @@ router.post("/", async function (req, res) {
       return "true";
     }
 
-    valid_json = await isJsonString(url_params.txn_data);
+    valid_json = await isJsonString(JSON.stringify(data.asset));
     if (valid_json == "false") {
-      console.log(`Create request with bad data from ${url_params.api_key}`);
-      resp_object = {
-        status: "400",
-        result: "400 Bad Request: Invalid Json.",
-      };
-      res.send(resp_object);
+      console.log(`Create request with bad data from ${api_key}`);
+      res.status(400).json({
+        success: false,
+        msg: "Invalid JSON.",
+      });
       return;
     }
 
-    if (!url_params.network || url_params.network !== "otp::testnet") {
-      console.log(
-        `Create request with invalid network from ${url_params.api_key}`
-      );
-      resp_object = {
-        status: "400",
-        result:
-          "400 Bad Request: Invalid network provided. Current supported networks are: otp::testnet.",
-      };
-      res.send(resp_object);
+    if (!data.network || data.network !== "otp::testnet") {
+      console.log(`Create request with invalid network from ${api_key}`);
+
+      res.status(400).json({
+        success: false,
+        msg: "Invalid network provided. Current supported networks are: otp::testnet.",
+      });
       return;
     }
 
-    if (!url_params.keywords || url_params.keywords === "") {
+    if (!data.keywords || data.keywords === "") {
       keywords = `othub-api`;
     } else {
-      keywords = url_params.keywords.replace("'", "");
+      keywords = data.keywords.replace("'", "");
       keywords = keywords.replace('"', "");
       keywords = keywords + ",othub-api";
     }
 
-    epochs = url_params.epochs;
-    if (!url_params.epochs || url_params.epochs === "") {
+    epochs = data.epochs;
+    if (!data.epochs || data.epochs === "") {
       epochs = 5;
     }
 
-    txn_description = url_params.txn_description;
-    if (!url_params.txn_description || url_params.txn_description === "") {
+    txn_description = data.txn_description;
+    if (!data.txn_description || data.txn_description === "") {
       txn_description = "No description available.";
     }
 
-    trac_fee = url_params.trac_fee;
-    if (!url_params.trac_fee || url_params.trac_fee === "") {
+    trac_fee = data.trac_fee;
+    if (!data.trac_fee || data.trac_fee === "") {
       trac_fee = null;
     }
 
     query = `select * from app_header where api_key = ?`;
-    params = [url_params.api_key];
+    params = [api_key];
     app = await getOTHUBData(query, params)
       .then((results) => {
         //console.log('Query results:', results);
@@ -230,16 +211,16 @@ router.post("/", async function (req, res) {
     // }
 
     receiver = {
-      receiver: url_params.public_address,
+      receiver: data.receiver,
     };
 
-    dkg_txn_data = JSON.parse(url_params.txn_data);
+    dkg_txn_data = data.asset;
 
     if (!dkg_txn_data["@context"]) {
       dkg_txn_data["@context"] = "https://schema.org";
     }
 
-    if (url_params.network === "otp::testnet") {
+    if (data.network === "otp::testnet") {
       dkg_create_result = await testnet_dkg.asset
         .create(
           {
@@ -252,7 +233,7 @@ router.post("/", async function (req, res) {
             contentType: "all",
             keywords: keywords,
             blockchain: {
-              name: url_params.network,
+              name: data.network,
               publicKey: process.env.PUBLIC_KEY,
               privateKey: process.env.PRIVATE_KEY,
             },
@@ -267,34 +248,28 @@ router.post("/", async function (req, res) {
         });
 
       if (!dkg_create_result || dkg_create_result.errorType) {
-        console.log(
-          `Create n Transfer request errored from ${url_params.api_key}`
-        );
-        resp_object = {
-          status: "504",
-          result:
-            "504 Gateway Timeout: Error occured while creating the asset.",
-        };
-        res.send(resp_object);
+        console.log(`Create n Transfer request failed from ${api_key}`);
+
+        res.status(504).json({
+          success: false,
+          msg: "Error occured while creating the asset.",
+        });
         return;
       }
 
       console.log("Created UAL: " + dkg_create_result.UAL);
 
-      if (
-        app[0].public_address.toUpperCase() !==
-        url_params.public_address.toUpperCase()
-      ) {
-        console.log(`Transfering to ${url_params.public_address}...`);
+      if (app[0].public_address.toUpperCase() !== data.receiver.toUpperCase()) {
+        console.log(`Transfering to ${data.receiver}...`);
         dkg_transfer_result = await testnet_dkg.asset
-          .transfer(dkg_create_result.UAL, url_params.public_address, {
+          .transfer(dkg_create_result.UAL, data.receiver, {
             epochsNum: epochs,
             maxNumberOfRetries: 30,
             frequency: 2,
             contentType: "all",
             keywords: keywords,
             blockchain: {
-              name: url_params.network,
+              name: data.network,
               publicKey: process.env.PUBLIC_KEY,
               privateKey: process.env.PRIVATE_KEY,
             },
@@ -308,22 +283,19 @@ router.post("/", async function (req, res) {
           });
 
         if (!dkg_transfer_result || dkg_transfer_result.errorType) {
-          console.log(
-            `Create n Transfer request errored from ${url_params.api_key}`
-          );
-          resp_object = {
-            status: "504",
-            result:
-              "504 Gateway Timeout: Error occured while transferring the asset.",
-          };
-          res.send(resp_object);
+          console.log(`Create n Transfer request errored from ${api_key}`);
+
+          res.status(504).json({
+            success: false,
+            msg: "Error occured while transferring the asset.",
+          });
           return;
         }
       }
     }
 
     receiver = {
-      receiver: url_params.public_address,
+      receiver: data.receiver,
     };
 
     //   if (url_params.network === "otp::mainnet") {
@@ -347,15 +319,15 @@ router.post("/", async function (req, res) {
     //       });
     //   }
 
-    query = `INSERT INTO txn_header (txn_id, progress, public_address, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+    query = `INSERT INTO txn_header (txn_id, progress, approver, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
     await othubdb_connection.query(
       query,
       [
         "COMPLETE",
-        url_params.public_address,
-        url_params.api_key,
+        process.env.PUBLIC_KEY,
+        api_key,
         type,
-        url_params.network,
+        data.network,
         app[0].app_name,
         txn_description,
         JSON.stringify(receiver),
@@ -366,6 +338,7 @@ router.post("/", async function (req, res) {
         null,
         trac_fee,
         epochs,
+        data.receiver,
       ],
       function (error, results, fields) {
         if (error) throw error;
@@ -373,7 +346,7 @@ router.post("/", async function (req, res) {
     );
 
     query = `select * from txn_header where api_key = ? and request = ? order by created_at desc`;
-    params = [url_params.api_key, type];
+    params = [api_key, type];
     txn = await getOTHUBData(query, params)
       .then((results) => {
         //console.log('Query results:', results);
@@ -384,26 +357,19 @@ router.post("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
-    resp_object = {
-      status: "200",
-      result: `Created ${dkg_create_result.UAL} and transfered it to ${url_params.public_address} successfully.`,
+    res.status(200).json({
+      success: true,
+      msg: `Created ${dkg_create_result.UAL} and transfered it to ${data.receiver} successfully.`,
       url: `${process.env.WEB_HOST}/portal/assets?ual=${dkg_create_result.UAL}`,
       ual: dkg_create_result.UAL,
-      receiver: url_params.public_address,
-    };
-
-    res.json(resp_object);
+      receiver: data.receiver,
+    });
   } catch (e) {
     console.log(e);
-    resp_object = {
-      status: "500",
-      result:
-        "500 Internal Server Error: Oops, something went wrong! Please try again later.",
-      error: e,
-    };
-
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.json(resp_object);
+    res.status(500).json({
+      success: false,
+      msg: `Oops, something went wrong! Please try again later.`,
+    });
   }
 });
 

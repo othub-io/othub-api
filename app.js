@@ -5,9 +5,25 @@ const path = require('path')
 const cookieParser = require('cookie-parser')
 const logger = require('morgan')
 const bodyParser = require('body-parser')
+const cors = require('cors')
+const app = express()
+
+app.use(logger('dev'))
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
+app.use(cookieParser())
+app.use(express.static(path.join(__dirname, 'public')))
+app.use(express.static(path.join(__dirname, 'node_modules')))
+app.use('/dkg', express.static(__dirname + 'node_modules/dkg.js'))
+app.use('/util', express.static(__dirname + 'public/util'))
+app.use(bodyParser.json({limit: '50mb', extended: true}));
+app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}));
+app.use(bodyParser.text({ limit: '200mb' }));
+app.use(cors())
 
 //dkg
 const getRouter_otp = require('./routes/dkg/get')
+const getBidSuggestionRouter_otp = require('./routes/dkg/getBidSuggestion')
 const getLatestStateIssuerRouter_otp = require('./routes/dkg/getLatestStateIssuer')
 const getOwnerRouter_otp = require('./routes/dkg/getOwner')
 const getStateIssuerRouter_otp = require('./routes/dkg/getStateIssuer')
@@ -38,22 +54,9 @@ const v_pubs_stats_lastRouter_otp_testnet = require('./routes/otp_testnet/v_pubs
 const assetHistory_otp_testnet = require('./routes/otp_testnet/assetHistory')
 const assetInventory_otp_testnet = require('./routes/otp_testnet/assetInventory')
 
-const app = express()
-
-app.use(logger('dev'))
-app.use(express.json())
-app.use(express.urlencoded({ extended: false }))
-app.use(cookieParser())
-app.use(express.static(path.join(__dirname, 'public')))
-app.use(express.static(path.join(__dirname, 'node_modules')))
-app.use('/dkg', express.static(__dirname + 'node_modules/dkg.js'))
-app.use('/util', express.static(__dirname + 'public/util'))
-app.use(bodyParser.json({limit: '50mb', extended: true}));
-app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}));
-app.use(bodyParser.text({ limit: '200mb' }));
-
 //dkg
 app.use('/dkg/get', getRouter_otp)
+app.use('/dkg/getBidSuggestion', getBidSuggestionRouter_otp)
 app.use('/dkg/getLatestStateIssuer', getLatestStateIssuerRouter_otp)
 app.use('/dkg/getOwner', getOwnerRouter_otp)
 app.use('/dkg/getStateIssuer', getStateIssuerRouter_otp)

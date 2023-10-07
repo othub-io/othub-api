@@ -1,9 +1,8 @@
 require("dotenv").config();
 var express = require("express");
 var router = express.Router();
-const queryTypes = require("../../util/queryTypes");
-
 const mysql = require("mysql");
+const queryTypes = require("../../util/queryTypes");
 const othubdb_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
@@ -42,6 +41,11 @@ const testnet_node_options = {
   port: OT_NODE_TESTNET_PORT,
   useSSL: true,
   maxNumberOfRetries: 100,
+  blockchain: {
+    name: "otp::testnet",
+    publicKey: process.env.PUBLIC_KEY,
+    privateKey: process.env.PRIVATE_KEY,
+  },
 };
 
 const mainnet_node_options = {
@@ -49,22 +53,30 @@ const mainnet_node_options = {
   port: OT_NODE_MAINNET_PORT,
   useSSL: true,
   maxNumberOfRetries: 100,
+  blockchain: {
+    name: "otp::mainnet",
+    publicKey: process.env.PUBLIC_KEY,
+    privateKey: process.env.PRIVATE_KEY,
+  },
 };
 
 const testnet_dkg = new DKGClient(testnet_node_options);
 const mainnet_dkg = new DKGClient(mainnet_node_options);
 
-router.get("/", async function (req, res) {
+router.post("/", async function (req, res) {
   try {
     ip = req.socket.remoteAddress;
     if (process.env.SSL_KEY_PATH) {
       ip = req.headers["x-forwarded-for"];
     }
 
-    type = "Query";
+    type = "getBidSuggestion";
     data = req.body;
+    console.log(req.headers);
     api_key = req.headers["x-api-key"];
 
+    console.log(data);
+    console.log(api_key);
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
       res.status(401).json({
@@ -101,16 +113,6 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    if (!data.query || data.query === "") {
-      console.log(`Query request with no query from ${api_key}`);
-      res.status(400).json({
-        success: false,
-        msg: "No Query provided.",
-      });
-      return;
-    }
-    sparquery = data.query;
-
     if (
       !data.network ||
       (data.network !== "otp::testnet" && data.network !== "otp::mainnet")
@@ -124,22 +126,84 @@ router.get("/", async function (req, res) {
       return;
     }
 
-    type = data.type;
-    if (!data.type || data.type === "") {
-      type = "SELECT";
+    function isJsonString(str) {
+      try {
+        JSON.parse(str);
+      } catch (e) {
+        console.log(e);
+        return "false";
+      }
+      return "true";
     }
 
+    if (!data.asset || data.asset === "") {
+      console.log(`Create request with no data from ${api_key}`);
+      res.status(400).json({
+        success: false,
+        msg: "No asset provided.",
+      });
+      return;
+    }
+
+    valid_json = await isJsonString(JSON.stringify(data.asset));
+    if (valid_json == "false") {
+      console.log(`Create request with bad data from ${api_key}`);
+      res.status(400).json({
+        success: false,
+        msg: "Invalid JSON.",
+      });
+      return;
+    }
+
+    epochs = data.epochs;
+    if (!data.epochs || data.epochs === "") {
+      epochs = 5;
+    }
+
+    txn_data = data.asset;
+    if (!txn_data["@context"]) {
+      txn_data["@context"] = "https://schema.org";
+    }
+
+    dkg_data = {
+      public: txn_data,
+    };
+
     if (data.network === "otp::testnet") {
-      queryResult = await testnet_dkg.graph.query(sparquery, type);
+      const publicAssertionId =
+        await testnet_dkg.assertion.getPublicAssertionId(dkg_data);
+      const publicAssertionSize = await testnet_dkg.assertion.getSizeInBytes(
+        dkg_data
+      );
+
+      dkg_bid_result = await testnet_dkg.network.getBidSuggestion(
+        publicAssertionId,
+        publicAssertionSize,
+        { epochsNum: epochs }
+      );
     }
 
     if (data.network === "otp::mainnet") {
-      queryResult = await mainnet_dkg.graph.query(sparquery, type);
+      const publicAssertionId =
+        await testnet_dkg.assertion.getPublicAssertionId(dkg_data);
+      const publicAssertionSize = await testnet_dkg.assertion.getSizeInBytes(
+        dkg_data
+      );
+
+      dkg_bid_result = await mainnet_dkg.network.getBidSuggestion(
+        publicAssertionId,
+        publicAssertionSize,
+        { epochsNum: epochs }
+      );
     }
 
-    data = JSON.stringify(queryResult.data);
-    if (queryResult.status === "FAILED") {
-      data = JSON.stringify("Invalid Query");
+    if (!dkg_bid_result || dkg_bid_result.errorType) {
+      console.log(`getBidSuggestion request failed from ${api_key}`);
+      res.status(504).json({
+        success: false,
+        msg: `Error occured while getting asset data.`,
+      });
+      return;
     }
 
     txn_description = data.txn_description;
@@ -166,14 +230,14 @@ router.get("/", async function (req, res) {
         "COMPLETE",
         null,
         api_key,
-        "query",
+        type,
         data.network,
         app[0].app_name,
         txn_description,
         null,
+        data.ual,
         null,
-        null,
-        null,
+        dkg_bid_result.assertionId,
         null,
         null,
         0,
@@ -185,7 +249,7 @@ router.get("/", async function (req, res) {
       }
     );
 
-    res.status(200).send(queryResult);
+    res.status(200).json(Number(dkg_bid_result));
   } catch (e) {
     console.log(e);
     res.status(500).json({
