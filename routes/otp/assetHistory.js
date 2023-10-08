@@ -10,7 +10,7 @@ const otp_connection = mysql.createConnection({
   database: process.env.SYNC_DB,
 });
 
-router.get("/", async function (req, res) {
+router.post("/", async function (req, res) {
   try {
     ip = req.socket.remoteAddress;
     if (process.env.SSL_KEY_PATH) {
@@ -19,6 +19,7 @@ router.get("/", async function (req, res) {
 
     type = "history";
     data = req.body;
+    console.log(req.headers)
     api_key = req.headers["x-api-key"];
 
     if (!api_key || api_key === "") {

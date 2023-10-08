@@ -11,7 +11,7 @@ const otp_connection = mysql.createConnection({
   database: process.env.SYNC_DB_TESTNET,
 });
 
-router.get("/", async function (req, res) {
+router.post("/", async function (req, res) {
   try {
     ip = req.socket.remoteAddress;
     if (process.env.SSL_KEY_PATH) {
