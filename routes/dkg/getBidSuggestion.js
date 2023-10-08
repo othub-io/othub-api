@@ -1,9 +1,8 @@
 require("dotenv").config();
-const express = require("express");
-const router = express.Router();
-const ethers = require("ethers");
-const queryTypes = require("../../util/queryTypes");
+var express = require("express");
+var router = express.Router();
 const mysql = require("mysql");
+const queryTypes = require("../../util/queryTypes");
 const othubdb_connection = mysql.createConnection({
   host: process.env.DBHOST,
   user: process.env.DBUSER,
@@ -42,6 +41,11 @@ const testnet_node_options = {
   port: OT_NODE_TESTNET_PORT,
   useSSL: true,
   maxNumberOfRetries: 100,
+  blockchain: {
+    name: "otp::testnet",
+    publicKey: process.env.PUBLIC_KEY,
+    privateKey: process.env.PRIVATE_KEY,
+  },
 };
 
 const mainnet_node_options = {
@@ -49,6 +53,11 @@ const mainnet_node_options = {
   port: OT_NODE_MAINNET_PORT,
   useSSL: true,
   maxNumberOfRetries: 100,
+  blockchain: {
+    name: "otp::mainnet",
+    publicKey: process.env.PUBLIC_KEY,
+    privateKey: process.env.PRIVATE_KEY,
+  },
 };
 
 const testnet_dkg = new DKGClient(testnet_node_options);
@@ -61,7 +70,7 @@ router.post("/", async function (req, res) {
       ip = req.headers["x-forwarded-for"];
     }
 
-    type = `Transfer`;
+    type = "getBidSuggestion";
     data = req.body;
     api_key = req.headers["x-api-key"];
 
@@ -101,29 +110,6 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (!data.ual || data.ual === "") {
-      console.log(`Transfer request with no ual from ${api_key}`);
-      res.status(400).json({
-        success: false,
-        msg: "No UAL provided.",
-      });
-      return;
-    }
-
-    const segments = data.ual.split(":");
-    const argsString =
-      segments.length === 3 ? segments[2] : segments[2] + segments[3];
-    const args = argsString.split("/");
-
-    if (args.length !== 3) {
-      console.log(`Transfer request with invalid ual from ${api_key}`);
-      res.status(400).json({
-        success: false,
-        msg: "Invalid UAL provided.",
-      });
-      return;
-    }
-
     if (
       !data.network ||
       (data.network !== "otp::testnet" && data.network !== "otp::mainnet")
@@ -137,95 +123,84 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (!data.approver || !ethers.utils.isAddress(data.approver)) {
-      console.log(`Create request with invalid approver from ${api_key}`);
+    function isJsonString(str) {
+      try {
+        JSON.parse(str);
+      } catch (e) {
+        console.log(e);
+        return "false";
+      }
+      return "true";
+    }
 
+    if (!data.asset || data.asset === "") {
+      console.log(`Create request with no data from ${api_key}`);
       res.status(400).json({
         success: false,
-        msg: "Invalid approver (evm address) provided.",
+        msg: "No asset provided.",
       });
       return;
     }
 
-    if (!data.receiver || !ethers.utils.isAddress(data.receiver)) {
-      console.log(`Transfer request with invalid receiver from ${api_key}`);
-
+    valid_json = await isJsonString(JSON.stringify(data.asset));
+    if (valid_json == "false") {
+      console.log(`Create request with bad data from ${api_key}`);
       res.status(400).json({
         success: false,
-        msg: "Invalid receiver (evm address) provided.",
+        msg: "Invalid JSON.",
       });
       return;
     }
-
-    if (data.network === "otp::testnet") {
-      dkg_get_result = await testnet_dkg.asset
-        .getOwner(data.ual, {
-          validate: true,
-          maxNumberOfRetries: 30,
-          frequency: 1,
-          blockchain: {
-            name: data.network,
-            publicKey: process.env.PUBLIC_KEY,
-            privateKey: process.env.PRIVATE_KEY,
-          },
-        })
-        .then((result) => {
-          //console.log(JSON.stringify(result))
-          return result;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
-
-    if (data.network === "otp::mainnet") {
-      dkg_get_result = await mainnet_dkg.asset
-        .getOwner(data.ual, {
-          validate: true,
-          maxNumberOfRetries: 30,
-          frequency: 1,
-          blockchain: {
-            name: data.network,
-            publicKey: process.env.PUBLIC_KEY,
-            privateKey: process.env.PRIVATE_KEY,
-          },
-        })
-        .then((result) => {
-          //console.log(JSON.stringify(result))
-          return result;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
-
-    if (!dkg_get_result || dkg_get_result.errorType) {
-      console.log(`getOwner request with invalid ual from ${api_key}`);
-      res.status(504).json({
-        success: false,
-        msg: `Error occured while creating the asset.`,
-      });
-      return;
-    }
-
-    if (dkg_get_result.owner !== data.approver) {
-      console.log(
-        `Transfer requested for an asset the approver did not own from ${api_key}`
-      );
-      res.status(400).json({
-        success: false,
-        msg: `The approver does not own this asset.`,
-      });
-      return;
-    }
-
-    receiver = {
-      receiver: data.receiver,
-    };
 
     epochs = data.epochs;
     if (!data.epochs || data.epochs === "") {
       epochs = 5;
+    }
+
+    txn_data = data.asset;
+    if (!txn_data["@context"]) {
+      txn_data["@context"] = "https://schema.org";
+    }
+
+    dkg_data = {
+      public: txn_data,
+    };
+
+    if (data.network === "otp::testnet") {
+      const publicAssertionId =
+        await testnet_dkg.assertion.getPublicAssertionId(dkg_data);
+      const publicAssertionSize = await testnet_dkg.assertion.getSizeInBytes(
+        dkg_data
+      );
+
+      dkg_bid_result = await testnet_dkg.network.getBidSuggestion(
+        publicAssertionId,
+        publicAssertionSize,
+        { epochsNum: epochs }
+      );
+    }
+
+    if (data.network === "otp::mainnet") {
+      const publicAssertionId =
+        await testnet_dkg.assertion.getPublicAssertionId(dkg_data);
+      const publicAssertionSize = await testnet_dkg.assertion.getSizeInBytes(
+        dkg_data
+      );
+
+      dkg_bid_result = await mainnet_dkg.network.getBidSuggestion(
+        publicAssertionId,
+        publicAssertionSize,
+        { epochsNum: epochs }
+      );
+    }
+
+    if (!dkg_bid_result || dkg_bid_result.errorType) {
+      console.log(`getBidSuggestion request failed from ${api_key}`);
+      res.status(504).json({
+        success: false,
+        msg: `Error occured while getting asset data.`,
+      });
+      return;
     }
 
     txn_description = data.txn_description;
@@ -245,37 +220,12 @@ router.post("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
-    query = `select * from enabled_apps where public_address = ?`;
-    params = [data.approver];
-    enabled_apps = await getOTHUBData(query, params)
-      .then((results) => {
-        //console.log('Query results:', results);
-        return results;
-        // Use the results in your variable or perform further operations
-      })
-      .catch((error) => {
-        console.error("Error retrieving data:", error);
-      });
-
-    white_listed = "no";
-    if (enabled_apps.some((obj) => obj.app_name === app[0].app_name)) {
-      white_listed = "yes";
-    }
-
-    if (white_listed === "no") {
-      res.status(403).json({
-        success: false,
-        msg: "This user has not whitelisted your application.",
-      });
-      return;
-    }
-
     query = `INSERT INTO txn_header (txn_id, progress, approver, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
     await othubdb_connection.query(
       query,
       [
-        "PENDING",
-        data.approver,
+        "COMPLETE",
+        null,
         api_key,
         type,
         data.network,
@@ -284,36 +234,19 @@ router.post("/", async function (req, res) {
         null,
         data.ual,
         null,
+        dkg_bid_result.assertionId,
         null,
         null,
+        0,
         null,
         null,
-        null,
-        data.receiver,
       ],
       function (error, results, fields) {
         if (error) throw error;
       }
     );
 
-    query = `select * from txn_header where api_key = ? and request = ? order by created_at desc`;
-    params = [api_key, type];
-    txn = await getOTHUBData(query, params)
-      .then((results) => {
-        //console.log('Query results:', results);
-        return results;
-        // Use the results in your variable or perform further operations
-      })
-      .catch((error) => {
-        console.error("Error retrieving data:", error);
-      });
-
-    res.status(200).json({
-      success: true,
-      msg: "Transfer transaction queued successfully.",
-      approver: data.approver,
-      url: `${process.env.WEB_HOST}/portal/gateway?txn_id=${txn[0].txn_id}`,
-    });
+    res.status(200).json(Number(dkg_bid_result));
   } catch (e) {
     console.log(e);
     res.status(500).json({

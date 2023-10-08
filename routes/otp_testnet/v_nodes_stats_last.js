@@ -2,7 +2,7 @@ require("dotenv").config();
 var express = require("express");
 var router = express.Router();
 const purl = require("url");
-const queryTypes = require("../../public/util/queryTypes");
+const queryTypes = require("../../util/queryTypes");
 const mysql = require("mysql");
 const otp_connection = mysql.createConnection({
   host: process.env.DBHOST,
@@ -11,30 +11,28 @@ const otp_connection = mysql.createConnection({
   database: process.env.SYNC_DB_TESTNET,
 });
 
-router.get("/", async function (req, res) {
+router.post("/", async function (req, res) {
   try {
-    url_params = purl.parse(req.url, true).query;
     ip = req.socket.remoteAddress;
     if (process.env.SSL_KEY_PATH) {
       ip = req.headers["x-forwarded-for"];
     }
 
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    type = "stats";
+    data = req.body;
+    api_key = req.headers["x-api-key"];
 
-    if (!url_params.api_key) {
-      console.log(`v_nodes request without authorization.`);
-      resp_object = {
-        status: "401",
-        result: "401 Unauthorized: Authorization key not provided.",
-      };
-      res.send(resp_object);
+    if (!api_key || api_key === "") {
+      console.log(`Create request without authorization.`);
+      res.status(401).json({
+        success: false,
+        msg: "Authorization key not provided.",
+      });
       return;
     }
 
-    type = "stats";
-    api_key = url_params.api_key;
+    apiSpamProtection = await queryTypes.apiSpamProtection();
 
-    const apiSpamProtection = await queryTypes.apiSpamProtection();
     permission = await apiSpamProtection
       .getData(type, api_key)
       .then(async ({ permission }) => {
@@ -42,28 +40,25 @@ router.get("/", async function (req, res) {
       })
       .catch((error) => console.log(`Error : ${error}`));
 
-    if (permission == `no_user`) {
-      console.log(`No user found for api key ${api_key}`);
-      resp_object = {
-        status: "401",
-        result: "401 Unauthorized: Unauthorized key provided.",
-      };
-      res.send(resp_object);
+    if (permission == `no_app`) {
+      console.log(`No app found for api key ${api_key}`);
+      res.status(401).json({
+        success: false,
+        msg: "Unauthorized key provided.",
+      });
       return;
     }
 
     if (permission == `block`) {
       console.log(`Request frequency limit hit from ${api_key}`);
-      resp_object = {
-        status: "429",
-        result:
-          "429 Too Many Requests: The rate limit for this api key has been reached. Please upgrade your key to increase your limit.",
-      };
-      res.send(resp_object);
+      res.status(429).json({
+        success: false,
+        msg: "The rate limit for this api key has been reached. Please upgrade your key to increase your limit.",
+      });
       return;
     }
 
-    limit = url_params.limit;
+    limit = data.limit;
     if (!limit) {
       limit = 1000;
     }
@@ -72,7 +67,7 @@ router.get("/", async function (req, res) {
       limit = 2000;
     }
 
-    timeframe = url_params.timeFrame;
+    timeframe = data.timeFrame;
     query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,nodeStake, nodeAsk, cumulativePayouts ,estimatedEarnings, pubsCommited, pubsCommited1stEpochOnly FROM v_nodes_stats_last1h`;
     if (timeframe == "hourly") {
       query = `SELECT nodeId,networkId,tokenName,TokenSymbol,nodeGroup,nodeStake, nodeAsk, cumulativePayouts ,estimatedEarnings, pubsCommited, pubsCommited1stEpochOnly FROM v_nodes_stats_last1h`;
@@ -90,9 +85,9 @@ router.get("/", async function (req, res) {
     conditions = [];
     params = [];
 
-    if (url_params.nodeId) {
+    if (data.nodeId) {
       conditions.push(`nodeId = ?`);
-      params.push(url_params.nodeId);
+      params.push(data.nodeId);
     }
 
     whereClause =
@@ -102,29 +97,28 @@ router.get("/", async function (req, res) {
     v_nodes_stats_last = [];
     await otp_connection.query(sqlQuery, params, function (error, row) {
       if (error) {
-        throw error;
+        res.status(504).json({
+          success: false,
+          msg: "Error occured while querying for the data.",
+        });
+        return;
       } else {
         setValue(row);
       }
     });
 
     function setValue(value) {
-      resp_object = {
-        status: "200",
-        result: value,
-      };
-      res.json(resp_object);
+      res.status(200).json({
+        success: true,
+        data: value,
+      });
     }
   } catch (e) {
     console.log(e);
-    resp_object = {
-      status: "500",
-      result:
-        "500 Internal Server Error: Oops, something went wrong! Please try again later.",
-      error: e,
-    };
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.json(resp_object);
+    res.status(500).json({
+      success: false,
+      msg: `Oops, something went wrong! Please try again later.`,
+    });
   }
 });
 
