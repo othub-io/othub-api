@@ -330,7 +330,7 @@ router.post("/", async function (req, res) {
         data.network,
         app[0].app_name,
         txn_description,
-        JSON.stringify(receiver),
+        JSON.stringify(data.asset),
         dkg_create_result.UAL,
         keywords,
         dkg_create_result.publicAssertionId,

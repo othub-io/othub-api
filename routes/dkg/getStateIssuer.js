@@ -53,7 +53,7 @@ const mainnet_node_options = {
 const testnet_dkg = new DKGClient(testnet_node_options);
 const mainnet_dkg = new DKGClient(mainnet_node_options);
 
-router.get("/", async function (req, res) {
+router.post("/", async function (req, res) {
   try {
     ip = req.socket.remoteAddress;
     if (process.env.SSL_KEY_PATH) {

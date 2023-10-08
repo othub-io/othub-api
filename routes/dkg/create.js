@@ -224,7 +224,7 @@ router.post("/", async function (req, res) {
         data.network,
         app[0].app_name,
         txn_description,
-        data.txn_data,
+        JSON.stringify(data.asset),
         null,
         keywords,
         null,
