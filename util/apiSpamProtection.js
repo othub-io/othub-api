@@ -88,7 +88,6 @@ module.exports = apiSpam = async (type, api_key) => {
       console.error('Error retrieving data:', error)
     })
 
-    console.log(request_frequency)
     rate = process.env.BASIC_RATE
 
     if (app[0].access === 'Super') {
@@ -112,7 +111,28 @@ module.exports = apiSpam = async (type, api_key) => {
         }
     }
 
-    console.log(`Vistor:${api_key} is allow to ${type}.`)
+    if(type === 'Create-n-Transfer'){
+      query = 'SELECT * FROM request_history WHERE request = ? AND api_key = ? AND UNIX_TIMESTAMP(NOW()) - date_stamp <= 60;'
+      params = [type,api_key]
+      request_frequency = await getOTHUBData(query, params)
+        .then(results => {
+          //console.log('Query results:', results);
+          return results
+          // Use the results in your variable or perform further operations
+        })
+        .catch(error => {
+          console.error('Error retrieving data:', error)
+        })
+
+        if (1 <= Number(request_frequency.length)) {
+          console.log(`Create-n-Transfer rate limit has been reached.`)
+          return {
+              permission: `block`
+          }
+      }
+    }
+
+    console.log(`Vistor:${api_key} is allowed to ${type}.`)
 
     //insert a new time stamp
     time_stamp = new Date()

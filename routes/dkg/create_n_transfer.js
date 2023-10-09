@@ -220,6 +220,61 @@ router.post("/", async function (req, res) {
       dkg_txn_data["@context"] = "https://schema.org";
     }
 
+    query = `select * from txn_header where request = 'Create-n-Transfer' AND approver != ? order by created_at desc LIMIT 1`;
+    params = [process.env.PUBLIC_KEY];
+    prev_cnt = await getOTHUBData(query, params)
+      .then((results) => {
+        //console.log('Query results:', results);
+        return results;
+        // Use the results in your variable or perform further operations
+      })
+      .catch((error) => {
+        console.error("Error retrieving data:", error);
+      });
+
+    wallet_array = JSON.parse(process.env.WALLET_ARRAY);
+
+    index = 0;
+    if (prev_cnt !== '[]') {
+      index = wallet_array.findIndex(
+        (obj) => obj.public_key == prev_cnt[0].approver
+      ) + 1
+    }
+
+    if (index == 9 || index == -1) {
+      index = 0;
+    }
+
+    console.log(
+      `Using ${wallet_array[index].name} wallet ${wallet_array[index].public_key} for next asset creation.`
+    );
+
+    query = `INSERT INTO txn_header (txn_id, progress, approver, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+    await othubdb_connection.query(
+      query,
+      [
+        "PENDING",
+        wallet_array[index].public_key,
+        api_key,
+        type,
+        data.network,
+        app[0].app_name,
+        txn_description,
+        JSON.stringify(data.asset),
+        null,
+        keywords,
+        null,
+        null,
+        null,
+        trac_fee,
+        epochs,
+        data.receiver,
+      ],
+      function (error, results, fields) {
+        if (error) throw error;
+      }
+    );
+
     if (data.network === "otp::testnet") {
       dkg_create_result = await testnet_dkg.asset
         .create(
@@ -234,8 +289,8 @@ router.post("/", async function (req, res) {
             keywords: keywords,
             blockchain: {
               name: data.network,
-              publicKey: process.env.PUBLIC_KEY,
-              privateKey: process.env.PRIVATE_KEY,
+              publicKey: wallet_array[index].public_key,
+              privateKey: wallet_array[index].private_key,
             },
           }
         )
@@ -270,8 +325,8 @@ router.post("/", async function (req, res) {
             keywords: keywords,
             blockchain: {
               name: data.network,
-              publicKey: process.env.PUBLIC_KEY,
-              privateKey: process.env.PRIVATE_KEY,
+              publicKey: wallet_array[index].public_key,
+              privateKey: wallet_array[index].private_key,
             },
           })
           .then((result) => {
@@ -294,10 +349,7 @@ router.post("/", async function (req, res) {
       }
     }
 
-    receiver = {
-      receiver: data.receiver,
-    };
-
+    console.log("Transfered UAL: " + dkg_create_result.UAL);
     //   if (url_params.network === "otp::mainnet") {
     //     dkg_get_result = await mainnet_dkg.asset
     //       .getOwner(url_params.ual, {
@@ -319,26 +371,16 @@ router.post("/", async function (req, res) {
     //       });
     //   }
 
-    query = `INSERT INTO txn_header (txn_id, progress, approver, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+    query = `UPDATE txn_header SET progress = ?, ual = ?, state = ? WHERE api_key = ? and receiver = ? and approver = ?`;
     await othubdb_connection.query(
       query,
       [
         "COMPLETE",
-        process.env.PUBLIC_KEY,
-        api_key,
-        type,
-        data.network,
-        app[0].app_name,
-        txn_description,
-        JSON.stringify(data.asset),
         dkg_create_result.UAL,
-        keywords,
         dkg_create_result.publicAssertionId,
-        null,
-        null,
-        trac_fee,
-        epochs,
+        api_key,
         data.receiver,
+        wallet_array[index].public_key
       ],
       function (error, results, fields) {
         if (error) throw error;
