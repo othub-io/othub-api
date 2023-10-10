@@ -23,7 +23,7 @@ const update = async (api_key) => {
   };
 
   const response = await axios
-    .post(`http://localhost:5575/dkg/update`, data, config)
+    .post(`https://api.othub.io/dkg/update`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;

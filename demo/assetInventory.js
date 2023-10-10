@@ -14,7 +14,7 @@ const assetInventory = async (api_key) => {
   };
 
   response = await axios.post(
-    `http://localhost:5575/otp_testnet/assetInventory`,
+    `https://api.othub.io/otp_testnet/assetInventory`,
     data,
     config
   );

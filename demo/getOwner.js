@@ -15,7 +15,7 @@ const getOwner = async (api_key) => {
   };
 
   const response = await axios
-    .post(`http://localhost:5575/dkg/getOwner`, data, config)
+    .post(`https://api.othub.io/dkg/getOwner`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;
