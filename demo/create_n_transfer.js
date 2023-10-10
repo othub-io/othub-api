@@ -32,7 +32,7 @@ const create_n_transfer = async (api_key) => {
       console.error(error);
     });
   console.log(`----------CREATE-N-TRANSFER------------`);
-  console.log(response.data);
+  console.log(response);
 
 };
 
