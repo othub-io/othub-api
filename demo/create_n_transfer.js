@@ -22,7 +22,7 @@ const create_n_transfer = async (api_key) => {
   };
 
   const response = await axios
-    .post(`http://localhost:5575/dkg/create_n_transfer`, data, config)
+    .post(`https://api.othub.io/dkg/create_n_transfer`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;
@@ -32,7 +32,7 @@ const create_n_transfer = async (api_key) => {
       console.error(error);
     });
   console.log(`----------CREATE-N-TRANSFER------------`);
-  console.log(response);
+  console.log(response.data);
 
 };
 

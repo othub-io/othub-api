@@ -24,7 +24,7 @@ const transfer = async (api_key) => {
   };
 
   const response = await axios
-    .post(`http://localhost:5575/dkg/transfer`, data, config)
+    .post(`https://api.othub.io/dkg/transfer`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;

@@ -14,7 +14,7 @@ const getHistory = async (api_key) => {
   };
 
   response = await axios.post(
-    `http://localhost:5575/otp_testnet/assetHistory`,
+    `https://api.othub.io/otp_testnet/assetHistory`,
     data,
     config
   );

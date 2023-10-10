@@ -21,7 +21,7 @@ const getBidSuggestion = async (api_key) => {
   };
 
   const response = await axios
-    .post(`http://localhost:5575/dkg/getBidSuggestion`, data, config)
+    .post(`https://api.othub.io/dkg/getBidSuggestion`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;

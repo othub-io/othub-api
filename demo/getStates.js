@@ -15,7 +15,7 @@ const getStates = async (api_key) => {
   };
 
   const response = await axios
-    .post(`http://localhost:5575/dkg/getStates`, data, config)
+    .post(`https://api.othub.io/dkg/getStates`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;
