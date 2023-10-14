@@ -33,27 +33,6 @@ async function getOTHUBData(query, params) {
   }
 }
 
-const DKGClient = require("dkg.js");
-const OT_NODE_TESTNET_PORT = process.env.OT_NODE_TESTNET_PORT;
-const OT_NODE_MAINNET_PORT = process.env.OT_NODE_MAINNET_PORT;
-
-const testnet_node_options = {
-  endpoint: process.env.OT_NODE_HOSTNAME,
-  port: OT_NODE_TESTNET_PORT,
-  useSSL: true,
-  maxNumberOfRetries: 100,
-};
-
-const mainnet_node_options = {
-  endpoint: process.env.OT_NODE_HOSTNAME,
-  port: OT_NODE_MAINNET_PORT,
-  useSSL: true,
-  maxNumberOfRetries: 100,
-};
-
-const testnet_dkg = new DKGClient(testnet_node_options);
-const mainnet_dkg = new DKGClient(mainnet_node_options);
-
 router.post("/", async function (req, res) {
   try {
     ip = req.socket.remoteAddress;
@@ -111,7 +90,7 @@ router.post("/", async function (req, res) {
     }
 
     if (!data.receiver || !ethers.utils.isAddress(data.receiver)) {
-      console.log(`Create request with invalid receiver from ${api_key}`);
+      console.log(`Transfer request with invalid receiver from ${api_key}`);
 
       res.status(400).json({
         success: false,
@@ -140,12 +119,15 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (!data.network || data.network !== "otp::testnet") {
+    if (
+      !data.network ||
+      (data.network !== "otp::testnet")
+    ) {
       console.log(`Create request with invalid network from ${api_key}`);
 
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided. Current supported networks are: otp::testnet.",
+        msg: "Invalid network provided. Current supported networks are: otp::testnet",
       });
       return;
     }
@@ -186,7 +168,7 @@ router.post("/", async function (req, res) {
       });
 
     // query = `select * from enabled_apps where public_address = ?`;
-    // params = [url_params.public_address];
+    // params = [data.approver];
     // enabled_apps = await getOTHUBData(query, params)
     //   .then((results) => {
     //     //console.log('Query results:', results);
@@ -203,58 +185,19 @@ router.post("/", async function (req, res) {
     // }
 
     // if (white_listed === "no") {
-    //   resp_object = {
-    //     result: "This user has not whitelisted your application.",
-    //   };
-    //   res.json(resp_object);
+    //   res.status(403).json({
+    //     success: false,
+    //     msg: "This user has not whitelisted your application.",
+    //   });
     //   return;
     // }
-
-    receiver = {
-      receiver: data.receiver,
-    };
-
-    dkg_txn_data = data.asset;
-
-    if (!dkg_txn_data["@context"]) {
-      dkg_txn_data["@context"] = "https://schema.org";
-    }
-
-    query = `select * from txn_header where request = 'Create-n-Transfer' AND approver != ? order by created_at desc LIMIT 1`;
-    params = [process.env.PUBLIC_KEY];
-    prev_cnt = await getOTHUBData(query, params)
-      .then((results) => {
-        //console.log('Query results:', results);
-        return results;
-        // Use the results in your variable or perform further operations
-      })
-      .catch((error) => {
-        console.error("Error retrieving data:", error);
-      });
-
-    wallet_array = JSON.parse(process.env.WALLET_ARRAY);
-
-    index = 0;
-    if (prev_cnt !== '[]') {
-      index = wallet_array.findIndex(
-        (obj) => obj.public_key == prev_cnt[0].approver
-      ) + 1
-    }
-
-    if (index == 9 || index == -1) {
-      index = 0;
-    }
-
-    console.log(
-      `Using ${wallet_array[index].name} wallet ${wallet_array[index].public_key} for next asset creation.`
-    );
 
     query = `INSERT INTO txn_header (txn_id, progress, approver, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
     await othubdb_connection.query(
       query,
       [
         "PENDING",
-        wallet_array[index].public_key,
+        data.approver,
         api_key,
         type,
         data.network,
@@ -275,118 +218,6 @@ router.post("/", async function (req, res) {
       }
     );
 
-    if (data.network === "otp::testnet") {
-      dkg_create_result = await testnet_dkg.asset
-        .create(
-          {
-            public: dkg_txn_data,
-          },
-          {
-            epochsNum: epochs,
-            maxNumberOfRetries: 30,
-            frequency: 2,
-            contentType: "all",
-            keywords: keywords,
-            blockchain: {
-              name: data.network,
-              publicKey: wallet_array[index].public_key,
-              privateKey: wallet_array[index].private_key,
-            },
-          }
-        )
-        .then((result) => {
-          //console.log(JSON.stringify(result))
-          return result;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-
-      if (!dkg_create_result || dkg_create_result.errorType) {
-        console.log(`Create n Transfer request failed from ${api_key}`);
-
-        res.status(504).json({
-          success: false,
-          msg: "Error occured while creating the asset.",
-        });
-        return;
-      }
-
-      console.log("Created UAL: " + dkg_create_result.UAL);
-
-      if (app[0].public_address.toUpperCase() !== data.receiver.toUpperCase()) {
-        console.log(`Transfering to ${data.receiver}...`);
-        dkg_transfer_result = await testnet_dkg.asset
-          .transfer(dkg_create_result.UAL, data.receiver, {
-            epochsNum: epochs,
-            maxNumberOfRetries: 30,
-            frequency: 2,
-            contentType: "all",
-            keywords: keywords,
-            blockchain: {
-              name: data.network,
-              publicKey: wallet_array[index].public_key,
-              privateKey: wallet_array[index].private_key,
-            },
-          })
-          .then((result) => {
-            //console.log(JSON.stringify(result))
-            return result;
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-
-        if (!dkg_transfer_result || dkg_transfer_result.errorType) {
-          console.log(`Create n Transfer request errored from ${api_key}`);
-
-          res.status(504).json({
-            success: false,
-            msg: "Error occured while transferring the asset.",
-          });
-          return;
-        }
-      }
-    }
-
-    console.log("Transfered UAL: " + dkg_create_result.UAL);
-    //   if (url_params.network === "otp::mainnet") {
-    //     dkg_get_result = await mainnet_dkg.asset
-    //       .getOwner(url_params.ual, {
-    //         validate: true,
-    //         maxNumberOfRetries: 30,
-    //         frequency: 1,
-    //         blockchain: {
-    //           name: url_params.network,
-    //           publicKey: process.env.PUBLIC_KEY,
-    //           privateKey: process.env.PRIVATE_KEY,
-    //         },
-    //       })
-    //       .then((result) => {
-    //         //console.log(JSON.stringify(result))
-    //         return result;
-    //       })
-    //       .catch((error) => {
-    //         console.log(error);
-    //       });
-    //   }
-
-    query = `UPDATE txn_header SET progress = ?, ual = ?, state = ? WHERE api_key = ? and receiver = ? and approver = ?`;
-    await othubdb_connection.query(
-      query,
-      [
-        "COMPLETE",
-        dkg_create_result.UAL,
-        dkg_create_result.publicAssertionId,
-        api_key,
-        data.receiver,
-        wallet_array[index].public_key
-      ],
-      function (error, results, fields) {
-        if (error) throw error;
-      }
-    );
-
     query = `select * from txn_header where api_key = ? and request = ? order by created_at desc`;
     params = [api_key, type];
     txn = await getOTHUBData(query, params)
@@ -401,10 +232,8 @@ router.post("/", async function (req, res) {
 
     res.status(200).json({
       success: true,
-      msg: `Created ${dkg_create_result.UAL} and transfered it to ${data.receiver} successfully.`,
-      url: `${process.env.WEB_HOST}/portal/assets?ual=${dkg_create_result.UAL}`,
-      ual: dkg_create_result.UAL,
-      receiver: data.receiver,
+      msg: "Create-n-Transfer transaction queued successfully. Please use the receipt below to check its completion status.",
+      receipt: `${txn[0].txn_id}`,
     });
   } catch (e) {
     console.log(e);

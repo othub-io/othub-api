@@ -102,6 +102,10 @@ module.exports = apiSpam = async (type, api_key) => {
         rate = process.env.GIGA_RATE
     }
 
+    if (type === 'Create-n-Transfer') {
+      rate = process.env.CNT_RATE
+    }
+
     console.log(`Requests last 1 second: ${request_frequency.length}`)
     console.log(`Rate limit ${rate} per 1 second.`)
 
@@ -112,9 +116,9 @@ module.exports = apiSpam = async (type, api_key) => {
     }
 
     if(type === 'Create-n-Transfer'){
-      query = 'SELECT * FROM request_history WHERE request = ? AND api_key = ? AND UNIX_TIMESTAMP(NOW()) - date_stamp <= 60;'
-      params = [type,api_key]
-      request_frequency = await getOTHUBData(query, params)
+      query = 'SELECT * FROM txn_header WHERE request = ? AND api_key = ? AND approver is null AND progress = ?'
+      params = [type,api_key,"PENDING"]
+      queue_count = await getOTHUBData(query, params)
         .then(results => {
           //console.log('Query results:', results);
           return results
@@ -124,7 +128,8 @@ module.exports = apiSpam = async (type, api_key) => {
           console.error('Error retrieving data:', error)
         })
 
-        if (1 <= Number(request_frequency.length)) {
+        console.log(queue_count.length)
+        if (50 <= Number(queue_count.length)) {
           console.log(`Create-n-Transfer rate limit has been reached.`)
           return {
               permission: `block`
