@@ -218,11 +218,7 @@ router.post("/", async function (req, res) {
       });
       return;
     }
-
-    receiver = {
-      receiver: data.receiver,
-    };
-
+    
     epochs = data.epochs;
     if (!data.epochs || data.epochs === "") {
       epochs = 5;

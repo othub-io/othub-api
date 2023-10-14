@@ -32,6 +32,7 @@ const createRouter_otp = require('./routes/dkg/create')
 const queryRouter_otp = require('./routes/dkg/query')
 const transferRouter_otp = require('./routes/dkg/transfer')
 const create_n_transferRouter_otp = require('./routes/dkg/create_n_transfer')
+const checkTransaction_otp = require('./routes/dkg/checkTransaction')
 const updateRouter_otp = require('./routes/dkg/update')
 
 //otp
@@ -66,6 +67,7 @@ app.use('/dkg/update', updateRouter_otp)
 app.use('/dkg/query', queryRouter_otp)
 app.use('/dkg/transfer', transferRouter_otp)
 app.use('/dkg/create_n_transfer', create_n_transferRouter_otp)
+app.use('/dkg/checkTransaction', checkTransaction_otp)
 
 //otp
 app.use('/otp/v_nodes_stats', v_nodes_statsRouter_otp)
