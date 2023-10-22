@@ -90,7 +90,7 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    sqlQuery = "select * from txn_header where txn_id = ? and requst = 'Create-n-Transfer'";
+    sqlQuery = "select * from txn_header where txn_id = ? and request = 'Create-n-Transfer'";
     params = [data.receipt];
     transaction = await getOTHubData(sqlQuery, params)
         .then((results) => {
