@@ -203,7 +203,7 @@ router.post("/", async function (req, res) {
         data.network,
         app[0].app_name,
         txn_description,
-        JSON.stringify(data.asset),
+        typeof data.asset === 'string' || data.asset instanceof String ? (data.asset) : (JSON.stringify(data.asset)),
         null,
         keywords,
         null,

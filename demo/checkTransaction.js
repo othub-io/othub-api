@@ -10,11 +10,11 @@ const getBidSuggestion = async (api_key) => {
   };
 
   const data = {
-    receipt: "3f65ab68-6a49-11ee-9b45-74563c6f5022"
+    receipt: "586062ab-6a4f-11ee-b885-960002220f0d"
   };
 
   const response = await axios
-    .post(`http://localhost:5575/dkg/checkTransaction`, data, config)
+    .post(`https://api.othub.io/dkg/checkTransaction`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;
