@@ -90,7 +90,7 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    sqlQuery = "select * from txn_header where txn_id = ?";
+    sqlQuery = "select * from txn_header where txn_id = ? and requst = 'Create-n-Transfer'";
     params = [data.receipt];
     transaction = await getOTHubData(sqlQuery, params)
         .then((results) => {
@@ -101,6 +101,13 @@ router.post("/", async function (req, res) {
         .catch((error) => {
             console.error("Error retrieving data:", error);
         });
+
+    if(Number(transaction.length) === 0){
+      res.status(200).json({
+        success: false,
+        status: null
+      });
+    }
 
     let ual
     if(transaction[0].progress === 'COMPLETE'){
