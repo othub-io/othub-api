@@ -122,7 +122,7 @@ router.post("/", async function (req, res) {
     let othub
     let explorer
     if(ual){
-      othub = `${process.env.WEB_HOST}/portal/assets?ual=${ual}`
+      othub = `${process.env.WEB_HOST}/assets?ual=${ual}`
       explorer = `${explorer_url}/explore?ual=${ual}`
     }
 
