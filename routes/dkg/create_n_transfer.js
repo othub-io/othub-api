@@ -89,7 +89,7 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (!data.receiver || !ethers.utils.isAddress(data.receiver)) {
+    if (!data.receiver || !ethers.utils.isAddress(data.receiver) || data.receiver === '0x0000000000000000000000000000000000000000') {
       console.log(`Transfer request with invalid receiver from ${api_key}`);
 
       res.status(400).json({
