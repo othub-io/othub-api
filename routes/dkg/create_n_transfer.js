@@ -33,6 +33,15 @@ async function getOTHUBData(query, params) {
   }
 }
 
+function isJsonString(str) {
+  try {
+    JSON.parse(str);
+    return "true";
+  } catch (e) {
+    return "false";
+  }
+}
+
 router.post("/", async function (req, res) {
   try {
     ip = req.socket.remoteAddress;
@@ -99,18 +108,10 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    function isJsonString(str) {
-      try {
-        JSON.parse(str);
-      } catch (e) {
-        console.log(e);
-        return "false";
-      }
-      return "true";
-    }
-
-    valid_json = await isJsonString(JSON.stringify(data.asset));
-    if (valid_json == "false") {
+    console.log(data.asset)
+    const valid_json = await isJsonString(typeof data.asset === 'string' || data.asset instanceof String ? (data.asset) : (JSON.stringify(data.asset)));
+    console.log(valid_json);
+    if (valid_json === "false") {
       console.log(`Create request with bad data from ${api_key}`);
       res.status(400).json({
         success: false,
