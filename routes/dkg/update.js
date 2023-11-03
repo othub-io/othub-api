@@ -54,6 +54,15 @@ const mainnet_node_options = {
 const testnet_dkg = new DKGClient(testnet_node_options);
 const mainnet_dkg = new DKGClient(mainnet_node_options);
 
+function isJsonString(str) {
+  try {
+    JSON.parse(str);
+    return "true";
+  } catch (e) {
+    return "false";
+  }
+}
+
 router.post("/", async function (req, res) {
   try {
     ip = req.socket.remoteAddress;
@@ -110,18 +119,8 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    function isJsonString(str) {
-      try {
-        JSON.parse(str);
-      } catch (e) {
-        console.log(e);
-        return "false";
-      }
-      return "true";
-    }
-
-    valid_json = await isJsonString(JSON.stringify(data.asset));
-    if (valid_json == "false") {
+    const valid_json = await isJsonString(data.asset);
+    if (valid_json === "false") {
       console.log(`Create request with bad data from ${api_key}`);
       res.status(400).json({
         success: false,

@@ -15,9 +15,9 @@ const create_n_transfer = async (api_key) => {
     receiver: '0x0EFA0c78aA0E5CB851E909614c22C98E68dd882d',
     asset: {
       "@type": "Car",
-      Make: "Toyota",
-      Model: "MR2",
-      Year: "2003",
+      "Make": "Toyota",
+      "Model": "MR2",
+      "Year": "2003"
     }
   };
 
@@ -32,7 +32,7 @@ const create_n_transfer = async (api_key) => {
       console.error(error);
     });
   console.log(`----------CREATE-N-TRANSFER------------`);
-  console.log(response.data);
+  console.log(response);
 
 };
 
