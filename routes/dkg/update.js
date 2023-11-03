@@ -119,7 +119,7 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    const valid_json = await isJsonString(data.asset);
+    const valid_json = await isJsonString(typeof data.asset === 'string' || data.asset instanceof String ? (data.asset) : (JSON.stringify(data.asset)));
     if (valid_json === "false") {
       console.log(`Create request with bad data from ${api_key}`);
       res.status(400).json({
