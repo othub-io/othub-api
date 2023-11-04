@@ -32,6 +32,10 @@ async function getOTHubData (query, params) {
   }
 }
 
+function isValidGUID(guid) {
+  const guidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  return guidRegex.test(guid);
+}
 
 router.post("/", async function (req, res) {
   try {
@@ -42,7 +46,6 @@ router.post("/", async function (req, res) {
 
     type = "checkTransaction";
     data = req.body;
-    console.log(req.headers)
     api_key = req.headers["x-api-key"];
 
     if (!api_key || api_key === "") {
@@ -86,6 +89,14 @@ router.post("/", async function (req, res) {
       res.status(400).json({
         success: false,
         msg: "No Receipt provided.",
+      });
+      return;
+    }
+
+    if (!isValidGUID(data.receipt)) {
+      res.status(400).json({
+        success: false,
+        msg: "Invalid Receipt provided.",
       });
       return;
     }
