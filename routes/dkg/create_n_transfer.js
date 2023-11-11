@@ -120,8 +120,7 @@ router.post("/", async function (req, res) {
 
     if (
       !data.network ||
-      (data.network !== "otp::testnet") ||
-      (data.network !== "otp::mainnet")
+      (data.network !== "otp::testnet" && data.network !== "otp::mainnet")
     ) {
       console.log(`Create request with invalid network from ${api_key}`);
 
