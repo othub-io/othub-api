@@ -121,6 +121,7 @@ router.post("/", async function (req, res) {
     if (
       !data.network ||
       (data.network !== "otp::testnet")
+      (data.network !== "otp::mainnet")
     ) {
       console.log(`Create request with invalid network from ${api_key}`);
 
@@ -130,6 +131,17 @@ router.post("/", async function (req, res) {
       });
       return;
     }
+
+    if (data.network === "otp::mainnet" && api_key !== process.env.MASTER_KEY ) {
+      console.log(`Create request with invalid network from ${api_key}`);
+
+      res.status(400).json({
+        success: false,
+        msg: "Invalid network provided. Current supported networks are: otp::testnet",
+      });
+      return;
+    }
+
 
     if (!data.keywords || data.keywords === "") {
       keywords = `othub-api`;
