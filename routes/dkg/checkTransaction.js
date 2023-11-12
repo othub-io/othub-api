@@ -113,6 +113,7 @@ router.post("/", async function (req, res) {
             console.error("Error retrieving data:", error);
         });
 
+        console.log(transaction)
     if(Number(transaction.length) === 0){
       res.status(200).json({
         success: false,

@@ -10,7 +10,7 @@ const getBidSuggestion = async (api_key) => {
   };
 
   const data = {
-    receipt: "586062ab-6a4f-11ee-b885-960002220f0d"
+    receipt: "9b0706b7-8102-11ee-b885-960002220f0d"
   };
 
   const response = await axios
@@ -23,7 +23,17 @@ const getBidSuggestion = async (api_key) => {
       // Handle errors here
       console.error(error);
     });
-  console.log(`----------RECEIPT RESULT------------`);
+
+    // const response = await axios
+    // .post(`http://localhost:5575/dkg/checkTransaction`, data, config)
+    // .then((response) => {
+    //   // Handle the successful response here
+    //   return response;
+    // })
+    // .catch((error) => {
+    //   // Handle errors here
+    //   console.error(error);
+    // });
   console.log(response.data);
 
 };

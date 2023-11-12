@@ -298,30 +298,33 @@ router.post("/", async function (req, res) {
     }
 
     query = `INSERT INTO txn_header (txn_id, progress, approver, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-    await othubdb_connection.query(
-      query,
-      [
-        "PENDING",
-        data.approver,
-        api_key,
-        type,
-        data.network,
-        app[0].app_name,
-        txn_description,
-        typeof data.asset === 'string' || data.asset instanceof String ? (data.asset) : (JSON.stringify(data.asset)),
-        data.ual,
-        keywords,
-        null,
-        null,
-        null,
-        trac_fee,
-        epochs,
-        null,
-      ],
-      function (error, results, fields) {
-        if (error) throw error;
-      }
-    );
+    params = [
+      "PENDING",
+      data.approver,
+      api_key,
+      type,
+      data.network,
+      app[0].app_name,
+      txn_description,
+      typeof data.asset === 'string' || data.asset instanceof String ? (data.asset) : (JSON.stringify(data.asset)),
+      data.ual,
+      keywords,
+      null,
+      null,
+      null,
+      trac_fee,
+      epochs,
+      null,
+    ];
+    await getOTHUBData(query, params)
+      .then((results) => {
+        //console.log('Query results:', results);
+        //return results;
+        // Use the results in your variable or perform further operations
+      })
+      .catch((error) => {
+        console.error("Error retrieving data:", error);
+      });
 
     query = `select * from txn_header where api_key = ? and request = ? order by created_at desc`;
     params = [api_key, type];
