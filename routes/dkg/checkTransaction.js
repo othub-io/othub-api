@@ -122,7 +122,7 @@ router.post("/", async function (req, res) {
     }
 
     let ual
-    if(transaction[0].progress === 'COMPLETE'){
+    if(transaction[0].ual){
       ual = transaction[0].ual
     }
 
