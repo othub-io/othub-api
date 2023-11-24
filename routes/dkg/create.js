@@ -257,7 +257,7 @@ router.post("/", async function (req, res) {
       success: true,
       msg: "Create transaction queued successfully.",
       approver: data.approver,
-      url: `${process.env.WEB_HOST}/portal?txn_id=${txn[0].txn_id}`,
+      url: `${process.env.WEB_HOST}/my-othub/portal?txn_id=${txn[0].txn_id}`,
     });
   } catch (e) {
     console.log(e);
