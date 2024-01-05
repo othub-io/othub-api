@@ -10,7 +10,7 @@ const get = async (api_key) => {
   };
 
   const data = {
-    network: "otp::testnet",
+    network: "otp::20430",
     ual: 'did:dkg:otp/0x1A061136Ed9f5eD69395f18961a0a535EF4B3E5f/427145'
   };
 
