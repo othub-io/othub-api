@@ -118,25 +118,12 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (
-      !data.network ||
-      (data.network !== "otp::testnet" && data.network !== "otp::mainnet")
-    ) {
+    if (data.network !== "gnosis::10200" || data.network !== "otp::20430" || ((data.network === "gnosis::100" || data.network === "otp::2043") && api_key !== process.env.MASTER_KEY)) {
       console.log(`Create request with invalid network from ${api_key}`);
 
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided. Current supported networks are: otp::testnet",
-      });
-      return;
-    }
-
-    if (data.network === "otp::mainnet" && api_key !== process.env.MASTER_KEY ) {
-      console.log(`Create request with invalid network from ${api_key}`);
-
-      res.status(400).json({
-        success: false,
-        msg: "Invalid network provided. Current supported networks are: otp::testnet",
+        msg: "Invalid network provided. Current supported networks are: otp::20430, gnosis::10200.",
       });
       return;
     }

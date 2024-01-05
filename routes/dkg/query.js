@@ -111,15 +111,24 @@ router.post("/", async function (req, res) {
     }
     sparquery = data.query;
 
-    if (
-      !data.network ||
-      (data.network !== "otp::testnet" && data.network !== "otp::mainnet")
-    ) {
-      console.log(`Create request with invalid network from ${api_key}`);
+    const environment =
+      data.network === "otp::20430" || data.network === "gnosis::10200"
+        ? "testnet"
+        : data.network === "otp::2043" || data.network === "gnosis::100"
+        ? "mainnet"
+        : "";
 
+    const dkg =
+      data.network === "otp::20430" || data.network === "gnosis::10200"
+        ? testnet_dkg
+        : data.network === "otp::2043" || data.network === "gnosis::100"
+        ? mainnet_dkg
+        : "";
+
+    if (dkg === "") {
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided. Current supported networks are: otp::testnet, otp::mainnet.",
+        msg: "Invalid network provided. Current supported networks are: otp::20430, otp::2043, gnosis::10200, gnosis::100.",
       });
       return;
     }
@@ -129,13 +138,7 @@ router.post("/", async function (req, res) {
       type = "SELECT";
     }
 
-    if (data.network === "otp::testnet") {
-      queryResult = await testnet_dkg.graph.query(sparquery, type);
-    }
-
-    if (data.network === "otp::mainnet") {
-      queryResult = await mainnet_dkg.graph.query(sparquery, type);
-    }
+    queryResult = await dkg.graph.query(sparquery, type, {environment: environment});
 
     data = JSON.stringify(queryResult.data);
     if (queryResult.status === "FAILED") {
