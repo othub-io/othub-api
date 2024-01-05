@@ -110,19 +110,6 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (
-      !data.network ||
-      (data.network !== "otp::testnet" && data.network !== "otp::mainnet")
-    ) {
-      console.log(`Create request with invalid network from ${api_key}`);
-
-      res.status(400).json({
-        success: false,
-        msg: "Invalid network provided. Current supported networks are: otp::testnet, otp::mainnet.",
-      });
-      return;
-    }
-
     function isJsonString(str) {
       try {
         JSON.parse(str);
@@ -166,33 +153,40 @@ router.post("/", async function (req, res) {
       public: JSON.parse(txn_data),
     };
 
-    if (data.network === "otp::testnet") {
+    const environment =
+      data.network === "otp::20430" || data.network === "gnosis::10200"
+        ? "testnet"
+        : data.network === "otp::2043" || data.network === "gnosis::100"
+        ? "mainnet"
+        : "";
+
+    const dkg =
+      data.network === "otp::20430" || data.network === "gnosis::10200"
+        ? testnet_dkg
+        : data.network === "otp::2043" || data.network === "gnosis::100"
+        ? mainnet_dkg
+        : "";
+
+    if (dkg === "") {
+      res.status(400).json({
+        success: false,
+        msg: "Invalid network provided. Current supported networks are: otp::20430, otp::2043, gnosis::10200, gnosis::100.",
+      });
+      return;
+    }
+
       const publicAssertionId =
-        await testnet_dkg.assertion.getPublicAssertionId(dkg_data);
-      const publicAssertionSize = await testnet_dkg.assertion.getSizeInBytes(
+        await dkg.assertion.getPublicAssertionId(dkg_data);
+      const publicAssertionSize = await dkg.assertion.getSizeInBytes(
         dkg_data
       );
 
-      dkg_bid_result = await testnet_dkg.network.getBidSuggestion(
+      dkg_bid_result = await dkg.network.getBidSuggestion(
         publicAssertionId,
         publicAssertionSize,
-        { epochsNum: epochs }
+        { epochsNum: epochs,
+          environment: environment }
       );
-    }
-
-    if (data.network === "otp::mainnet") {
-      const publicAssertionId =
-        await testnet_dkg.assertion.getPublicAssertionId(dkg_data);
-      const publicAssertionSize = await testnet_dkg.assertion.getSizeInBytes(
-        dkg_data
-      );
-
-      dkg_bid_result = await mainnet_dkg.network.getBidSuggestion(
-        publicAssertionId,
-        publicAssertionSize,
-        { epochsNum: epochs }
-      );
-    }
 
     if (!dkg_bid_result || dkg_bid_result.errorType) {
       console.log(`getBidSuggestion request failed from ${api_key}`);

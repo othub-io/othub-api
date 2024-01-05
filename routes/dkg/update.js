@@ -139,22 +139,31 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (
-      !data.network ||
-      (data.network !== "otp::testnet" && data.network !== "otp::mainnet")
-    ) {
-      console.log(`Create request with invalid network from ${api_key}`);
+    const environment =
+      data.network === "otp::20430" || data.network === "gnosis::10200"
+        ? "testnet"
+        : data.network === "otp::2043" || data.network === "gnosis::100"
+        ? "mainnet"
+        : "";
 
+    const dkg =
+      data.network === "otp::20430" || data.network === "gnosis::10200"
+        ? testnet_dkg
+        : data.network === "otp::2043" || data.network === "gnosis::100"
+        ? mainnet_dkg
+        : "";
+
+    if (dkg === "") {
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided. Current supported networks are: otp::testnet, otp::mainnet.",
+        msg: "Invalid network provided. Current supported networks are: otp::20430, otp::2043, gnosis::10200, gnosis::100.",
       });
       return;
     }
-
-    if (data.network === "otp::testnet") {
-      dkg_get_result = await testnet_dkg.asset
+ 
+      dkg_get_result = await dkg.asset
         .getOwner(data.ual, {
+          environment: environment,
           validate: true,
           maxNumberOfRetries: 30,
           frequency: 1,
@@ -171,29 +180,7 @@ router.post("/", async function (req, res) {
         .catch((error) => {
           console.log(error);
         });
-    }
-
-    if (data.network === "otp::mainnet") {
-      dkg_get_result = await mainnet_dkg.asset
-        .getOwner(data.ual, {
-          validate: true,
-          maxNumberOfRetries: 30,
-          frequency: 1,
-          blockchain: {
-            name: data.network,
-            publicKey: process.env.PUBLIC_KEY,
-            privateKey: process.env.PRIVATE_KEY,
-          },
-        })
-        .then((result) => {
-          //console.log(JSON.stringify(result))
-          return result;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
-
+    
     if (!dkg_get_result || dkg_get_result.errorType) {
       console.log(`getOwner request failed from ${api_key}`);
       res.status(504).json({
@@ -342,7 +329,7 @@ router.post("/", async function (req, res) {
       success: true,
       msg: "Update transaction queued successfully.",
       approver: data.approver,
-      url: `${process.env.WEB_HOST}/portal?txn_id=${txn[0].txn_id}`,
+      url: `${process.env.WEB_HOST}/my-othub/portal?txn_id=${txn[0].txn_id}`,
     });
   } catch (e) {
     console.log(e);
