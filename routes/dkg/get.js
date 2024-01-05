@@ -129,23 +129,23 @@ router.post("/", async function (req, res) {
     }
 
     const environment =
-      data.network === "otp::20430" || data.network === "gnosis::10200"
+      data.network === "otp:20430" || data.network === "gnosis:10200"
         ? "testnet"
-        : data.network === "otp::2043" || data.network === "gnosis::100"
+        : data.network === "otp:2043" || data.network === "gnosis:100"
         ? "mainnet"
         : "";
 
     const dkg =
-      data.network === "otp::20430" || data.network === "gnosis::10200"
+      data.network === "otp:20430" || data.network === "gnosis:10200"
         ? testnet_dkg
-        : data.network === "otp::2043" || data.network === "gnosis::100"
+        : data.network === "otp:2043" || data.network === "gnosis:100"
         ? mainnet_dkg
         : "";
 
     if (dkg === "") {
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided. Current supported networks are: otp::20430, otp::2043, gnosis::10200, gnosis::100.",
+        msg: "Invalid network provided. Current supported networks are: otp:20430, otp:2043, gnosis:10200, gnosis:100.",
       });
       return;
     }

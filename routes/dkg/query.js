@@ -112,35 +112,35 @@ router.post("/", async function (req, res) {
     sparquery = data.query;
 
     const hubContract =
-      data.network === "otp::20430" 
+      data.network === "otp:20430" 
         ? "0xBbfF7Ea6b2Addc1f38A0798329e12C08f03750A6" :
-      data.network === "gnosis::10200"
+      data.network === "gnosis:10200"
         ? "0xC06210312C9217A0EdF67453618F5eB96668679A" :
-      data.network === "otp::2043" 
+      data.network === "otp:2043" 
         ? "0x5fA7916c48Fe6D5F1738d12Ad234b78c90B4cAdA" : 
-      data.network === "gnosis::100"
+      data.network === "gnosis:100"
         ? "0xbEF14fc04F870c2dD65c13Df4faB6ba01A9c746b"
         : "";
 
         
     const environment =
-      data.network === "otp::20430" || data.network === "gnosis::10200"
+      data.network === "otp:20430" || data.network === "gnosis:10200"
         ? "testnet"
-        : data.network === "otp::2043" || data.network === "gnosis::100"
+        : data.network === "otp:2043" || data.network === "gnosis:100"
         ? "mainnet"
         : "";
 
     const dkg =
-      data.network === "otp::20430" || data.network === "gnosis::10200"
+      data.network === "otp:20430" || data.network === "gnosis:10200"
         ? testnet_dkg
-        : data.network === "otp::2043" || data.network === "gnosis::100"
+        : data.network === "otp:2043" || data.network === "gnosis:100"
         ? mainnet_dkg
         : "";
 
     if (dkg === "") {
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided. Current supported networks are: otp::20430, otp::2043, gnosis::10200, gnosis::100.",
+        msg: "Invalid network provided. Current supported networks are: otp:20430, otp:2043, gnosis:10200, gnosis:100.",
       });
       return;
     }
