@@ -127,7 +127,7 @@ router.post("/", async function (req, res) {
     }
 
     let explorer_url = 'https://dkg.origintrail.io'
-    if(transaction[0].network === 'otp::testnet'){
+    if(transaction[0].network === 'otp::20430' || transaction[0].network === 'gnosis::10200'){
       explorer_url = 'https://dkg-testnet.origintrail.io'
     }
 
