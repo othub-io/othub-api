@@ -33,31 +33,19 @@ async function getOTHUBData(query, params) {
 }
 
 const DKGClient = require("dkg.js");
-const OT_NODE_TESTNET_PORT = process.env.OT_NODE_TESTNET_PORT;
-const OT_NODE_MAINNET_PORT = process.env.OT_NODE_MAINNET_PORT;
 
 const testnet_node_options = {
   endpoint: process.env.OT_NODE_HOSTNAME,
-  port: OT_NODE_TESTNET_PORT,
+  port: process.env.OT_NODE_TESTNET_PORT,
   useSSL: true,
-  maxNumberOfRetries: 100,
-  blockchain: {
-    name: "otp:testnet",
-    publicKey: process.env.PUBLIC_KEY,
-    privateKey: process.env.PRIVATE_KEY,
-  },
+  maxNumberOfRetries: 100
 };
 
 const mainnet_node_options = {
   endpoint: process.env.OT_NODE_HOSTNAME,
-  port: OT_NODE_MAINNET_PORT,
+  port: process.env.OT_NODE_MAINNET_PORT,
   useSSL: true,
-  maxNumberOfRetries: 100,
-  blockchain: {
-    name: "otp:mainnet",
-    publicKey: process.env.PUBLIC_KEY,
-    privateKey: process.env.PRIVATE_KEY,
-  },
+  maxNumberOfRetries: 100
 };
 
 const testnet_dkg = new DKGClient(testnet_node_options);
@@ -175,18 +163,24 @@ router.post("/", async function (req, res) {
       return;
     }
 
-      const publicAssertionId =
-        await dkg.assertion.getPublicAssertionId(dkg_data);
-      const publicAssertionSize = await dkg.assertion.getSizeInBytes(
-        dkg_data
-      );
+    const publicAssertionId = await dkg.assertion.getPublicAssertionId(
+      dkg_data
+    );
+    const publicAssertionSize = await dkg.assertion.getSizeInBytes(dkg_data);
 
-      dkg_bid_result = await dkg.network.getBidSuggestion(
-        publicAssertionId,
-        publicAssertionSize,
-        { epochsNum: epochs,
-          environment: environment }
-      );
+    dkg_bid_result = await dkg.network.getBidSuggestion(
+      publicAssertionId,
+      publicAssertionSize,
+      {
+        epochsNum: epochs,
+        environment: environment,
+        blockchain: {
+          name: data.network,
+          publicKey: process.env.PUBLIC_KEY,
+          privateKey: process.env.PRIVATE_KEY,
+        },
+      }
+    );
 
     if (!dkg_bid_result || dkg_bid_result.errorType) {
       console.log(`getBidSuggestion request failed from ${api_key}`);

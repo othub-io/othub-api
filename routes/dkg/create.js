@@ -33,27 +33,6 @@ async function getOTHUBData(query, params) {
   }
 }
 
-const DKGClient = require("dkg.js");
-const OT_NODE_TESTNET_PORT = process.env.OT_NODE_TESTNET_PORT;
-const OT_NODE_MAINNET_PORT = process.env.OT_NODE_MAINNET_PORT;
-
-const testnet_node_options = {
-  endpoint: process.env.OT_NODE_HOSTNAME,
-  port: OT_NODE_TESTNET_PORT,
-  useSSL: true,
-  maxNumberOfRetries: 100,
-};
-
-const mainnet_node_options = {
-  endpoint: process.env.OT_NODE_HOSTNAME,
-  port: OT_NODE_MAINNET_PORT,
-  useSSL: true,
-  maxNumberOfRetries: 100,
-};
-
-const testnet_dkg = new DKGClient(testnet_node_options);
-const mainnet_dkg = new DKGClient(mainnet_node_options);
-
 function isJsonString(str) {
   try {
     JSON.parse(str);
