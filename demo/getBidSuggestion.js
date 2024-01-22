@@ -10,18 +10,29 @@ const getBidSuggestion = async (api_key) => {
   };
 
   const data = {
-    network: "otp::testnet",
+    network: "otp:20430",
     epochs: 2,
     asset: {
       "@type": "Car",
       Make: "Toyota",
       Model: "MR2",
       Year: "2003",
-    },
+    }
   };
 
+  // const response = await axios
+  //   .post(`https://api.othub.io/dkg/getBidSuggestion`, data, config)
+  //   .then((response) => {
+  //     // Handle the successful response here
+  //     return response;
+  //   })
+  //   .catch((error) => {
+  //     // Handle errors here
+  //     console.error(error);
+  //   });
+
   const response = await axios
-    .post(`https://api.othub.io/dkg/getBidSuggestion`, data, config)
+    .post(`http://localhost:5575/dkg/getBidSuggestion`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;
@@ -30,6 +41,7 @@ const getBidSuggestion = async (api_key) => {
       // Handle errors here
       console.error(error);
     });
+
   console.log(`----------BID SUGGESTION------------`);
   console.log(response.data);
 

@@ -10,11 +10,22 @@ const getBidSuggestion = async (api_key) => {
   };
 
   const data = {
-    receipt: "9b0706b7-8102-11ee-b885-960002220f0d"
+    receipt: "d9e654f3-b8be-11ee-a10d-74563c6f5022"
   };
 
-  const response = await axios
-    .post(`https://api.othub.io/dkg/checkTransaction`, data, config)
+  // const response = await axios
+  //   .post(`https://api.othub.io/dkg/checkTransaction`, data, config)
+  //   .then((response) => {
+  //     // Handle the successful response here
+  //     return response;
+  //   })
+  //   .catch((error) => {
+  //     // Handle errors here
+  //     console.error(error);
+  //   });
+
+    const response = await axios
+    .post(`http://localhost:5575/dkg/checkTransaction`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;
@@ -23,17 +34,6 @@ const getBidSuggestion = async (api_key) => {
       // Handle errors here
       console.error(error);
     });
-
-    // const response = await axios
-    // .post(`http://localhost:5575/dkg/checkTransaction`, data, config)
-    // .then((response) => {
-    //   // Handle the successful response here
-    //   return response;
-    // })
-    // .catch((error) => {
-    //   // Handle errors here
-    //   console.error(error);
-    // });
   console.log(response.data);
 
 };
