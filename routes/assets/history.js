@@ -86,16 +86,6 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (data.network === "testnet") {
-      network = "DKG Testnet";
-      blockchain = ""
-    }
-
-    if (data.network === "mainnet") {
-      network = "DKG Mainnet";
-      blockchain = ""
-    }
-
     if(data.network === "otp:2043"){
       blockchain = "NeuroWeb Mainnet"
     }

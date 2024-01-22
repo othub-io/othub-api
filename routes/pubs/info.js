@@ -96,35 +96,44 @@ router.post("/", async function (req, res) {
       limit = 1000;
     }
 
-    if (limit > 2000) {
-      limit = 2000;
+    if (limit > 100000) {
+      limit = 100000;
     }
 
-    if (data.timeframe === "1min" || data.timeframe === "24h") {
-      timeframe = data.timeframe;
-    } else {
-      timeframe = "1min";
-    }
-
-    query = `select signer,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_pubs_activity_last${timeframe}`;
+    query = `select * from v_pubs`;
 
     conditions = [];
     params = [];
     ques = "";
 
-    if (data.signer) {
-      if (!ethers.utils.isAddress(data.signer)) {
-        console.log(`Pub activity request with invalid signer from ${api_key}`);
+    if (data.owner) {
+      if (!ethers.utils.isAddress(data.owner)) {
+        console.log(`Pub activity request with invalid owner from ${api_key}`);
 
         res.status(400).json({
           success: false,
-          msg: "Invalid signer (evm address) provided.",
+          msg: "Invalid owner (evm address) provided.",
         });
         return;
       }
 
-      conditions.push(`signer = ?`);
-      params.push(data.signer);
+      conditions.push(`owner = ?`);
+      params.push(data.owner);
+    }
+
+    if (data.publisher) {
+      if (!ethers.utils.isAddress(data.publisher)) {
+        console.log(`Pub activity request with invalid publisher from ${api_key}`);
+
+        res.status(400).json({
+          success: false,
+          msg: "Invalid publisher (evm address) provided.",
+        });
+        return;
+      }
+
+      conditions.push(`publisher = ?`);
+      params.push(data.publisher);
     }
 
     if (data.ual) {
@@ -134,7 +143,7 @@ router.post("/", async function (req, res) {
       const args = argsString.split("/");
 
       if (args.length !== 3) {
-        console.log(`getOwner request with invalid ual from ${api_key}`);
+        console.log(`Pub Info request with invalid ual from ${api_key}`);
         res.status(400).json({
           success: false,
           msg: "Invalid UAL provided.",
@@ -148,8 +157,7 @@ router.post("/", async function (req, res) {
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query =
-      query + " " + whereClause + ` order by datetime desc LIMIT ${limit}`;
+    query = query + " " + whereClause + ` order by block_ts LIMIT ${limit}`;
 
     value = await queryDB
       .getData(query, params, network, blockchain)

@@ -47,6 +47,7 @@ const nodeStatsRouter = require('./routes/nodes/stats')
 
 //pubs
 const pubActivityRouter = require('./routes/pubs/activity')
+const pubInfoRouter = require('./routes/pubs/info')
 const pubStatsRouter = require('./routes/pubs/stats')
 
 
@@ -76,6 +77,7 @@ app.use('/nodes/stats', nodeStatsRouter)
 
 //pubs
 app.use('/pubs/activity', pubActivityRouter)
+app.use('/pubs/info', pubInfoRouter)
 app.use('/pubs/stats', pubStatsRouter)
 
 // catch 404 and forward to error handler

@@ -1,6 +1,7 @@
 require("dotenv").config();
 var express = require("express");
 var router = express.Router();
+const ethers = require("ethers");
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
 
@@ -9,6 +10,7 @@ router.post("/", async function (req, res) {
     type = "stats";
     data = req.body;
     api_key = req.headers["x-api-key"];
+    let blockchain;
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -48,15 +50,15 @@ router.post("/", async function (req, res) {
 
     network = "";
     if (
-      data.network !== "testnet" ||
-      data.network !== "mainnet" ||
-      data.network !== "otp:2043" ||
-      data.network !== "otp:20430" ||
-      data.network !== "gnosis:100" ||
+      data.network !== "mainnet" &&
+      data.network !== "testnet" &&
+      data.network !== "otp:2043" &&
+      data.network !== "otp:20430" &&
+      data.network !== "gnosis:100" &&
       data.network !== "gnosis:10200"
     ) {
       console.log(
-        `Create request without valid network. Supported: testnet, mainnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
+        `Create request without valid network. Supported: mainnet, testnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
       );
       res.status(400).json({
         success: false,
@@ -65,14 +67,12 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (data.network === "testnet") {
-      network = "DKG Testnet";
-      blockchain = "";
-    }
-
     if (data.network === "mainnet") {
       network = "DKG Mainnet";
-      blockchain = "";
+    }
+
+    if (data.network === "testnet") {
+      network = "DKG Testnet";
     }
 
     if (data.network === "otp:2043") {
@@ -100,39 +100,39 @@ router.post("/", async function (req, res) {
       limit = 100000;
     }
 
-    timeframe = "_monthly";
-    if (data.timeFrame === "hourly") {
-      timeframe = "_hourly_7d";
+    timeframe = "_total";
+    if (data.timeframe === "hourly") {
+      timeframe = "_hourly";
     }
 
-    if (data.timeFrame === "daily") {
+    if (data.timeframe === "daily") {
       timeframe = "_daily";
+    }
+
+    if (data.timeframe === "monthly") {
+      timeframe = "_monthly";
+    }
+
+    if (data.timeframe === "last1h") {
+      timeframe = "_last1h";
+    }
+
+    if (data.timeframe === "last24h") {
+      timeframe = "_last24h";
+    }
+
+    if (data.timeframe === "last30d") {
+      timeframe = "_last30d";
+    }
+
+    if (data.timeframe === "last7d") {
+      timeframe = "_last7d";
     }
 
     query = `select * from v_pubs_stats${timeframe}`;
 
     conditions = [];
     params = [];
-    ques = "";
-
-    if (data.nodeId) {
-      for (const nodeid of [data.nodeId]) {
-        if (!Number(nodeid)) {
-          console.log(`Invalid node id provided by ${api_key}`);
-          res.status(400).json({
-            success: false,
-            msg: "Invalid node ID provided.",
-          });
-          return;
-        }
-        ques = ques + "?,";
-      }
-
-      ques = ques.substring(0, ques.length - 1);
-
-      conditions.push(`nodeId in (${ques})`);
-      params = [data.nodeId];
-    }
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";

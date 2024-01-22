@@ -1,6 +1,7 @@
 require("dotenv").config();
 var express = require("express");
 var router = express.Router();
+const ethers = require("ethers");
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
 
@@ -9,6 +10,7 @@ router.post("/", async function (req, res) {
     type = "stats";
     data = req.body;
     api_key = req.headers["x-api-key"];
+    let blockchain;
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -48,15 +50,15 @@ router.post("/", async function (req, res) {
 
     network = "";
     if (
-      data.network !== "testnet" ||
-      data.network !== "mainnet" ||
-      data.network !== "otp:2043" ||
-      data.network !== "otp:20430" ||
-      data.network !== "gnosis:100" ||
+      data.network !== "mainnet" &&
+      data.network !== "testnet" &&
+      data.network !== "otp:2043" &&
+      data.network !== "otp:20430" &&
+      data.network !== "gnosis:100" &&
       data.network !== "gnosis:10200"
     ) {
       console.log(
-        `Create request without valid network. Supported: testnet, mainnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
+        `Create request without valid network. Supported: mainnet, testnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
       );
       res.status(400).json({
         success: false,
@@ -65,14 +67,19 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (data.network === "testnet") {
-      network = "DKG Testnet";
-      blockchain = "";
+    grouped = "";
+    if (data.grouped === "yes") {
+      grouped = "_grouped";
     }
 
     if (data.network === "mainnet") {
       network = "DKG Mainnet";
-      blockchain = "";
+      grouped = "_grouped";
+    }
+
+    if (data.network === "testnet") {
+      network = "DKG Testnet";
+      grouped = "_grouped";
     }
 
     if (data.network === "otp:2043") {
@@ -101,17 +108,12 @@ router.post("/", async function (req, res) {
     }
 
     timeframe = "_monthly";
-    if (data.timeFrame === "hourly") {
+    if (data.timeframe === "hourly") {
       timeframe = "_hourly_7d";
     }
 
-    if (data.timeFrame === "daily") {
+    if (data.timeframe === "daily") {
       timeframe = "_daily";
-    }
-
-    grouped = "";
-    if (data.grouped === "yes") {
-      grouped = "_grouped";
     }
 
     query = `select * from v_nodes_stats${grouped}${timeframe}`;
@@ -120,8 +122,9 @@ router.post("/", async function (req, res) {
     params = [];
     ques = "";
 
-    if (data.nodeId) {
-      for (const nodeid of [data.nodeId]) {
+    if (data.nodeId && data.grouped !== "yes") {
+        nodeIds = data.nodeId.split(',').map(Number)
+      for (const nodeid of nodeIds) {
         if (!Number(nodeid)) {
           console.log(`Invalid node id provided by ${api_key}`);
           res.status(400).json({
@@ -136,12 +139,27 @@ router.post("/", async function (req, res) {
       ques = ques.substring(0, ques.length - 1);
 
       conditions.push(`nodeId in (${ques})`);
-      params = [data.nodeId];
+      params = nodeIds;
     }
+
+    if (data.owner) {
+        if (!ethers.utils.isAddress(data.owner)) {
+          console.log(`Node stats request with invalid owner from ${api_key}`);
+  
+          res.status(400).json({
+            success: false,
+            msg: "Invalid owner (evm address) provided.",
+          });
+          return;
+        }
+  
+        conditions.push(`nodeOwner = ?`);
+        params.push(data.owner);
+      }
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` order by date asc LIMIT ${limit}`;
+    query = query + " " + whereClause + ` order by date desc LIMIT ${limit}`;
 
     value = await queryDB
       .getData(query, params, network, blockchain)

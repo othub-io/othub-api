@@ -2,7 +2,7 @@ const axios = require("axios");
 require("dotenv").config();
 const api_key = process.env.DEMO_API_KEY;
 
-const getStates = async (api_key) => {
+const query = async (api_key) => {
   const config = {
     headers: {
       "X-API-Key": api_key,
@@ -10,12 +10,12 @@ const getStates = async (api_key) => {
   };
 
   const data = {
-    network: "otp:20430",
-    ual: 'did:dkg:otp/0x1A061136Ed9f5eD69395f18961a0a535EF4B3E5f/427145'
+    network: "gnosis:10200",
+    timeframe: "last24h"
   };
 
   // const response = await axios
-  //   .post(`https://api.othub.io/dkg/getStates`, data, config)
+  //   .post(`https://api.othub.io/dkg/query`, data, config)
   //   .then((response) => {
   //     // Handle the successful response here
   //     return response;
@@ -26,19 +26,19 @@ const getStates = async (api_key) => {
   //   });
 
   const response = await axios
-  .post(`http://localhost:5575/dkg/getStates`, data, config)
-  .then((response) => {
-    // Handle the successful response here
-    return response;
-  })
-  .catch((error) => {
-    // Handle errors here
-    console.error(error);
-  });
+    .post(`http://localhost:5575/pubs/stats`, data, config)
+    .then((response) => {
+      // Handle the successful response here
+      return response;
+    })
+    .catch((error) => {
+      // Handle errors here
+      console.error(error);
+    });
 
-  console.log(`----------GET STATES------------`);
+  console.log(`----------NODE ACTIVITY------------`);
   console.log(response.data);
 
 };
 
-getStates(api_key);
+query(api_key);

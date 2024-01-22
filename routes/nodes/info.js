@@ -1,14 +1,17 @@
 require("dotenv").config();
 var express = require("express");
 var router = express.Router();
+const ethers = require("ethers");
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
+const keccak256 = require("keccak256");
 
 router.post("/", async function (req, res) {
   try {
     type = "stats";
     data = req.body;
     api_key = req.headers["x-api-key"];
+    let blockchain;
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -48,15 +51,15 @@ router.post("/", async function (req, res) {
 
     network = "";
     if (
-      data.network !== "testnet" ||
-      data.network !== "mainnet" ||
-      data.network !== "otp:2043" ||
-      data.network !== "otp:20430" ||
-      data.network !== "gnosis:100" ||
+      data.network !== "mainnet" &&
+      data.network !== "testnet" &&
+      data.network !== "otp:2043" &&
+      data.network !== "otp:20430" &&
+      data.network !== "gnosis:100" &&
       data.network !== "gnosis:10200"
     ) {
       console.log(
-        `Create request without valid network. Supported: testnet, mainnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
+        `Create request without valid network. Supported: mainnet, testnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
       );
       res.status(400).json({
         success: false,
@@ -65,14 +68,12 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (data.network === "testnet") {
-      network = "DKG Testnet";
-      blockchain = ""
-    }
-
     if (data.network === "mainnet") {
       network = "DKG Mainnet";
-      blockchain = ""
+    }
+
+    if (data.network === "testnet") {
+      network = "DKG Testnet";
     }
 
     if (data.network === "otp:2043") {
@@ -107,7 +108,8 @@ router.post("/", async function (req, res) {
     ques = "";
 
     if (data.nodeId) {
-      for (const nodeid of [data.nodeId]) {
+      nodeIds = data.nodeId.split(",").map(Number);
+      for (const nodeid of nodeIds) {
         if (!Number(nodeid)) {
           console.log(`Invalid node id provided by ${api_key}`);
           res.status(400).json({
@@ -122,12 +124,35 @@ router.post("/", async function (req, res) {
       ques = ques.substring(0, ques.length - 1);
 
       conditions.push(`nodeId in (${ques})`);
-      params = [data.nodeId];
+      params = nodeIds;
+    }
+
+    if (data.owner) {
+      if (!ethers.utils.isAddress(data.owner)) {
+        console.log(`Node info request with invalid owner from ${api_key}`);
+
+        res.status(400).json({
+          success: false,
+          msg: "Invalid owner (evm address) provided.",
+        });
+        return;
+      }
+
+      keccak256hash = keccak256(data.owner).toString("hex");
+      keccak256hash = "0x" + keccak256hash;
+      like_keccak256hash = "%" + keccak256hash + "%";
+
+      conditions.push(`current_adminWallet_hashes like ?`);
+      params.push(like_keccak256hash);
     }
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` LIMIT ${limit}`;
+    query =
+      query +
+      " " +
+      whereClause +
+      ` order by createProfile_ts desc LIMIT ${limit}`;
 
     value = await queryDB
       .getData(query, params, network, blockchain)

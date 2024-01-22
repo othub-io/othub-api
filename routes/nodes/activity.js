@@ -1,6 +1,7 @@
 require("dotenv").config();
 var express = require("express");
 var router = express.Router();
+const ethers = require("ethers");
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
 
@@ -9,6 +10,7 @@ router.post("/", async function (req, res) {
     type = "stats";
     data = req.body;
     api_key = req.headers["x-api-key"];
+    let blockchain;
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -48,15 +50,15 @@ router.post("/", async function (req, res) {
 
     network = "";
     if (
-      data.network !== "testnet" ||
-      data.network !== "mainnet" ||
-      data.network !== "otp:2043" ||
-      data.network !== "otp:20430" ||
-      data.network !== "gnosis:100" ||
+      data.network !== "mainnet" &&
+      data.network !== "testnet" &&
+      data.network !== "otp:2043" &&
+      data.network !== "otp:20430" &&
+      data.network !== "gnosis:100" &&
       data.network !== "gnosis:10200"
     ) {
       console.log(
-        `Create request without valid network. Supported: testnet, mainnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
+        `Create request without valid network. Supported: mainnet, testnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
       );
       res.status(400).json({
         success: false,
@@ -65,14 +67,12 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (data.network === "testnet") {
-      network = "DKG Testnet";
-      blockchain = "";
-    }
-
     if (data.network === "mainnet") {
       network = "DKG Mainnet";
-      blockchain = "";
+    }
+
+    if (data.network === "testnet") {
+      network = "DKG Testnet";
     }
 
     if (data.network === "otp:2043") {
@@ -100,11 +100,13 @@ router.post("/", async function (req, res) {
       limit = 2000;
     }
 
-    if (data.timeFrame === "1m" || data.timeFrame === "24h") {
-      timeframe = data.timeFrame;
-    } else {
-      timeframe = "1m";
-    }
+    // if (data.timeFrame === "1min" || data.timeframe === "24h") {
+    //   timeframe = data.timeframe;
+    // } else {
+    //   timeframe = "1min";
+    // }
+
+    timeframe = "1min";
 
     query = `select tokenSymbol,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_nodes_activity_last${timeframe}`;
 
@@ -113,7 +115,8 @@ router.post("/", async function (req, res) {
     ques = "";
 
     if (data.nodeId) {
-      for (const nodeid of [data.nodeId]) {
+      nodeIds = data.nodeId.split(",").map(Number);
+      for (const nodeid of nodeIds) {
         if (!Number(nodeid)) {
           console.log(`Invalid node id provided by ${api_key}`);
           res.status(400).json({
@@ -128,7 +131,26 @@ router.post("/", async function (req, res) {
       ques = ques.substring(0, ques.length - 1);
 
       conditions.push(`nodeId in (${ques})`);
-      params = [data.nodeId];
+      params = nodeIds;
+    }
+
+    if (data.ual) {
+      const segments = data.ual.split(":");
+      const argsString =
+        segments.length === 3 ? segments[2] : segments[2] + segments[3];
+      const args = argsString.split("/");
+
+      if (args.length !== 3) {
+        console.log(`getOwner request with invalid ual from ${api_key}`);
+        res.status(400).json({
+          success: false,
+          msg: "Invalid UAL provided.",
+        });
+        return;
+      }
+
+      conditions.push(`UAL = ?`);
+      params.push(data.ual);
     }
 
     whereClause =
@@ -136,6 +158,8 @@ router.post("/", async function (req, res) {
     query =
       query + " " + whereClause + ` order by datetime desc LIMIT ${limit}`;
 
+    console.log(query);
+    console.log(params);
     value = await queryDB
       .getData(query, params, network, blockchain)
       .then((results) => {

@@ -164,6 +164,8 @@ router.post("/", async function (req, res) {
       return;
     }
 
+    console.log(dkg_get_result.owner)
+    console.log(data.approver)
     if (dkg_get_result.owner !== data.approver) {
       console.log(
         `Transfer requested for an asset the approver did not own from ${api_key}`

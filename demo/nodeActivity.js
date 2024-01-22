@@ -2,7 +2,7 @@ const axios = require("axios");
 require("dotenv").config();
 const api_key = process.env.DEMO_API_KEY;
 
-const update = async (api_key) => {
+const query = async (api_key) => {
   const config = {
     headers: {
       "X-API-Key": api_key,
@@ -10,20 +10,14 @@ const update = async (api_key) => {
   };
 
   const data = {
-    network: "otp:20430",
-    epochs: 2,
-    approver: '0x0EFA0c78aA0E5CB851E909614c22C98E68dd882d',
-    ual: 'did:dkg:otp/0x1A061136Ed9f5eD69395f18961a0a535EF4B3E5f/427068',
-    asset: {
-      "@type": "Car",
-      Make: "Toyota",
-      Model: "MR2",
-      Year: "2003",
-    },
+    network: "mainnet",
+    nodeId: "",
+    timeframe: "1min",
+    ual: "did:dkg:otp:2043/0x5cAC41237127F94c2D21dAe0b14bFeFa99880630/104710"
   };
 
   // const response = await axios
-  //   .post(`https://api.othub.io/dkg/update`, data, config)
+  //   .post(`https://api.othub.io/dkg/query`, data, config)
   //   .then((response) => {
   //     // Handle the successful response here
   //     return response;
@@ -33,8 +27,8 @@ const update = async (api_key) => {
   //     console.error(error);
   //   });
 
-    const response = await axios
-    .post(`http://localhost:5575/dkg/update`, data, config)
+  const response = await axios
+    .post(`http://localhost:5575/nodes/activity`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;
@@ -44,9 +38,9 @@ const update = async (api_key) => {
       console.error(error);
     });
 
-  console.log(`----------UPDATE------------`);
+  console.log(`----------NODE ACTIVITY------------`);
   console.log(response.data);
 
 };
 
-update(api_key);
+query(api_key);
