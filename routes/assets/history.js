@@ -1,25 +1,13 @@
 require("dotenv").config();
-var express = require("express");
-var router = express.Router();
+const express = require("express");
+const router = express.Router();
 const queryTypes = require("../../util/queryTypes");
-const mysql = require("mysql");
-const otp_connection = mysql.createConnection({
-  host: process.env.DBHOST,
-  user: process.env.DBUSER,
-  password: process.env.DBPASSWORD,
-  database: process.env.SYNC_DB,
-});
+const queryDB = queryTypes.queryDB();
 
 router.post("/", async function (req, res) {
   try {
-    ip = req.socket.remoteAddress;
-    if (process.env.SSL_KEY_PATH) {
-      ip = req.headers["x-forwarded-for"];
-    }
-
     type = "history";
     data = req.body;
-    console.log(req.headers)
     api_key = req.headers["x-api-key"];
 
     if (!api_key || api_key === "") {
@@ -81,6 +69,39 @@ router.post("/", async function (req, res) {
       return;
     }
 
+    network = "";
+    if (
+      data.network !== "otp:2043" &&
+      data.network !== "otp:20430" &&
+      data.network !== "gnosis:100" &&
+      data.network !== "gnosis:10200"
+    ) {
+      console.log(
+        `Create request without valid network. Supported: otp:20430, otp:2043, gnosis:10200, gnosis:100`
+      );
+      res.status(400).json({
+        success: false,
+        msg: "Invalid network provided.",
+      });
+      return;
+    }
+
+    if(data.network === "otp:2043"){
+      blockchain = "NeuroWeb Mainnet"
+    }
+
+    if(data.network === "otp:20430"){
+      blockchain = "NeuroWeb Testnet"
+    }
+
+    if(data.network === "gnosis:100"){
+      blockchain = "Gnosis Mainnet"
+    }
+
+    if(data.network === "gnosis:10200"){
+      blockchain = "Chiado Testnet"
+    }
+
     limit = data.limit;
     if (!limit) {
       limit = 500;
@@ -102,27 +123,23 @@ router.post("/", async function (req, res) {
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    sqlQuery = query + " " + whereClause + `LIMIT ${limit}`;
+    query = query + " " + whereClause + `LIMIT ${limit}`;
 
-    history = [];
-    await otp_connection.query(sqlQuery, params, function (error, row) {
-      if (error) {
-        res.status(504).json({
-          success: false,
-          msg: "Error occured while querying for the data.",
-        });
-        return;
-      } else {
-        setValue(row);
-      }
-    });
+    value = await queryDB
+      .getData(query, params, network, blockchain)
+      .then((results) => {
+        //console.log('Query results:', results);
+        return results;
+        // Use the results in your variable or perform further operations
+      })
+      .catch((error) => {
+        console.error("Error retrieving data:", error);
+      });
 
-    function setValue(value) {
       res.status(200).json({
         success: true,
         data: value,
       });
-    }
   } catch (e) {
     console.log(e);
     res.status(500).json({

@@ -10,12 +10,28 @@ const query = async (api_key) => {
   };
 
   const data = {
-    network: "otp::testnet",
-    query: ''
+    network: "otp:20430",
+    query: `SELECT ?subject ?predicate ?object
+    WHERE {
+      ?subject ?predicate ?object.
+      FILTER (str(?object) = "cat")
+    }
+    `
   };
 
+  // const response = await axios
+  //   .post(`https://api.othub.io/dkg/query`, data, config)
+  //   .then((response) => {
+  //     // Handle the successful response here
+  //     return response;
+  //   })
+  //   .catch((error) => {
+  //     // Handle errors here
+  //     console.error(error);
+  //   });
+
   const response = await axios
-    .post(`https://api.othub.io/dkg/query`, data, config)
+    .post(`http://localhost:5575/dkg/query`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;
@@ -24,6 +40,7 @@ const query = async (api_key) => {
       // Handle errors here
       console.error(error);
     });
+
   console.log(`----------QUERY------------`);
   console.log(response.data);
 

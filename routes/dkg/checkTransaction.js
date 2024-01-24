@@ -1,36 +1,8 @@
 require("dotenv").config();
-var express = require("express");
-var router = express.Router();
+const express = require("express");
+const router = express.Router();
 const queryTypes = require("../../util/queryTypes");
-const mysql = require("mysql");
-const othubdb_connection = mysql.createConnection({
-  host: process.env.DBHOST,
-  user: process.env.DBUSER,
-  password: process.env.DBPASSWORD,
-  database: process.env.OTHUB_DB,
-});
-
-function executeOTHubQuery (query, params) {
-  return new Promise((resolve, reject) => {
-    othubdb_connection.query(query, params, (error, results) => {
-      if (error) {
-        reject(error)
-      } else {
-        resolve(results)
-      }
-    })
-  })
-}
-
-async function getOTHubData (query, params) {
-  try {
-    const results = await executeOTHubQuery(query, params)
-    return results
-  } catch (error) {
-    console.error('Error executing query:', error)
-    throw error
-  }
-}
+const queryDB = queryTypes.queryDB();
 
 function isValidGUID(guid) {
   const guidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
@@ -39,14 +11,11 @@ function isValidGUID(guid) {
 
 router.post("/", async function (req, res) {
   try {
-    ip = req.socket.remoteAddress;
-    if (process.env.SSL_KEY_PATH) {
-      ip = req.headers["x-forwarded-for"];
-    }
-
     type = "checkTransaction";
     data = req.body;
     api_key = req.headers["x-api-key"];
+    network = ""
+    blockchain = "othub_db"
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -101,19 +70,19 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    sqlQuery = "select * from txn_header where txn_id = ? and request = 'Create-n-Transfer'";
+    query = "select * from txn_header where txn_id = ? and request = 'Create-n-Transfer'";
     params = [data.receipt];
-    transaction = await getOTHubData(sqlQuery, params)
-        .then((results) => {
-            //console.log('Query results:', results);
-            return results;
-            // Use the results in your variable or perform further operations
-        })
-        .catch((error) => {
-            console.error("Error retrieving data:", error);
-        });
+    transaction = await queryDB
+    .getData(query, params, network, blockchain)
+    .then((results) => {
+      //console.log('Query results:', results);
+      return results;
+      // Use the results in your variable or perform further operations
+    })
+    .catch((error) => {
+      console.error("Error retrieving data:", error);
+    });
 
-        console.log(transaction)
     if(Number(transaction.length) === 0){
       res.status(200).json({
         success: false,

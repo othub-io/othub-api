@@ -10,7 +10,7 @@ const create = async (api_key) => {
   };
 
   const data = {
-    network: "otp::testnet",
+    network: "otp:20430",
     epochs: 2,
     approver: '0x0EFA0c78aA0E5CB851E909614c22C98E68dd882d',
     asset: {

@@ -22,75 +22,63 @@ app.use(bodyParser.text({ limit: '200mb' }));
 app.use(cors())
 
 //dkg
-const getRouter_otp = require('./routes/dkg/get')
-const getBidSuggestionRouter_otp = require('./routes/dkg/getBidSuggestion')
-const getLatestStateIssuerRouter_otp = require('./routes/dkg/getLatestStateIssuer')
-const getOwnerRouter_otp = require('./routes/dkg/getOwner')
-const getStateIssuerRouter_otp = require('./routes/dkg/getStateIssuer')
-const getStatesRouter_otp = require('./routes/dkg/getStates')
-const createRouter_otp = require('./routes/dkg/create')
-const queryRouter_otp = require('./routes/dkg/query')
-const transferRouter_otp = require('./routes/dkg/transfer')
-const create_n_transferRouter_otp = require('./routes/dkg/create_n_transfer')
-const checkTransactionRouter_otp = require('./routes/dkg/checkTransaction')
-const updateRouter_otp = require('./routes/dkg/update')
-const isValidUALRouter_otp = require('./routes/dkg/isValidUAL')
+const getRouter = require('./routes/dkg/get')
+const getBidSuggestionRouter = require('./routes/dkg/getBidSuggestion')
+const getLatestStateIssuerRouter = require('./routes/dkg/getLatestStateIssuer')
+const getOwnerRouter = require('./routes/dkg/getOwner')
+const getStateIssuerRouter = require('./routes/dkg/getStateIssuer')
+const getStatesRouter = require('./routes/dkg/getStates')
+const createRouter= require('./routes/dkg/create')
+const queryRouter = require('./routes/dkg/query')
+const transferRouter = require('./routes/dkg/transfer')
+const create_n_transferRouter = require('./routes/dkg/create_n_transfer')
+const checkTransactionRouter = require('./routes/dkg/checkTransaction')
+const updateRouter = require('./routes/dkg/update')
+const isValidUALRouter = require('./routes/dkg/isValidUAL')
 
-//otp
-const v_nodes_statsRouter_otp = require('./routes/otp/v_nodes_stats')
-const v_nodes_stats_lastRouter_otp = require('./routes/otp/v_nodes_stats_last')
-const v_nodes_rank_lastRouter_otp = require('./routes/otp/v_nodes_rank_last')
-const v_nodesRouter_otp = require('./routes/otp/v_nodes')
-const v_pubs_statsRouter_otp = require('./routes/otp/v_pubs_stats')
-const v_pubs_stats_lastRouter_otp = require('./routes/otp/v_pubs_stats_last')
-const assetHistory_otp = require('./routes/otp/assetHistory')
-const assetInventory_otp = require('./routes/otp/assetInventory')
+//assets
+const assetHistoryRouter = require('./routes/assets/history')
+const assetInventoryRouter = require('./routes/assets/inventory')
 
-//otp_testnet
-const v_nodes_statsRouter_otp_testnet = require('./routes/otp_testnet/v_nodes_stats')
-const v_nodes_stats_lastRouter_otp_testnet = require('./routes/otp_testnet/v_nodes_stats_last')
-const v_nodes_rank_lastRouter_otp_testnet = require('./routes/otp_testnet/v_nodes_rank_last')
-const v_nodesRouter_otp_testnet = require('./routes/otp_testnet/v_nodes')
-const v_pubs_statsRouter_otp_testnet = require('./routes/otp_testnet/v_pubs_stats')
-const v_pubs_stats_lastRouter_otp_testnet = require('./routes/otp_testnet/v_pubs_stats_last')
-const assetHistory_otp_testnet = require('./routes/otp_testnet/assetHistory')
-const assetInventory_otp_testnet = require('./routes/otp_testnet/assetInventory')
+//nodes
+const nodeActivityRouter = require('./routes/nodes/activity')
+const nodeInfoRouter = require('./routes/nodes/info')
+const nodeStatsRouter = require('./routes/nodes/stats')
+
+//pubs
+const pubActivityRouter = require('./routes/pubs/activity')
+const pubInfoRouter = require('./routes/pubs/info')
+const pubStatsRouter = require('./routes/pubs/stats')
+
 
 //dkg
-app.use('/dkg/get', getRouter_otp)
-app.use('/dkg/getBidSuggestion', getBidSuggestionRouter_otp)
-app.use('/dkg/getLatestStateIssuer', getLatestStateIssuerRouter_otp)
-app.use('/dkg/getOwner', getOwnerRouter_otp)
-app.use('/dkg/getStateIssuer', getStateIssuerRouter_otp)
-app.use('/dkg/getStates', getStatesRouter_otp)
-app.use('/dkg/create', createRouter_otp)
-app.use('/dkg/update', updateRouter_otp)
-app.use('/dkg/query', queryRouter_otp)
-app.use('/dkg/transfer', transferRouter_otp)
-app.use('/dkg/create_n_transfer', create_n_transferRouter_otp)
-app.use('/dkg/checkTransaction', checkTransactionRouter_otp)
-app.use('/dkg/isValidUAL', isValidUALRouter_otp)
+app.use('/dkg/get', getRouter)
+app.use('/dkg/getBidSuggestion', getBidSuggestionRouter)
+app.use('/dkg/getLatestStateIssuer', getLatestStateIssuerRouter)
+app.use('/dkg/getOwner', getOwnerRouter)
+app.use('/dkg/getStateIssuer', getStateIssuerRouter)
+app.use('/dkg/getStates', getStatesRouter)
+app.use('/dkg/create', createRouter)
+app.use('/dkg/update', updateRouter)
+app.use('/dkg/query', queryRouter)
+app.use('/dkg/transfer', transferRouter)
+app.use('/dkg/create_n_transfer', create_n_transferRouter)
+app.use('/dkg/checkTransaction', checkTransactionRouter)
+app.use('/dkg/isValidUAL', isValidUALRouter)
 
-//otp
-app.use('/otp/v_nodes_stats', v_nodes_statsRouter_otp)
-app.use('/otp/v_nodes_stats_last', v_nodes_stats_lastRouter_otp)
-app.use('/otp/v_nodes_rank_last', v_nodes_rank_lastRouter_otp)
-app.use('/otp/v_nodes', v_nodesRouter_otp)
-app.use('/otp/v_pubs_stats', v_pubs_statsRouter_otp)
-app.use('/otp/v_pubs_stats_last', v_pubs_stats_lastRouter_otp)
-app.use('/otp/assetHistory', assetHistory_otp)
-app.use('/otp/assetInventory', assetInventory_otp)
+//assets
+app.use('/assets/history', assetHistoryRouter)
+app.use('/assets/inventory', assetInventoryRouter)
 
-//otp_testnet
-app.use('/otp_testnet/v_nodes_stats', v_nodes_statsRouter_otp_testnet)
-app.use('/otp_testnet/v_nodes_stats_last', v_nodes_stats_lastRouter_otp_testnet)
-app.use('/otp_testnet/v_nodes_rank_last', v_nodes_rank_lastRouter_otp_testnet)
-app.use('/otp_testnet/v_nodes', v_nodesRouter_otp_testnet)
-app.use('/otp_testnet/v_pubs_stats', v_pubs_statsRouter_otp_testnet)
-app.use('/otp_testnet/v_pubs_stats_last', v_pubs_stats_lastRouter_otp_testnet)
-app.use('/otp_testnet/assetHistory', assetHistory_otp_testnet)
-app.use('/otp_testnet/assetInventory', assetInventory_otp_testnet)
+//nodes
+app.use('/nodes/activity', nodeActivityRouter)
+app.use('/nodes/info', nodeInfoRouter)
+app.use('/nodes/stats', nodeStatsRouter)
 
+//pubs
+app.use('/pubs/activity', pubActivityRouter)
+app.use('/pubs/info', pubInfoRouter)
+app.use('/pubs/stats', pubStatsRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

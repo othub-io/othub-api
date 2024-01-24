@@ -11,13 +11,20 @@ const assetInventory = async (api_key) => {
 
   const data = {
     owner: "0x0EFA0c78aA0E5CB851E909614c22C98E68dd882d",
+    network: "otp:20430"
   };
 
   response = await axios.post(
-    `https://api.othub.io/otp_testnet/assetInventory`,
+    `http://localhost:5575/assets/inventory`,
     data,
     config
   );
+
+  // response = await axios.post(
+  //   `https://api.othub.io/assets/inventory`,
+  //   data,
+  //   config
+  // );
   console.log(`----------INVENTORY------------`);
   console.log(response.data);
 };

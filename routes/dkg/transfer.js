@@ -1,37 +1,9 @@
 require("dotenv").config();
+const ethers = require("ethers");
 const express = require("express");
 const router = express.Router();
-const ethers = require("ethers");
 const queryTypes = require("../../util/queryTypes");
-const mysql = require("mysql");
-const othubdb_connection = mysql.createConnection({
-  host: process.env.DBHOST,
-  user: process.env.DBUSER,
-  password: process.env.DBPASSWORD,
-  database: process.env.OTHUB_DB,
-});
-
-function executeOTHUBQuery(query, params) {
-  return new Promise((resolve, reject) => {
-    othubdb_connection.query(query, params, (error, results) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(results);
-      }
-    });
-  });
-}
-
-async function getOTHUBData(query, params) {
-  try {
-    const results = await executeOTHUBQuery(query, params);
-    return results;
-  } catch (error) {
-    console.error("Error executing query:", error);
-    throw error;
-  }
-}
+const queryDB = queryTypes.queryDB();
 
 const DKGClient = require("dkg.js");
 const OT_NODE_TESTNET_PORT = process.env.OT_NODE_TESTNET_PORT;
@@ -56,14 +28,11 @@ const mainnet_dkg = new DKGClient(mainnet_node_options);
 
 router.post("/", async function (req, res) {
   try {
-    ip = req.socket.remoteAddress;
-    if (process.env.SSL_KEY_PATH) {
-      ip = req.headers["x-forwarded-for"];
-    }
-
     type = `Transfer`;
     data = req.body;
     api_key = req.headers["x-api-key"];
+    network = ""
+    blockchain = "othub_db"
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -195,6 +164,8 @@ router.post("/", async function (req, res) {
       return;
     }
 
+    console.log(dkg_get_result.owner)
+    console.log(data.approver)
     if (dkg_get_result.owner !== data.approver) {
       console.log(
         `Transfer requested for an asset the approver did not own from ${api_key}`
@@ -218,27 +189,29 @@ router.post("/", async function (req, res) {
 
     query = `select * from app_header where api_key = ?`;
     params = [api_key];
-    app = await getOTHUBData(query, params)
-      .then((results) => {
-        //console.log('Query results:', results);
-        return results;
-        // Use the results in your variable or perform further operations
-      })
-      .catch((error) => {
-        console.error("Error retrieving data:", error);
-      });
+    app = await queryDB
+    .getData(query, params, network, blockchain)
+    .then((results) => {
+      //console.log('Query results:', results);
+      return results;
+      // Use the results in your variable or perform further operations
+    })
+    .catch((error) => {
+      console.error("Error retrieving data:", error);
+    });
 
     query = `select * from enabled_apps where public_address = ?`;
     params = [data.approver];
-    enabled_apps = await getOTHUBData(query, params)
-      .then((results) => {
-        //console.log('Query results:', results);
-        return results;
-        // Use the results in your variable or perform further operations
-      })
-      .catch((error) => {
-        console.error("Error retrieving data:", error);
-      });
+    enabled_apps = await queryDB
+    .getData(query, params, network, blockchain)
+    .then((results) => {
+      //console.log('Query results:', results);
+      return results;
+      // Use the results in your variable or perform further operations
+    })
+    .catch((error) => {
+      console.error("Error retrieving data:", error);
+    });
 
     white_listed = "no";
     if (enabled_apps.some((obj) => obj.app_name === app[0].app_name)) {
@@ -254,34 +227,27 @@ router.post("/", async function (req, res) {
     }
 
     query = `INSERT INTO txn_header (txn_id, progress, approver, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
-    await othubdb_connection.query(
-      query,
-      [
-        "PENDING",
-        data.approver,
-        api_key,
-        type,
-        data.network,
-        app[0].app_name,
-        txn_description,
-        null,
-        data.ual,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        data.receiver,
-      ],
-      function (error, results, fields) {
-        if (error) throw error;
-      }
-    );
+    params = [
+      "PENDING",
+      data.approver,
+      api_key,
+      type,
+      data.network,
+      app[0].app_name,
+      txn_description,
+      null,
+      data.ual,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      data.receiver,
+    ]
 
-    query = `select * from txn_header where api_key = ? and request = ? order by created_at desc`;
-    params = [api_key, type];
-    txn = await getOTHUBData(query, params)
+    await queryDB
+      .getData(query, params, network, blockchain)
       .then((results) => {
         //console.log('Query results:', results);
         return results;
@@ -290,6 +256,19 @@ router.post("/", async function (req, res) {
       .catch((error) => {
         console.error("Error retrieving data:", error);
       });
+
+    query = `select * from txn_header where api_key = ? and request = ? order by created_at desc`;
+    params = [api_key, type];
+    txn = await queryDB
+    .getData(query, params, network, blockchain)
+    .then((results) => {
+      //console.log('Query results:', results);
+      return results;
+      // Use the results in your variable or perform further operations
+    })
+    .catch((error) => {
+      console.error("Error retrieving data:", error);
+    });
 
     res.status(200).json({
       success: true,
