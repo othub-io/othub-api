@@ -101,32 +101,40 @@ router.post("/", async function (req, res) {
     }
 
     timeframe = "_total";
+    order_by = ""
     if (data.timeframe === "hourly") {
       timeframe = "_hourly";
+      order_by = "order by date"
     }
 
     if (data.timeframe === "daily") {
       timeframe = "_daily";
+      order_by = "order by date"
     }
 
     if (data.timeframe === "monthly") {
       timeframe = "_monthly";
+      order_by = "order by date"
     }
 
     if (data.timeframe === "last1h") {
       timeframe = "_last1h";
+      order_by = "order by datetime"
     }
 
     if (data.timeframe === "last24h") {
       timeframe = "_last24h";
+      order_by = "order by datetime"
     }
 
     if (data.timeframe === "last30d") {
       timeframe = "_last30d";
+      order_by = "order by datetime"
     }
 
     if (data.timeframe === "last7d") {
       timeframe = "_last7d";
+      order_by = "order by datetime"
     }
 
     query = `select * from v_pubs_stats${timeframe}`;
@@ -136,7 +144,7 @@ router.post("/", async function (req, res) {
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` order by date LIMIT ${limit}`;
+    query = query + " " + whereClause + ` ${order_by} LIMIT ${limit}`;
 
     value = await queryDB
       .getData(query, params, network, blockchain)
