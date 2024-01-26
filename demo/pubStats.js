@@ -10,8 +10,8 @@ const query = async (api_key) => {
   };
 
   const data = {
-    network: "gnosis:10200",
-    timeframe: "last24h"
+    network: "otp:2043",
+    timeframe: "last7d"
   };
 
   // const response = await axios

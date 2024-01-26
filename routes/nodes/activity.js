@@ -141,7 +141,7 @@ router.post("/", async function (req, res) {
       const args = argsString.split("/");
 
       if (args.length !== 3) {
-        console.log(`getOwner request with invalid ual from ${api_key}`);
+        console.log(`Node activity request with invalid ual from ${api_key}`);
         res.status(400).json({
           success: false,
           msg: "Invalid UAL provided.",
