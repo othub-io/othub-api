@@ -135,31 +135,31 @@ router.post("/", async function (req, res) {
       console.error("Error retrieving data:", error);
     });
 
-    query = `select * from enabled_apps where public_address = ?`;
-    params = [data.approver];
-    enabled_apps = await queryDB
-    .getData(query, params, network, blockchain)
-    .then((results) => {
-      //console.log('Query results:', results);
-      return results;
-      // Use the results in your variable or perform further operations
-    })
-    .catch((error) => {
-      console.error("Error retrieving data:", error);
-    });
+    // query = `select * from enabled_apps where public_address = ?`;
+    // params = [data.approver];
+    // enabled_apps = await queryDB
+    // .getData(query, params, network, blockchain)
+    // .then((results) => {
+    //   //console.log('Query results:', results);
+    //   return results;
+    //   // Use the results in your variable or perform further operations
+    // })
+    // .catch((error) => {
+    //   console.error("Error retrieving data:", error);
+    // });
 
-    white_listed = "no";
-    if (enabled_apps.some((obj) => obj.app_name === app[0].app_name)) {
-      white_listed = "yes";
-    }
+    // white_listed = "no";
+    // if (enabled_apps.some((obj) => obj.app_name === app[0].app_name)) {
+    //   white_listed = "yes";
+    // }
 
-    if (white_listed === "no") {
-      res.status(403).json({
-        success: false,
-        msg: "This user has not whitelisted your application.",
-      });
-      return;
-    }
+    // if (white_listed === "no") {
+    //   res.status(403).json({
+    //     success: false,
+    //     msg: "This user has not whitelisted your application.",
+    //   });
+    //   return;
+    // }
 
     query = `INSERT INTO txn_header (txn_id, progress, approver, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
     params = [
