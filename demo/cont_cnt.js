@@ -45,19 +45,6 @@ const create_n_transfer = async () => {
       console.log(`----------CREATE-N-TRANSFER------------`);
       console.log(response);
 
-    // const response = await axios
-    //     .post(`http://localhost:5575/dkg/create_n_transfer`, data, config)
-    //     .then((response) => {
-    //       // Handle the successful response here
-    //       return response;
-    //     })
-    //     .catch((error) => {
-    //       // Handle errors here
-    //       console.error(error);
-    //     });
-    //   console.log(`----------CREATE-N-TRANSFER------------`);
-    //   console.log(response);
-
       await sleep(3000);
     }
   } catch (e) {

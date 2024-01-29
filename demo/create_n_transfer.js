@@ -21,21 +21,8 @@ const create_n_transfer = async (api_key) => {
     }
   };
 
-  // const response = await axios
-  //       .post(`https://api.othub.io/dkg/create_n_transfer`, data, config)
-  //       .then((response) => {
-  //         // Handle the successful response here
-  //         return response;
-  //       })
-  //       .catch((error) => {
-  //         // Handle errors here
-  //         console.error(error);
-  //       });
-  // console.log(`----------CREATE-N-TRANSFER------------`);
-  // console.log(response);
-
   const response = await axios
-        .post(`http://localhost:5575/dkg/create_n_transfer`, data, config)
+        .post(`https://api.othub.io/dkg/create_n_transfer`, data, config)
         .then((response) => {
           // Handle the successful response here
           return response;
@@ -44,8 +31,8 @@ const create_n_transfer = async (api_key) => {
           // Handle errors here
           console.error(error);
         });
-      console.log(`----------CREATE-N-TRANSFER------------`);
-      console.log(response);
+  console.log(`----------CREATE-N-TRANSFER------------`);
+  console.log(response);
 };
 
 create_n_transfer(api_key);

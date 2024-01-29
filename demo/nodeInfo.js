@@ -15,19 +15,8 @@ const query = async (api_key) => {
     owner: "0x840AF7A83c5fEfA87A360FB98c027a40E7e58F1b"
   };
 
-  // const response = await axios
-  //   .post(`https://api.othub.io/dkg/query`, data, config)
-  //   .then((response) => {
-  //     // Handle the successful response here
-  //     return response;
-  //   })
-  //   .catch((error) => {
-  //     // Handle errors here
-  //     console.error(error);
-  //   });
-
   const response = await axios
-    .post(`http://localhost:5575/nodes/info`, data, config)
+    .post(`https://api.othub.io/nodes/info`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;

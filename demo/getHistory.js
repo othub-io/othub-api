@@ -15,16 +15,10 @@ const getHistory = async (api_key) => {
   };
 
   response = await axios.post(
-    `http://localhost:5575/assets/history`,
+    `https://api.othub.io/otp_testnet/assetHistory`,
     data,
     config
   );
-
-  // response = await axios.post(
-  //   `https://api.othub.io/otp_testnet/assetHistory`,
-  //   data,
-  //   config
-  // );
   console.log(`----------HISTORY------------`);
   console.log(response.data);
 };

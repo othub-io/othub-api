@@ -16,19 +16,8 @@ const query = async (api_key) => {
     grouped: "no"
   };
 
-  // const response = await axios
-  //   .post(`https://api.othub.io/dkg/query`, data, config)
-  //   .then((response) => {
-  //     // Handle the successful response here
-  //     return response;
-  //   })
-  //   .catch((error) => {
-  //     // Handle errors here
-  //     console.error(error);
-  //   });
-
   const response = await axios
-    .post(`http://localhost:5575/nodes/stats`, data, config)
+    .post(`https://api.othub.io/nodes/stats`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;
