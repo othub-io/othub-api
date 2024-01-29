@@ -21,32 +21,18 @@ const create = async (api_key) => {
     },
   };
 
-  // const response = await axios
-  //   .post(`https://api.othub.io/dkg/create`, data, config)
-  //   .then((response) => {
-  //     // Handle the successful response here
-  //     return response;
-  //   })
-  //   .catch((error) => {
-  //     // Handle errors here
-  //     //console.error(error);
-  //   });
-  // console.log(`----------CREATE------------`);
-  // console.log(response);
-
   const response = await axios
-    .post(`http://localhost:5575/dkg/create`, data, config)
+    .post(`https://api.othub.io/dkg/create`, data, config)
     .then((response) => {
       // Handle the successful response here
-      console.log(response)
       return response;
     })
     .catch((error) => {
       // Handle errors here
-      console.error(error);
+      //console.error(error);
     });
   console.log(`----------CREATE------------`);
-  console.log(response);
+  console.log(response.data);
 
 };
 

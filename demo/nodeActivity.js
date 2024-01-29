@@ -16,19 +16,8 @@ const query = async (api_key) => {
     ual: "did:dkg:otp:2043/0x5cAC41237127F94c2D21dAe0b14bFeFa99880630/104710"
   };
 
-  // const response = await axios
-  //   .post(`https://api.othub.io/dkg/query`, data, config)
-  //   .then((response) => {
-  //     // Handle the successful response here
-  //     return response;
-  //   })
-  //   .catch((error) => {
-  //     // Handle errors here
-  //     console.error(error);
-  //   });
-
   const response = await axios
-    .post(`http://localhost:5575/nodes/activity`, data, config)
+    .post(`https://api.othub.io/nodes/activity`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;

@@ -14,19 +14,8 @@ const query = async (api_key) => {
     timeframe: "last7d"
   };
 
-  // const response = await axios
-  //   .post(`https://api.othub.io/dkg/query`, data, config)
-  //   .then((response) => {
-  //     // Handle the successful response here
-  //     return response;
-  //   })
-  //   .catch((error) => {
-  //     // Handle errors here
-  //     console.error(error);
-  //   });
-
   const response = await axios
-    .post(`http://localhost:5575/pubs/stats`, data, config)
+    .post(`https://api.othub.io/pubs/stats`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;

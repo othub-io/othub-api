@@ -22,19 +22,8 @@ const update = async (api_key) => {
     },
   };
 
-  // const response = await axios
-  //   .post(`https://api.othub.io/dkg/update`, data, config)
-  //   .then((response) => {
-  //     // Handle the successful response here
-  //     return response;
-  //   })
-  //   .catch((error) => {
-  //     // Handle errors here
-  //     console.error(error);
-  //   });
-
-    const response = await axios
-    .post(`http://localhost:5575/dkg/update`, data, config)
+  const response = await axios
+    .post(`https://api.othub.io/dkg/update`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;

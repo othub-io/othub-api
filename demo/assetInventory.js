@@ -15,16 +15,10 @@ const assetInventory = async (api_key) => {
   };
 
   response = await axios.post(
-    `http://localhost:5575/assets/inventory`,
+    `https://api.othub.io/assets/inventory`,
     data,
     config
   );
-
-  // response = await axios.post(
-  //   `https://api.othub.io/assets/inventory`,
-  //   data,
-  //   config
-  // );
   console.log(`----------INVENTORY------------`);
   console.log(response.data);
 };
