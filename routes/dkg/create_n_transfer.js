@@ -87,8 +87,10 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (data.network !== "gnosis:10200" && 
+    if ((data.network !== "gnosis:10200" && 
         data.network !== "otp:20430" && 
+        data.network !== "gnosis:100" && 
+        data.network !== "otp:2043") || 
     ((data.network === "gnosis:100" || data.network === "otp:2043") && api_key !== process.env.MASTER_KEY)) {
       console.log(`Create request with invalid network from ${api_key}`);
 
