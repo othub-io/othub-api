@@ -37,6 +37,7 @@ const updateRouter = require('./routes/dkg/update')
 const isValidUALRouter = require('./routes/dkg/isValidUAL')
 
 //assets
+const assetActivityRouter = require('./routes/assets/activity')
 const assetHistoryRouter = require('./routes/assets/history')
 const assetInventoryRouter = require('./routes/assets/inventory')
 
@@ -46,7 +47,6 @@ const nodeInfoRouter = require('./routes/nodes/info')
 const nodeStatsRouter = require('./routes/nodes/stats')
 
 //pubs
-const pubActivityRouter = require('./routes/pubs/activity')
 const pubInfoRouter = require('./routes/pubs/info')
 const pubStatsRouter = require('./routes/pubs/stats')
 
@@ -67,6 +67,7 @@ app.use('/dkg/checkTransaction', checkTransactionRouter)
 app.use('/dkg/isValidUAL', isValidUALRouter)
 
 //assets
+app.use('/assets/activity', assetActivityRouter)
 app.use('/assets/history', assetHistoryRouter)
 app.use('/assets/inventory', assetInventoryRouter)
 
@@ -76,7 +77,6 @@ app.use('/nodes/info', nodeInfoRouter)
 app.use('/nodes/stats', nodeStatsRouter)
 
 //pubs
-app.use('/pubs/activity', pubActivityRouter)
 app.use('/pubs/info', pubInfoRouter)
 app.use('/pubs/stats', pubStatsRouter)
 
