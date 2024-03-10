@@ -102,7 +102,7 @@ router.post("/", async function (req, res) {
     }
 
     txn_data = data.asset;
-    if (!txn_data["@context"]) {
+    if (!txn_data.hasOwnProperty("@context")) {
       txn_data["@context"] = "https://schema.org";
     }
 
