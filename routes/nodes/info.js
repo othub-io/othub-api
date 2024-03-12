@@ -49,7 +49,7 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    network = "";
+    let network = "";
     if (
       data.network !== "mainnet" &&
       data.network !== "testnet" &&
@@ -146,6 +146,9 @@ router.post("/", async function (req, res) {
       params.push(like_keccak256hash);
     }
 
+    conditions.push(`nodeId != ?`);
+    params.push(0);
+
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
     query =
@@ -154,7 +157,7 @@ router.post("/", async function (req, res) {
       whereClause +
       ` order by createProfile_ts desc LIMIT ${limit}`;
 
-    value = await queryDB
+    nodes = await queryDB
       .getData(query, params, network, blockchain)
       .then((results) => {
         //console.log('Query results:', results);
@@ -165,9 +168,57 @@ router.post("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
+      network = ""
+      let node_list = []
+      for(const node of nodes){
+        blockchain = node.chainName
+        query = `select estimatedEarnings from v_nodes_stats_latest where nodeId = ?`;
+        params = [node.nodeId];
+        dkg_node = await queryDB
+          .getData(query, params, network, blockchain)
+          .then((results) => {
+            //console.log('Query results:', results);
+            return results;
+            // Use the results in your variable or perform further operations
+          })
+          .catch((error) => {
+            console.error("Error retrieving data:", error);
+          });
+  
+          let after_fee_earnings = dkg_node[0].estimatedEarnings - (dkg_node[0].estimatedEarnings * (node.nodeOperatorFee / 100))
+          let shareValue = (node.nodeStake + after_fee_earnings) / node.nodeStake
+
+        node_obj = {
+          chainId: node.chainId,
+          chainName: node.chainName,
+          nodeId: node.nodeId,
+          sharesContractAddress: node.sharesContractAddress,
+          networkId: node.networkId,
+          tokenName: node.tokenName,
+          tokenSymbol: node.tokenSymbol,
+          nodeStake: node.nodeStake,
+          shareValue: shareValue,
+          nodeOperatorFee: node.nodeOperatorFee,
+          nodeAsk: node.nodeAsk,
+          nodeAgeDays: node.nodeAgeDays,
+          nodeGroup: node.nodeAgeDays,
+          createProfile_adminWallet: node.createProfile_adminWallet,
+          createProfile_adminWallet_hash: node.createProfile_adminWallet_hash,
+          current_adminWallet_hashes: node.current_adminWallet_hashes,
+          createProfile_blockNumber: node.createProfile_blockNumber,
+          createProfile_txHash: node.createProfile_txHash,
+          createProfile_ts: node.createProfile_ts,
+          createProfile_date: node.createProfile_date,
+          nodeOperatorFee: node.nodeOperatorFee,
+          nodeSharesTotalSupply: node.nodeSharesTotalSupply
+        }
+  
+        node_list.push(node_obj)
+      }
+
     res.status(200).json({
       success: true,
-      data: value,
+      data: node_list,
     });
   } catch (e) {
     console.log(e);
