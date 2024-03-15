@@ -10,13 +10,13 @@ const query = async (api_key) => {
   };
 
   const data = {
-    network: "otp:2043",
+    network: "gnosis:100",
     nodeId: "",
-    owner: "0x840AF7A83c5fEfA87A360FB98c027a40E7e58F1b"
+    owner: ""
   };
 
   const response = await axios
-    .post(`https://api.othub.io/nodes/info`, data, config)
+    .post(`http://localhost:5575/nodes/info`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;

@@ -50,6 +50,11 @@ const nodeStatsRouter = require('./routes/nodes/stats')
 const pubInfoRouter = require('./routes/pubs/info')
 const pubStatsRouter = require('./routes/pubs/stats')
 
+//images
+const imagesRouter = require('./routes/images')
+
+//sync
+const syncStatusRouter = require('./routes/sync/status')
 
 //dkg
 app.use('/dkg/get', getRouter)
@@ -79,6 +84,12 @@ app.use('/nodes/stats', nodeStatsRouter)
 //pubs
 app.use('/pubs/info', pubInfoRouter)
 app.use('/pubs/stats', pubStatsRouter)
+
+//images
+app.use('/images', imagesRouter)
+
+//sync
+app.use('/sync/status', syncStatusRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
