@@ -172,7 +172,7 @@ router.post("/", async function (req, res) {
       let node_list = []
       for(const node of nodes){
         blockchain = node.chainName
-        query = `select estimatedEarnings,cumulativePayouts from v_nodes_stats_latest where nodeId = ?`;
+        query = `select shareValueCurrent,shareValueFuture from v_nodes_stats_latest where nodeId = ?`;
         params = [node.nodeId];
         dkg_node = await queryDB
           .getData(query, params, network, blockchain)
@@ -184,9 +184,6 @@ router.post("/", async function (req, res) {
           .catch((error) => {
             console.error("Error retrieving data:", error);
           });
-  
-          let after_fee_earnings = dkg_node[0].estimatedEarnings - (dkg_node[0].estimatedEarnings * (node.nodeOperatorFee / 100))
-          let shareValue = (node.nodeStake + after_fee_earnings - dkg_node[0].cumulativePayouts) / node.nodeStake
 
         node_obj = {
           chainId: node.chainId,
@@ -197,7 +194,8 @@ router.post("/", async function (req, res) {
           tokenName: node.tokenName,
           tokenSymbol: node.tokenSymbol,
           nodeStake: node.nodeStake,
-          shareValue: shareValue,
+          shareValueCurrent: dkg_node[0].shareValueCurrent,
+          shareValueFuture: dkg_node[0].shareValueFuture,
           nodeOperatorFee: node.nodeOperatorFee,
           nodeAsk: node.nodeAsk,
           nodeAgeDays: node.nodeAgeDays,
