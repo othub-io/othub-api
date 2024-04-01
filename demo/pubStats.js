@@ -10,12 +10,14 @@ const query = async (api_key) => {
   };
 
   const data = {
-    network: "otp:2043",
-    timeframe: "last7d"
+    network: "DKG Mainnet",
+    blockchain: "Gnosis Mainnet",
+    frequency: "monthly",
+    timeframe: "12"
   };
 
   const response = await axios
-    .post(`https://api.othub.io/pubs/stats`, data, config)
+    .post(`http://localhost:5575/pubs/stats`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;
@@ -26,7 +28,7 @@ const query = async (api_key) => {
     });
 
   console.log(`----------NODE ACTIVITY------------`);
-  console.log(response.data);
+  console.log(response.data.result);
 
 };
 

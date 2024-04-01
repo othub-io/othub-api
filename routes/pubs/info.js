@@ -10,10 +10,17 @@ router.post("/", async function (req, res) {
     type = "stats";
     data = req.body;
     api_key = req.headers["x-api-key"];
-    let blockchain;
+    let network = data.network && !data.blockchain ? data.network : null;
+    let blockchain = data.blockchain ? data.blockchain : null;
+    let query = `select * from v_pubs`;
+    let nodeId = Number.isInteger(data.nodeId) ? data.nodeId : null;
+    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
+    let order_by = data.order_by ? data.order_by : "block_ts_hour"
+    let conditions = [];
+    let params = [];
 
     if (!api_key || api_key === "") {
-      console.log(`Create request without authorization.`);
+      console.log(`Pub info request without authorization.`);
       res.status(401).json({
         success: false,
         msg: "Authorization key not provided.",
@@ -48,63 +55,27 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    network = "";
     if (
-      data.network !== "mainnet" &&
-      data.network !== "testnet" &&
-      data.network !== "otp:2043" &&
-      data.network !== "otp:20430" &&
-      data.network !== "gnosis:100" &&
-      data.network !== "gnosis:10200"
+      network !== "DKG Mainnet" &&
+      network !== "DKG Testnet" &&
+      blockchain !== "NeuroWeb Mainnet" &&
+      blockchain !== "NeuroWeb Testnet" &&
+      blockchain !== "Gnosis Mainnet" &&
+      blockchain !== "Chiado Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported: mainnet, testnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
       );
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided.",
+        msg: "Invalid network or blockchain provided.",
       });
       return;
-    }
-
-    if (data.network === "mainnet") {
-      network = "DKG Mainnet";
-    }
-
-    if (data.network === "testnet") {
-      network = "DKG Testnet";
-    }
-
-    if (data.network === "otp:2043") {
-      blockchain = "NeuroWeb Mainnet";
-    }
-
-    if (data.network === "otp:20430") {
-      blockchain = "NeuroWeb Testnet";
-    }
-
-    if (data.network === "gnosis:100") {
-      blockchain = "Gnosis Mainnet";
-    }
-
-    if (data.network === "gnosis:10200") {
-      blockchain = "Chiado Testnet";
-    }
-
-    limit = data.limit;
-    if (!limit) {
-      limit = 1000;
     }
 
     if (limit > 100000) {
       limit = 100000;
     }
-
-    query = `select * from v_pubs`;
-
-    conditions = [];
-    params = [];
-    ques = "";
 
     if (data.owner) {
       if (!ethers.utils.isAddress(data.owner)) {
@@ -123,7 +94,7 @@ router.post("/", async function (req, res) {
 
     if (data.publisher) {
       if (!ethers.utils.isAddress(data.publisher)) {
-        console.log(`Pub activity request with invalid publisher from ${api_key}`);
+        console.log(`Pub info request with invalid publisher from ${api_key}`);
 
         res.status(400).json({
           success: false,
@@ -155,11 +126,24 @@ router.post("/", async function (req, res) {
       params.push(data.ual);
     }
 
+    if (nodeId) {
+      conditions.push(`winners like ? OR winners like ? OR winners like ?`);
+  
+      nodeId = `%"${nodeId},%`;
+      params.push(nodeId);
+  
+      nodeId = `%,${nodeId},%`;
+      params.push(nodeId);
+  
+      nodeId = `%,${nodeId}"%`;
+      params.push(nodeId);
+    }
+
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` order by block_ts LIMIT ${limit}`;
+    query = query + " " + whereClause + ` order by ${order_by} DESC LIMIT ${limit}`;
 
-    value = await queryDB
+    result = await queryDB
       .getData(query, params, network, blockchain)
       .then((results) => {
         //console.log('Query results:', results);
@@ -172,7 +156,7 @@ router.post("/", async function (req, res) {
 
     res.status(200).json({
       success: true,
-      data: value,
+      result: result,
     });
   } catch (e) {
     console.log(e);

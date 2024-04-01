@@ -11,7 +11,12 @@ router.post("/", async function (req, res) {
     type = "stats";
     data = req.body;
     api_key = req.headers["x-api-key"];
-    let blockchain;
+    let network = data.network ? data.network : null;
+    let blockchain = data.blockchain ? data.blockchain : null;
+    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
+    let conditions = [];
+    let params = [];
+    let query;
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -49,62 +54,25 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    let network = "";
     if (
-      data.network !== "mainnet" &&
-      data.network !== "testnet" &&
-      data.network !== "otp:2043" &&
-      data.network !== "otp:20430" &&
-      data.network !== "gnosis:100" &&
-      data.network !== "gnosis:10200"
+      network !== "DKG Mainnet" &&
+      network !== "DKG Testnet" &&
+      blockchain !== "NeuroWeb Mainnet" &&
+      blockchain !== "NeuroWeb Testnet" &&
+      blockchain !== "Gnosis Mainnet" &&
+      blockchain !== "Chiado Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported: mainnet, testnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
       );
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided.",
+        msg: "Invalid network or blockchain provided.",
       });
       return;
     }
 
-    if (data.network === "mainnet") {
-      network = "DKG Mainnet";
-    }
-
-    if (data.network === "testnet") {
-      network = "DKG Testnet";
-    }
-
-    if (data.network === "otp:2043") {
-      blockchain = "NeuroWeb Mainnet";
-    }
-
-    if (data.network === "otp:20430") {
-      blockchain = "NeuroWeb Testnet";
-    }
-
-    if (data.network === "gnosis:100") {
-      blockchain = "Gnosis Mainnet";
-    }
-
-    if (data.network === "gnosis:10200") {
-      blockchain = "Chiado Testnet";
-    }
-
-    limit = data.limit;
-    if (!limit) {
-      limit = 1000;
-    }
-
-    if (limit > 2000) {
-      limit = 2000;
-    }
-
     query = `select * from v_nodes`;
-
-    conditions = [];
-    params = [];
     ques = "";
 
     if (data.nodeId) {
@@ -216,7 +184,7 @@ router.post("/", async function (req, res) {
 
     res.status(200).json({
       success: true,
-      data: node_list,
+      result: node_list,
     });
   } catch (e) {
     console.log(e);

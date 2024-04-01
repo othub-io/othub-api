@@ -1,7 +1,6 @@
 require("dotenv").config();
 var express = require("express");
 var router = express.Router();
-const ethers = require("ethers");
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
 
@@ -10,7 +9,18 @@ router.post("/", async function (req, res) {
     type = "stats";
     data = req.body;
     api_key = req.headers["x-api-key"];
-    let blockchain;
+    let network = data.network ? data.network : null;
+    let blockchain = data.blockchain ? data.blockchain : null;
+    let frequency = data.frequency ? data.frequency : `total`;
+    let timeframe =
+      Number.isInteger(data.timeframe)
+        ? data.timeframe
+        : null;
+    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
+    let order_by = "date"
+    let conditions = [];
+    let params = [];
+    let query;
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -48,50 +58,58 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    network = "";
     if (
-      data.network !== "mainnet" &&
-      data.network !== "testnet" &&
-      data.network !== "otp:2043" &&
-      data.network !== "otp:20430" &&
-      data.network !== "gnosis:100" &&
-      data.network !== "gnosis:10200"
+      network !== "DKG Mainnet" &&
+      network !== "DKG Testnet" &&
+      blockchain !== "NeuroWeb Mainnet" &&
+      blockchain !== "NeuroWeb Testnet" &&
+      blockchain !== "Gnosis Mainnet" &&
+      blockchain !== "Chiado Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported: mainnet, testnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
       );
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided.",
+        msg: "Invalid network or blockchain provided.",
       });
       return;
     }
 
-    if (data.network === "mainnet") {
-      network = "DKG Mainnet";
+    if (!blockchain) {
+      blockchain = "othub_db";
+      query = `select chain_name,chain_id from blockchains where environment = ?`;
+      params = [network];
+      network = "";
+      blockchains = await queryDB
+        .getData(query, params, network, blockchain)
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+    } else {
+      query = `select chain_name,chain_id from blockchains where environment = ? and chain_name = ?`;
+      params = [network, blockchain];
+      blockchain = "othub_db";
+      network = "";
+      blockchains = await queryDB
+        .getData(query, params, network, blockchain)
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
     }
 
-    if (data.network === "testnet") {
-      network = "DKG Testnet";
-    }
+    params = [];
 
-    if (data.network === "otp:2043") {
-      blockchain = "NeuroWeb Mainnet";
-    }
-
-    if (data.network === "otp:20430") {
-      blockchain = "NeuroWeb Testnet";
-    }
-
-    if (data.network === "gnosis:100") {
-      blockchain = "Gnosis Mainnet";
-    }
-
-    if (data.network === "gnosis:10200") {
-      blockchain = "Chiado Testnet";
-    }
-
-    limit = data.limit;
     if (!limit) {
       limit = 1000;
     }
@@ -100,66 +118,57 @@ router.post("/", async function (req, res) {
       limit = 100000;
     }
 
-    timeframe = "_total";
-    order_by = ""
-    if (data.timeframe === "hourly") {
-      timeframe = "_hourly";
-      order_by = "order by date"
+    if (frequency === "hourly") {
+      order_by = "datetime";
+
+      if (timeframe) {
+        conditions.push(`datetime >= (select DATE_ADD(block_ts, interval -${timeframe} HOUR) as t from v_sys_staging_date)`);
+      }
     }
 
-    if (data.timeframe === "daily") {
-      timeframe = "_daily";
-      order_by = "order by date"
+    if (frequency === "daily") {
+      if (timeframe) {
+        conditions.push(`date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} DAY) as date) as t from v_sys_staging_date)`);
+      }
     }
 
-    if (data.timeframe === "monthly") {
-      timeframe = "_monthly";
-      order_by = "order by date"
+    if (frequency === "monthly") {
+      if (timeframe) {
+        conditions.push(`date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} MONTH) as date) as t from v_sys_staging_date)`);
+      }
     }
 
-    if (data.timeframe === "last1h") {
-      timeframe = "_last1h";
-      order_by = "order by datetime"
-    }
-
-    if (data.timeframe === "last24h") {
-      timeframe = "_last24h";
-      order_by = "order by datetime"
-    }
-
-    if (data.timeframe === "last30d") {
-      timeframe = "_last30d";
-      order_by = "order by datetime"
-    }
-
-    if (data.timeframe === "last7d") {
-      timeframe = "_last7d";
-      order_by = "order by datetime"
-    }
-
-    query = `select * from v_pubs_stats${timeframe}`;
-
-    conditions = [];
-    params = [];
+    query = `select * from v_pubs_stats_${frequency}`;
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` ${order_by} LIMIT ${limit}`;
+    query = query + " " + whereClause + ` order by ${order_by} LIMIT ${limit}`;
 
-    value = await queryDB
-      .getData(query, params, network, blockchain)
-      .then((results) => {
-        //console.log('Query results:', results);
-        return results;
-        // Use the results in your variable or perform further operations
-      })
-      .catch((error) => {
-        console.error("Error retrieving data:", error);
-      });
+    let pub_data = [];
+    for (const blockchain of blockchains) {
+      result = await queryDB
+        .getData(query, params, network, blockchain.chain_name)
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+
+      chain_data = {
+        blockchain_name: blockchain.chain_name,
+        blockchain_id: blockchain.chain_id,
+        data: result,
+      };
+
+      pub_data.push(chain_data);
+    }
 
     res.status(200).json({
       success: true,
-      data: value,
+      result: pub_data,
     });
   } catch (e) {
     console.log(e);

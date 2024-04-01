@@ -9,6 +9,12 @@ router.post("/", async function (req, res) {
     type = "history";
     data = req.body;
     api_key = req.headers["x-api-key"];
+    let network;
+    let blockchain = data.blockchain
+    let query = `SELECT * FROM v_asset_history`;
+    let conditions = [];
+    let params = [];
+    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -69,47 +75,21 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    network = "";
     if (
-      data.network !== "otp:2043" &&
-      data.network !== "otp:20430" &&
-      data.network !== "gnosis:100" &&
-      data.network !== "gnosis:10200"
+      blockchain !== "NeuroWeb Mainnet" &&
+      blockchain !== "NeuroWeb Testnet" &&
+      blockchain !== "Gnosis Mainnet" &&
+      blockchain !== "Chiado Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported: otp:20430, otp:2043, gnosis:10200, gnosis:100`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
       );
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided.",
+        msg: "Invalid network or blockchain provided.",
       });
       return;
     }
-
-    if(data.network === "otp:2043"){
-      blockchain = "NeuroWeb Mainnet"
-    }
-
-    if(data.network === "otp:20430"){
-      blockchain = "NeuroWeb Testnet"
-    }
-
-    if(data.network === "gnosis:100"){
-      blockchain = "Gnosis Mainnet"
-    }
-
-    if(data.network === "gnosis:10200"){
-      blockchain = "Chiado Testnet"
-    }
-
-    limit = data.limit;
-    if (!limit) {
-      limit = 500;
-    }
-
-    query = `SELECT * FROM v_asset_history`;
-    conditions = [];
-    params = [];
 
     conditions.push(`asset_contract = ?`);
     params.push(args[1]);
@@ -125,7 +105,7 @@ router.post("/", async function (req, res) {
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
     query = query + " " + whereClause + `LIMIT ${limit}`;
 
-    value = await queryDB
+    result = await queryDB
       .getData(query, params, network, blockchain)
       .then((results) => {
         //console.log('Query results:', results);
@@ -138,7 +118,7 @@ router.post("/", async function (req, res) {
 
       res.status(200).json({
         success: true,
-        data: value,
+        result: result,
       });
   } catch (e) {
     console.log(e);

@@ -22,6 +22,7 @@
     "http-server": "^14.1.1",
     "https-browserify": "^1.0.0",
     "jsonld": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
     "keccak256": "^1.0.6",
     "morgan": "~1.9.1",
     "mysql": "^2.18.1",

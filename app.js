@@ -41,6 +41,13 @@ const assetActivityRouter = require('./routes/assets/activity')
 const assetHistoryRouter = require('./routes/assets/history')
 const assetInventoryRouter = require('./routes/assets/inventory')
 
+//auth
+const authRegisterRouter = require('./routes/auth/register')
+const authSignRouter = require('./routes/auth/sign')
+
+//blockchains
+const othubBlockchainsRouter = require('./routes/othub/blockchains')
+
 //nodes
 const nodeActivityRouter = require('./routes/nodes/activity')
 const nodeInfoRouter = require('./routes/nodes/info')
@@ -51,7 +58,7 @@ const pubInfoRouter = require('./routes/pubs/info')
 const pubStatsRouter = require('./routes/pubs/stats')
 
 //images
-const imagesRouter = require('./routes/images')
+const imagesRouter = require('./routes/images/index')
 
 //sync
 const syncStatusRouter = require('./routes/sync/status')
@@ -75,6 +82,13 @@ app.use('/dkg/isValidUAL', isValidUALRouter)
 app.use('/assets/activity', assetActivityRouter)
 app.use('/assets/history', assetHistoryRouter)
 app.use('/assets/inventory', assetInventoryRouter)
+
+//auth
+app.use('/auth/register', authRegisterRouter)
+app.use('/auth/sign', authSignRouter)
+
+//othub
+app.use('/othub/blockchains', othubBlockchainsRouter)
 
 //nodes
 app.use('/nodes/activity', nodeActivityRouter)

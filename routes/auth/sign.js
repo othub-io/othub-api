@@ -11,10 +11,10 @@ router.post("/", async function (req, res, next) {
   try{
     api_key = req.headers["x-api-key"];
     data = req.body;
-    public_address = data.public_address;
-    signature = data.signature;
-    blockchain = "othub_db"
-    network = ""
+    let public_address = data.public_address;
+    let signature = data.signature;
+    let blockchain = "othub_db"
+    let network;
   
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
