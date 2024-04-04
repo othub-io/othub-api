@@ -47,6 +47,7 @@ const authSignRouter = require('./routes/auth/sign')
 
 //blockchains
 const othubBlockchainsRouter = require('./routes/othub/blockchains')
+const othubHomeRouter = require('./routes/othub/home')
 
 //nodes
 const nodeActivityRouter = require('./routes/nodes/activity')
@@ -89,6 +90,7 @@ app.use('/auth/sign', authSignRouter)
 
 //othub
 app.use('/othub/blockchains', othubBlockchainsRouter)
+app.use('/othub/home', othubHomeRouter)
 
 //nodes
 app.use('/nodes/activity', nodeActivityRouter)

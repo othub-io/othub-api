@@ -76,7 +76,7 @@ router.post("/", async function (req, res) {
     ques = "";
 
     if (data.nodeId) {
-      nodeIds = data.nodeId.split(",").map(Number);
+      nodeIds = !Number(data.nodeId) ? data.nodeId.split(",").map(Number) : [data.nodeId];
       for (const nodeid of nodeIds) {
         if (!Number(nodeid)) {
           console.log(`Invalid node id provided by ${api_key}`);
@@ -92,7 +92,10 @@ router.post("/", async function (req, res) {
       ques = ques.substring(0, ques.length - 1);
 
       conditions.push(`nodeId in (${ques})`);
-      params = nodeIds;
+      params.push(nodeIds);
+    }else if(data.nodeName){
+      conditions.push(`tokenName = ?`);
+      params.push(data.nodeName);
     }
 
     if (data.owner) {
@@ -123,7 +126,7 @@ router.post("/", async function (req, res) {
       query +
       " " +
       whereClause +
-      ` order by createProfile_ts desc LIMIT ${limit}`;
+      ` order by chainName,nodeId asc LIMIT ${limit}`;
 
     nodes = await queryDB
       .getData(query, params, network, blockchain)
@@ -136,14 +139,13 @@ router.post("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
-      network = ""
       let node_list = []
       for(const node of nodes){
         blockchain = node.chainName
         query = `select shareValueCurrent,shareValueFuture from v_nodes_stats_latest where nodeId = ?`;
         params = [node.nodeId];
         dkg_node = await queryDB
-          .getData(query, params, network, blockchain)
+          .getData(query, params, "", blockchain)
           .then((results) => {
             //console.log('Query results:', results);
             return results;

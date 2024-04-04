@@ -1,31 +1,20 @@
 require("dotenv").config();
-var express = require("express");
-var router = express.Router();
-const ethers = require("ethers");
+const express = require("express");
+const router = express.Router();
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
 
-router.post("/", async function (req, res) {
+/* GET explore page. */
+router.post("/", async function (req, res, next) {
   try {
-    type = "stats";
-    data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
-    let frequency = data.frequency ? data.frequency : `monthly`;
-    let timeframe =
-      Number.isInteger(data.timeframe)
-        ? data.timeframe
-        : null;
-    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
-    let grouped = data.grouped === "yes" ? "_grouped" : "";
-    let order_by = "date";
-    let conditions = [];
     let params = [];
     let query;
 
     if (!api_key || api_key === "") {
-      console.log(`Create request without authorization.`);
+      console.log(`Pub info request without authorization.`);
       res.status(401).json({
         success: false,
         msg: "Authorization key not provided.",
@@ -92,8 +81,8 @@ router.post("/", async function (req, res) {
           console.error("Error retrieving data:", error);
         });
     } else {
-      query = `select chain_name,chain_id from blockchains where chain_name = ?`;
-      params = [blockchain];
+      query = `select chain_name,chain_id from blockchains where environment = ? and chain_name = ?`;
+      params = [network, blockchain];
       blockchains = await queryDB
         .getData(query, params, "", "othub_db")
         .then((results) => {
@@ -106,100 +95,13 @@ router.post("/", async function (req, res) {
         });
     }
 
-    params = [];
+    let stats_data = [];
 
-    if (data.owner) {
-      if (!ethers.utils.isAddress(data.owner)) {
-        console.log(`Node stats request with invalid owner from ${api_key}`);
-
-        res.status(400).json({
-          success: false,
-          msg: "Invalid owner (evm address) provided.",
-        });
-        return;
-      }
-
-      conditions.push(`nodeOwner = ?`);
-      params.push(data.owner);
-    }
-
-    if (
-      network === "DKG Mainnet" ||
-      network === "DKG Testnet"
-    ) {
-      grouped = "_grouped";
-    }
-
-    if (!limit) {
-      limit = 1000;
-    }
-
-    if (limit > 2000) {
-      limit = 2000;
-    }
-
-    if (frequency === "hourly") {
-      frequency = "hourly_7d";
-      order_by = "datetime";
-
-      if (timeframe) {
-        conditions.push(
-          `datetime >= (select DATE_ADD(block_ts, interval -${timeframe} HOUR) as t from v_sys_staging_date)`
-        );
-      }
-    }
-
-    if (frequency === "daily") {
-      if (timeframe) {
-        conditions.push(
-          `date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} DAY) as date) as t from v_sys_staging_date)`
-        );
-      }
-    }
-
-    if (frequency === "monthly") {
-      if (timeframe) {
-        conditions.push(
-          `date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} MONTH) as date) as t from v_sys_staging_date)`
-        );
-      }
-    }
-
-    if (frequency === "last24h") {
-      order_by = "1";
-    }
-
-    ques = "";
-    if (data.nodeId && grouped !== "_grouped") {
-      nodeIds = !Number(data.nodeId) ? data.nodeId.split(",").map(Number) : [data.nodeId];
-      for (const nodeid of nodeIds) {
-        if (!Number(nodeid)) {
-          console.log(`Invalid node id provided by ${api_key}`);
-          res.status(400).json({
-            success: false,
-            msg: "Invalid node ID provided.",
-          });
-          return;
-        }
-        ques = ques + "?,";
-      }
-
-      ques = ques.substring(0, ques.length - 1);
-
-      conditions.push(`nodeId in (${ques})`);
-      params.push(nodeIds);
-    }
-
-    query = `select * from v_nodes_stats${grouped}_${frequency}`;
-
-    whereClause =
-      conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` order by ${order_by} LIMIT ${limit}`;
-
-    let node_data = [];
     for (const blockchain of blockchains) {
-      data = await queryDB
-        .getData(query, params, "", blockchain.chain_name)
+      query = `select nodeStake from v_nodes where nodeStake >= 50000`;
+      params = [];
+      let nodes = await queryDB
+        .getData(query, params, network, blockchain.chain_name)
         .then((results) => {
           //console.log('Query results:', results);
           return results;
@@ -209,18 +111,63 @@ router.post("/", async function (req, res) {
           console.error("Error retrieving data:", error);
         });
 
+      query = `select sum(totalPubs) as count from v_pubs_stats_daily`;
+      let pub_count = await queryDB
+        .getData(query, params, network, blockchain.chain_name)
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+
+      query = `select totalPubs,totalTracSpent from v_pubs_stats_last24h order by datetime`;
+      let pubs_stats_last24h = await queryDB
+        .getData(query, params, network, blockchain.chain_name)
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+
+      query = `select totalTracSpent from v_pubs_stats_total`;
+      let totalTracSpent = await queryDB
+        .getData(query, params, network, blockchain.chain_name)
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+
+      let totalStake = 0;
+      for (const node of nodes) {
+        totalStake = totalStake + Number(node.nodeStake);
+      }
+
       chain_data = {
         blockchain_name: blockchain.chain_name,
         blockchain_id: blockchain.chain_id,
-        data: data,
+        nodes: nodes.length,
+        pubs_stats_last24h: pubs_stats_last24h,
+        pub_count: pub_count[0].count,
+        totalTracSpent: totalTracSpent[0].totalTracSpent,
+        totalStake: totalStake,
       };
 
-      node_data.push(chain_data);
+      stats_data.push(chain_data);
     }
 
     res.status(200).json({
       success: true,
-      result: node_data,
+      result: stats_data,
     });
   } catch (e) {
     console.log(e);

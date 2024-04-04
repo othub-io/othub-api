@@ -77,12 +77,10 @@ router.post("/", async function (req, res) {
     }
 
     if (!blockchain) {
-      blockchain = "othub_db";
       query = `select chain_name,chain_id from blockchains where environment = ?`;
       params = [network];
-      network = "";
       blockchains = await queryDB
-        .getData(query, params, network, blockchain)
+        .getData(query, params, "", "othub_db")
         .then((results) => {
           //console.log('Query results:', results);
           return results;
@@ -92,12 +90,10 @@ router.post("/", async function (req, res) {
           console.error("Error retrieving data:", error);
         });
     } else {
-      query = `select chain_name,chain_id from blockchains where environment = ? and chain_name = ?`;
-      params = [network, blockchain];
-      blockchain = "othub_db";
-      network = "";
+      query = `select chain_name,chain_id from blockchains where chain_name = ?`;
+      params = [blockchain];
       blockchains = await queryDB
-        .getData(query, params, network, blockchain)
+        .getData(query, params, "", "othub_db")
         .then((results) => {
           //console.log('Query results:', results);
           return results;
@@ -138,6 +134,10 @@ router.post("/", async function (req, res) {
       }
     }
 
+    if (frequency === "last24h") {
+      order_by = "1";
+    }
+
     query = `select * from v_pubs_stats_${frequency}`;
 
     whereClause =
@@ -145,9 +145,31 @@ router.post("/", async function (req, res) {
     query = query + " " + whereClause + ` order by ${order_by} LIMIT ${limit}`;
 
     let pub_data = [];
+
+    if(!blockchain){
+      result = await queryDB
+        .getData(query, params, network, "")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+
+      chain_data = {
+        blockchain_name: "Total",
+        blockchain_id: "99999",
+        data: result,
+      };
+
+      pub_data.push(chain_data);
+    }
+
     for (const blockchain of blockchains) {
       result = await queryDB
-        .getData(query, params, network, blockchain.chain_name)
+        .getData(query, params, "", blockchain.chain_name)
         .then((results) => {
           //console.log('Query results:', results);
           return results;

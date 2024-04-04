@@ -10,7 +10,13 @@ router.post("/", async function (req, res) {
     type = "stats";
     data = req.body;
     api_key = req.headers["x-api-key"];
-    let blockchain;
+    let network = data.network && !data.blockchain ? data.network : null;
+    let blockchain = data.blockchain
+    //let frequency = data.frequency ? data.frequency : `1min`;
+    let frequency = `1min`;
+    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
+    let conditions = [];
+    let params = [];
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -48,70 +54,25 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    network = "";
     if (
-      data.network !== "mainnet" &&
-      data.network !== "testnet" &&
-      data.network !== "otp:2043" &&
-      data.network !== "otp:20430" &&
-      data.network !== "gnosis:100" &&
-      data.network !== "gnosis:10200"
+      network !== "DKG Mainnet" &&
+      network !== "DKG Testnet" &&
+      blockchain !== "NeuroWeb Mainnet" &&
+      blockchain !== "NeuroWeb Testnet" &&
+      blockchain !== "Gnosis Mainnet" &&
+      blockchain !== "Chiado Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported: mainnet, testnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
       );
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided.",
+        msg: "Invalid network or blockchain provided.",
       });
       return;
     }
 
-    if (data.network === "mainnet") {
-      network = "DKG Mainnet";
-    }
-
-    if (data.network === "testnet") {
-      network = "DKG Testnet";
-    }
-
-    if (data.network === "otp:2043") {
-      blockchain = "NeuroWeb Mainnet";
-    }
-
-    if (data.network === "otp:20430") {
-      blockchain = "NeuroWeb Testnet";
-    }
-
-    if (data.network === "gnosis:100") {
-      blockchain = "Gnosis Mainnet";
-    }
-
-    if (data.network === "gnosis:10200") {
-      blockchain = "Chiado Testnet";
-    }
-
-    limit = data.limit;
-    if (!limit) {
-      limit = 1000;
-    }
-
-    if (limit > 2000) {
-      limit = 2000;
-    }
-
-    // if (data.timeFrame === "1min" || data.timeframe === "24h") {
-    //   timeframe = data.timeframe;
-    // } else {
-    //   timeframe = "1min";
-    // }
-
-    timeframe = "1min";
-
-    query = `select tokenSymbol,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_nodes_activity_last${timeframe}`;
-
-    conditions = [];
-    params = [];
+    query = `select signer,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_pubs_activity_last${frequency} UNION ALL select tokenSymbol,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_nodes_activity_last${frequency} WHERE nodeId in (${ques}) AND eventName != 'StakeIncreased' order by datetime desc LIMIT ${limit}`;
     ques = "";
 
     if (data.nodeId) {
@@ -134,33 +95,12 @@ router.post("/", async function (req, res) {
       params = nodeIds;
     }
 
-    if (data.ual) {
-      const segments = data.ual.split(":");
-      const argsString =
-        segments.length === 3 ? segments[2] : segments[2] + segments[3];
-      const args = argsString.split("/");
-
-      if (args.length !== 3) {
-        console.log(`Node activity request with invalid ual from ${api_key}`);
-        res.status(400).json({
-          success: false,
-          msg: "Invalid UAL provided.",
-        });
-        return;
-      }
-
-      conditions.push(`UAL = ?`);
-      params.push(data.ual);
-    }
-
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
     query =
       query + " " + whereClause + ` order by datetime desc LIMIT ${limit}`;
 
-    console.log(query);
-    console.log(params);
-    value = await queryDB
+      result = await queryDB
       .getData(query, params, network, blockchain)
       .then((results) => {
         //console.log('Query results:', results);
@@ -173,7 +113,7 @@ router.post("/", async function (req, res) {
 
     res.status(200).json({
       success: true,
-      data: value,
+      result: result,
     });
   } catch (e) {
     console.log(e);
