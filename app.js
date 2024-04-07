@@ -36,6 +36,22 @@ const checkTransactionRouter = require('./routes/dkg/checkTransaction')
 const updateRouter = require('./routes/dkg/update')
 const isValidUALRouter = require('./routes/dkg/isValidUAL')
 
+//app
+const appInfoRouter = require('./routes/app/info')
+const appCreateRouter = require('./routes/app/create')
+const appDeleteRouter = require('./routes/app/delete')
+const appEditRouter = require('./routes/app/edit')
+
+//key
+const keyInfoRouter = require('./routes/key/info')
+const keyCreateRouter = require('./routes/key/create')
+const keyDeleteRouter = require('./routes/key/delete')
+
+//txn
+const txnInfoRouter = require('./routes/txn/info')
+const txnCompleteRouter = require('./routes/txn/complete')
+const txnRejectRouter = require('./routes/txn/reject')
+
 //assets
 const assetActivityRouter = require('./routes/assets/activity')
 const assetHistoryRouter = require('./routes/assets/history')
@@ -78,6 +94,22 @@ app.use('/dkg/transfer', transferRouter)
 app.use('/dkg/create_n_transfer', create_n_transferRouter)
 app.use('/dkg/checkTransaction', checkTransactionRouter)
 app.use('/dkg/isValidUAL', isValidUALRouter)
+
+//app
+app.use('/app/info', appInfoRouter)
+app.use('/app/create', appCreateRouter)
+app.use('/app/delete', appDeleteRouter)
+app.use('/app/edit', appEditRouter)
+
+//key
+app.use('/key/info', keyInfoRouter)
+app.use('/key/create', keyCreateRouter)
+app.use('/key/delete', keyDeleteRouter)
+
+//txn
+app.use('/txn/info', txnInfoRouter)
+app.use('/txn/complete', txnCompleteRouter)
+app.use('/txn/reject', txnRejectRouter)
 
 //assets
 app.use('/assets/activity', assetActivityRouter)

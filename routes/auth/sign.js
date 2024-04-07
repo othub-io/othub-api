@@ -9,27 +9,17 @@ const queryDB = queryTypes.queryDB()
 
 router.post("/", async function (req, res, next) {
   try{
-    api_key = req.headers["x-api-key"];
     data = req.body;
-    let public_address = data.public_address;
+    let account = data.account;
     let signature = data.signature;
     let blockchain = "othub_db"
     let network;
   
-    if (!api_key || api_key === "") {
-      console.log(`Create request without authorization.`);
-      res.status(401).json({
-        success: false,
-        msg: "Authorization key not provided.",
-      });
-      return;
-    }
-  
-    if (!public_address || public_address === "" || !ethers.utils.isAddress(public_address)) {
-      console.log(`Register request without valid public_address.`);
+    if (!account || account === "" || !ethers.utils.isAddress(account)) {
+      console.log(`Register request without valid account.`);
       res.status(400).json({
         success: false,
-        msg: "Valid public address not provided.",
+        msg: "Valid account not provided.",
       });
       return;
     }
@@ -44,8 +34,8 @@ router.post("/", async function (req, res, next) {
     }
     
     
-    query = `select * from user_header where public_address = ?`;
-    params = [public_address];
+    query = `select * from user_header where account = ?`;
+    params = [account];
     user_record = await queryDB
     .getData(query, params, network, blockchain)
       .then((results) => {
@@ -76,10 +66,10 @@ router.post("/", async function (req, res, next) {
       const address = ethUtil.bufferToHex(addressBuffer);
   
       // Check if address matches
-      if (address.toLowerCase() === public_address.toLowerCase()) {
+      if (address.toLowerCase() === account.toLowerCase()) {
         // Change user nonce
-        query = `UPDATE user_header SET nonce = ? where public_address = ?`;
-        params = [Math.floor(Math.random() * 1000000), public_address];
+        query = `UPDATE user_header SET nonce = ? where account = ?`;
+        params = [Math.floor(Math.random() * 1000000), account];
         await queryDB
         .getData(query, params, network, blockchain)
           .then((results) => {
@@ -91,8 +81,8 @@ router.post("/", async function (req, res, next) {
         // Set jwt token
         const token = jwt.sign(
           {
-            _id: public_address,
-            address: public_address,
+            _id: account,
+            address: account,
           },
           process.env.JWT_SECRET,
           { expiresIn: "6h" }

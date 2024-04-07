@@ -10,7 +10,7 @@ const create = async (api_key) => {
   };
 
   const data = {
-    network: "otp:20430",
+    blockchain: "gnosis:10200",
     epochs: 2,
     approver: '0x0EFA0c78aA0E5CB851E909614c22C98E68dd882d',
     asset: {
@@ -22,7 +22,7 @@ const create = async (api_key) => {
   };
 
   const response = await axios
-    .post(`https://api.othub.io/dkg/create`, data, config)
+    .post(`http://localhost:5575/dkg/create`, data, config)
     .then((response) => {
       // Handle the successful response here
       return response;

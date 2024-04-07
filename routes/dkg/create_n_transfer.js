@@ -87,16 +87,16 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if ((data.network !== "gnosis:10200" && 
-        data.network !== "otp:20430" && 
-        data.network !== "gnosis:100" && 
-        data.network !== "otp:2043") || 
-    ((data.network === "gnosis:100" || data.network === "otp:2043") && api_key !== process.env.MASTER_KEY)) {
-      console.log(`Create request with invalid network from ${api_key}`);
+    if ((data.blockchain !== "gnosis:10200" && 
+        data.blockchain !== "otp:20430" && 
+        data.blockchain !== "gnosis:100" && 
+        data.blockchain !== "otp:2043") || 
+    ((data.blockchain === "gnosis:100" || data.blockchain === "otp:2043") && api_key !== process.env.MASTER_KEY)) {
+      console.log(`Create request with invalid blockchain from ${api_key}`);
 
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided. Current supported networks are: otp:20430, gnosis:10200.",
+        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, gnosis:10200.",
       });
       return;
     }
@@ -125,7 +125,7 @@ router.post("/", async function (req, res) {
       trac_fee = null;
     }
 
-    query = `select * from app_header where api_key = ?`;
+    query = `select ah.app_name,kh.key_id from key_header kh join app_header ah on ah.account = kh.account where kh.api_key = ?`;
     params = [api_key];
     app = await queryDB
     .getData(query, params, network, blockchain)
@@ -138,7 +138,7 @@ router.post("/", async function (req, res) {
       console.error("Error retrieving data:", error);
     });
 
-    // query = `select * from enabled_apps where public_address = ?`;
+    // query = `select * from enabled_apps where owner = ?`;
     // params = [data.approver];
     // enabled_apps = await getOTHUBData(query, params)
     //   .then((results) => {
@@ -163,13 +163,13 @@ router.post("/", async function (req, res) {
     //   return;
     // }
 
-    query = `INSERT INTO txn_header (txn_id, progress, approver, api_key, request, network, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
     params = [
       "PENDING",
       data.approver,
-      api_key,
+      app[0].key_id,
       type,
-      data.network,
+      data.blockchain,
       app[0].app_name,
       txn_description,
       typeof data.asset === 'string' || data.asset instanceof String ? (data.asset) : (JSON.stringify(data.asset)),
@@ -193,8 +193,8 @@ router.post("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
-    query = `select * from txn_header where api_key = ? and request = ? order by created_at desc`;
-    params = [api_key, type];
+    query = `select * from txn_header where key_id = ? and request = ? order by created_at desc`;
+    params = [app[0].key_id, type];
     txn = await queryDB
     .getData(query, params, network, blockchain)
     .then((results) => {

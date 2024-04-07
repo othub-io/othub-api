@@ -135,7 +135,7 @@ router.post("/", async function (req, res) {
     }
 
     if (frequency === "last24h") {
-      order_by = "1";
+      order_by = "date";
     }
 
     query = `select * from v_pubs_stats_${frequency}`;

@@ -10,7 +10,7 @@ const getBidSuggestion = async (api_key) => {
   };
 
   const data = {
-    receipt: "aafa5619-be33-11ee-979f-960002220f0d"
+    receipt: "b3033346-f2b5-11ee-af86-960002220f0d"
   };
 
   const response = await axios

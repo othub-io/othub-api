@@ -14,7 +14,6 @@ router.post("/", async function (req, res) {
     type = "checkTransaction";
     data = req.body;
     api_key = req.headers["x-api-key"];
-    network = ""
     blockchain = "othub_db"
 
     if (!api_key || api_key === "") {
@@ -96,7 +95,7 @@ router.post("/", async function (req, res) {
     }
 
     let explorer_url = 'https://dkg.origintrail.io'
-    if(transaction[0].network === 'otp::20430' || transaction[0].network === 'gnosis::10200'){
+    if(transaction[0].blockchain === 'otp::20430' || transaction[0].blockchain === 'gnosis::10200'){
       explorer_url = 'https://dkg-testnet.origintrail.io'
     }
 

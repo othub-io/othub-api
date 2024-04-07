@@ -108,19 +108,19 @@ router.post("/", async function (req, res) {
 
     params = [];
 
-    if (data.owner) {
-      if (!ethers.utils.isAddress(data.owner)) {
-        console.log(`Node stats request with invalid owner from ${api_key}`);
+    if (data.account) {
+      if (!ethers.utils.isAddress(data.account)) {
+        console.log(`Node stats request with invalid account from ${api_key}`);
 
         res.status(400).json({
           success: false,
-          msg: "Invalid owner (evm address) provided.",
+          msg: "Invalid account (evm address) provided.",
         });
         return;
       }
 
-      conditions.push(`nodeOwner = ?`);
-      params.push(data.owner);
+      conditions.push(`nodeaccount = ?`);
+      params.push(data.account);
     }
 
     if (

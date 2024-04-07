@@ -14,7 +14,7 @@ router.post("/", async function (req, res) {
     let blockchain = data.blockchain ? data.blockchain : null;
     let query = `select * from v_pubs`;
     let nodeId = Number.isInteger(data.nodeId) ? data.nodeId : null;
-    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
+    let limit = Number.isInteger(data.limit) ? data.limit : 100;
     let order_by = data.order_by ? data.order_by : "block_ts_hour"
     let conditions = [];
     let params = [];
@@ -79,7 +79,7 @@ router.post("/", async function (req, res) {
 
     if (data.owner) {
       if (!ethers.utils.isAddress(data.owner)) {
-        console.log(`Pub activity request with invalid owner from ${api_key}`);
+        console.log(`Pub activity request with invalid account from ${api_key}`);
 
         res.status(400).json({
           success: false,
