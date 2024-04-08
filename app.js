@@ -70,6 +70,10 @@ const nodeActivityRouter = require('./routes/nodes/activity')
 const nodeInfoRouter = require('./routes/nodes/info')
 const nodeStatsRouter = require('./routes/nodes/stats')
 
+//delegators
+const delegatorsActivityRouter = require('./routes/delegators/activity')
+const delegatorsStatsRouter = require('./routes/delegators/stats')
+
 //pubs
 const pubInfoRouter = require('./routes/pubs/info')
 const pubStatsRouter = require('./routes/pubs/stats')
@@ -128,6 +132,10 @@ app.use('/othub/home', othubHomeRouter)
 app.use('/nodes/activity', nodeActivityRouter)
 app.use('/nodes/info', nodeInfoRouter)
 app.use('/nodes/stats', nodeStatsRouter)
+
+//nodes
+app.use('/delegators/activity', delegatorsActivityRouter)
+app.use('/delegators/stats', delegatorsStatsRouter)
 
 //pubs
 app.use('/pubs/info', pubInfoRouter)

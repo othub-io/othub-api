@@ -18,7 +18,6 @@ router.post("/", async function (req, res) {
         ? data.timeframe
         : null;
     let limit = Number.isInteger(data.limit) ? data.limit : 1000;
-    let grouped = data.grouped === "yes" ? "_grouped" : "";
     let order_by = "date";
     let conditions = [];
     let params = [];
@@ -112,26 +111,19 @@ router.post("/", async function (req, res) {
 
     params = [];
 
-    if (data.owner) {
+    if (data.delegator) {
       if (!ethers.utils.isAddress(data.owner)) {
-        console.log(`Node stats request with invalid owner from ${api_key}`);
+        console.log(`Delegator stats request with invalid delegator from ${api_key}`);
 
         res.status(400).json({
           success: false,
-          msg: "Invalid owner (evm address) provided.",
+          msg: "Invalid delegator (evm address) provided.",
         });
         return;
       }
 
-      conditions.push(`nodeOwner = ?`);
-      params.push(data.owner);
-    }
-
-    if (
-      network === "DKG Mainnet" ||
-      network === "DKG Testnet"
-    ) {
-      grouped = "_grouped";
+      conditions.push(`delegator = ?`);
+      params.push(data.delegator);
     }
 
     if (!limit) {
@@ -170,7 +162,7 @@ router.post("/", async function (req, res) {
     }
 
     ques = "";
-    if (data.nodeId && grouped !== "_grouped") {
+    if (data.nodeId) {
       nodeIds = data.nodeId.split(",").map(Number);
       for (const nodeid of nodeIds) {
         if (!Number(nodeid)) {
@@ -190,7 +182,7 @@ router.post("/", async function (req, res) {
       params.push(nodeIds);
     }
 
-    query = `select * from v_nodes_stats${grouped}_${frequency}`;
+    query = `select * from v_delegators_${frequency}`;
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
