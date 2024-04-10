@@ -6,19 +6,6 @@ const queryTypes = require("../../util/queryTypes");
 const { pubToAddress } = require("ethereumjs-util");
 const queryDB = queryTypes.queryDB();
 
-function randomWord(length) {
-  let result = "";
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const charactersLength = characters.length;
-
-  for (let i = 0; i < length; ++i) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-
-  return result;
-}
-
 router.post(
   "/",
   web3passport.authenticate("jwt", { session: false }),
@@ -28,7 +15,7 @@ router.post(
       account = req.user[0].account;
       console.log(`Visitor:${account} is deleting an app.`);
 
-      query = `Select * from app_header WHERE account = ?`;
+      query = `select ah.app_name,kh.key_id from key_header kh join app_header ah on ah.account = kh.account where kh.api_key = ?`;
       app_header = await queryDB
         .getData(query, [account, data.api_key], "", "othub_db")
         .then((results) => {
@@ -40,9 +27,9 @@ router.post(
           console.error("Error retrieving data:", error);
         });
 
-      query = `DELETE FROM txn_header WHERE app_name = ? and api_key = ?`;
+      query = `DELETE FROM txn_header WHERE app_name = ? and key_id = ?`;
       await queryDB
-        .getData(query, [app_header[0].app_name, data.api_key], "", "othub_db")
+        .getData(query, [app_header[0].app_name, app_header[0].key_id], "", "othub_db")
         .then((results) => {
           //console.log('Query results:', results);
           return results;
@@ -52,9 +39,9 @@ router.post(
           console.error("Error retrieving data:", error);
         });
 
-      query = `DELETE FROM key_header WHERE account = ? and api_key = ?`;
+      query = `DELETE FROM key_header WHERE account = ? and key_id = ?`;
       await queryDB
-        .getData(query, [account, data.api_key], "", "othub_db")
+        .getData(query, [account, app_header[0].key_id], "", "othub_db")
         .then((results) => {
           //console.log('Query results:', results);
           return results;

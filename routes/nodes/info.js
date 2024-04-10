@@ -98,18 +98,18 @@ router.post("/", async function (req, res) {
       params.push(data.nodeName);
     }
 
-    if (data.account) {
-      if (!ethers.utils.isAddress(data.account)) {
-        console.log(`Node info request with invalid account from ${api_key}`);
+    if (data.owner) {
+      if (!ethers.utils.isAddress(data.owner)) {
+        console.log(`Node info request with invalid owner from ${api_key}`);
 
         res.status(400).json({
           success: false,
-          msg: "Invalid account (evm address) provided.",
+          msg: "Invalid owner (evm address) provided.",
         });
         return;
       }
 
-      keccak256hash = keccak256(data.account).toString("hex");
+      keccak256hash = keccak256(data.owner).toString("hex");
       keccak256hash = "0x" + keccak256hash;
       like_keccak256hash = "%" + keccak256hash + "%";
 

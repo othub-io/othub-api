@@ -7,6 +7,7 @@ const queryDB = queryTypes.queryDB()
 /* GET explore page. */
 router.post('/', async function (req, res, next) {
   try{
+    type = ""
     api_key = req.headers["x-api-key"];
     let network = req.body.network;
     let blockchain = "othub_db"

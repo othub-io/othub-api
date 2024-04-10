@@ -108,19 +108,19 @@ router.post("/", async function (req, res) {
 
     params = [];
 
-    if (data.account) {
-      if (!ethers.utils.isAddress(data.account)) {
-        console.log(`Node stats request with invalid account from ${api_key}`);
+    if (data.owner) {
+      if (!ethers.utils.isAddress(data.owner)) {
+        console.log(`Node stats request with invalid owner from ${api_key}`);
 
         res.status(400).json({
           success: false,
-          msg: "Invalid account (evm address) provided.",
+          msg: "Invalid owner (evm address) provided.",
         });
         return;
       }
 
-      conditions.push(`nodeaccount = ?`);
-      params.push(data.account);
+      conditions.push(`nodeOwner = ?`);
+      params.push(data.owner);
     }
 
     if (
@@ -165,7 +165,7 @@ router.post("/", async function (req, res) {
       }
     }
 
-    if (frequency === "last24h") {
+    if (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" ||   frequency === "latest") {
       order_by = "1";
     }
 

@@ -72,11 +72,11 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    query = `select signer,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_pubs_activity_last${frequency} UNION ALL select tokenSymbol,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_nodes_activity_last${frequency} WHERE nodeId in (${ques}) AND eventName != 'StakeIncreased' order by datetime desc LIMIT ${limit}`;
+    query = `select signer,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_pubs_activity_last${frequency} UNION ALL select tokenSymbol,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_nodes_activity_last${frequency}`;
     ques = "";
 
     if (data.nodeId) {
-      nodeIds = data.nodeId.split(",").map(Number);
+      nodeIds = !Number(data.nodeId) ? data.nodeId.split(",").map(Number) : [data.nodeId];
       for (const nodeid of nodeIds) {
         if (!Number(nodeid)) {
           console.log(`Invalid node id provided by ${api_key}`);
@@ -92,7 +92,7 @@ router.post("/", async function (req, res) {
       ques = ques.substring(0, ques.length - 1);
 
       conditions.push(`nodeId in (${ques})`);
-      params = nodeIds;
+      params.push(nodeIds);
     }
 
     whereClause =
