@@ -72,11 +72,41 @@ router.post("/", async function (req, res) {
       return;
     }
 
+    if (!blockchain) {
+      query = `select chain_name,chain_id from blockchains where environment = ?`;
+      params = [network];
+      blockchains = await queryDB
+        .getData(query, params, "", "othub_db")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+    } else {
+      query = `select chain_name,chain_id from blockchains where chain_name = ?`;
+      params = [blockchain];
+      blockchains = await queryDB
+        .getData(query, params, "", "othub_db")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+    }
+
     query = `select * from v_nodes`;
     ques = "";
 
     if (data.nodeId) {
-      nodeIds = !Number(data.nodeId) ? data.nodeId.split(",").map(Number) : [data.nodeId];
+      nodeIds = !Number(data.nodeId)
+        ? data.nodeId.split(",").map(Number)
+        : [data.nodeId];
       for (const nodeid of nodeIds) {
         if (!Number(nodeid)) {
           console.log(`Invalid node id provided by ${api_key}`);
@@ -93,7 +123,7 @@ router.post("/", async function (req, res) {
 
       conditions.push(`nodeId in (${ques})`);
       params.push(nodeIds);
-    }else if(data.nodeName){
+    } else if (data.nodeName) {
       conditions.push(`tokenName = ?`);
       params.push(data.nodeName);
     }
@@ -127,66 +157,32 @@ router.post("/", async function (req, res) {
       " " +
       whereClause +
       ` order by chainName,nodeId asc LIMIT ${limit}`;
+      
+    let node_data = [];
+    for (const blockchain of blockchains) {
+      data = await queryDB
+        .getData(query, params, "", blockchain.chain_name)
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
 
-    nodes = await queryDB
-      .getData(query, params, network, blockchain)
-      .then((results) => {
-        //console.log('Query results:', results);
-        return results;
-        // Use the results in your variable or perform further operations
-      })
-      .catch((error) => {
-        console.error("Error retrieving data:", error);
-      });
+      chain_data = {
+        blockchain_name: blockchain.chain_name,
+        blockchain_id: blockchain.chain_id,
+        data: data,
+      };
 
-      let node_list = []
-      for(const node of nodes){
-        blockchain = node.chainName
-        query = `select shareValueCurrent,shareValueFuture from v_nodes_stats_latest where nodeId = ?`;
-        params = [node.nodeId];
-        dkg_node = await queryDB
-          .getData(query, params, "", blockchain)
-          .then((results) => {
-            //console.log('Query results:', results);
-            return results;
-            // Use the results in your variable or perform further operations
-          })
-          .catch((error) => {
-            console.error("Error retrieving data:", error);
-          });
-
-        node_obj = {
-          chainId: node.chainId,
-          chainName: node.chainName,
-          nodeId: node.nodeId,
-          sharesContractAddress: node.sharesContractAddress,
-          networkId: node.networkId,
-          tokenName: node.tokenName,
-          tokenSymbol: node.tokenSymbol,
-          nodeStake: node.nodeStake,
-          shareValueCurrent: dkg_node[0].shareValueCurrent,
-          shareValueFuture: dkg_node[0].shareValueFuture,
-          nodeOperatorFee: node.nodeOperatorFee,
-          nodeAsk: node.nodeAsk,
-          nodeAgeDays: node.nodeAgeDays,
-          nodeGroup: node.nodeAgeDays,
-          createProfile_adminWallet: node.createProfile_adminWallet,
-          createProfile_adminWallet_hash: node.createProfile_adminWallet_hash,
-          current_adminWallet_hashes: node.current_adminWallet_hashes,
-          createProfile_blockNumber: node.createProfile_blockNumber,
-          createProfile_txHash: node.createProfile_txHash,
-          createProfile_ts: node.createProfile_ts,
-          createProfile_date: node.createProfile_date,
-          nodeOperatorFee: node.nodeOperatorFee,
-          nodeSharesTotalSupply: node.nodeSharesTotalSupply
-        }
-  
-        node_list.push(node_obj)
-      }
+      node_data.push(chain_data);
+    }
 
     res.status(200).json({
       success: true,
-      result: node_list,
+      result: node_data,
     });
   } catch (e) {
     console.log(e);

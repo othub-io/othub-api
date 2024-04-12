@@ -124,8 +124,8 @@ router.post("/", async function (req, res) {
     }
 
     if (
-      network === "DKG Mainnet" ||
-      network === "DKG Testnet"
+      (network === "DKG Mainnet" ||
+      network === "DKG Testnet") && (!frequency === "last1h" && !frequency === "last24h" && !frequency === "last7d" && !frequency === "last30d" && !frequency === "latest")
     ) {
       grouped = "_grouped";
     }

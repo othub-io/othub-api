@@ -101,7 +101,7 @@ router.post("/", async function (req, res, next) {
       query = `select nodeStake from v_nodes where nodeStake >= 50000`;
       params = [];
       let nodes = await queryDB
-        .getData(query, params, network, blockchain.chain_name)
+        .getData(query, params, "", blockchain.chain_name)
         .then((results) => {
           //console.log('Query results:', results);
           return results;
@@ -113,7 +113,7 @@ router.post("/", async function (req, res, next) {
 
       query = `select sum(totalPubs) as count from v_pubs_stats_daily`;
       let pub_count = await queryDB
-        .getData(query, params, network, blockchain.chain_name)
+        .getData(query, params, "", blockchain.chain_name)
         .then((results) => {
           //console.log('Query results:', results);
           return results;
@@ -125,7 +125,7 @@ router.post("/", async function (req, res, next) {
 
       query = `select totalPubs,totalTracSpent from v_pubs_stats_last24h order by datetime`;
       let pubs_stats_last24h = await queryDB
-        .getData(query, params, network, blockchain.chain_name)
+        .getData(query, params, "", blockchain.chain_name)
         .then((results) => {
           //console.log('Query results:', results);
           return results;
@@ -137,7 +137,7 @@ router.post("/", async function (req, res, next) {
 
       query = `select totalTracSpent from v_pubs_stats_total`;
       let totalTracSpent = await queryDB
-        .getData(query, params, network, blockchain.chain_name)
+        .getData(query, params, "", blockchain.chain_name)
         .then((results) => {
           //console.log('Query results:', results);
           return results;

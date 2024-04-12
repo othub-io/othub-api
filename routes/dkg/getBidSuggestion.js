@@ -30,6 +30,7 @@ router.post("/", async function (req, res) {
     api_key = req.headers["x-api-key"];
     network = ""
     blockchain = "othub_db"
+    let range = data.range ? data.range : "all";
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -101,13 +102,14 @@ router.post("/", async function (req, res) {
       epochs = 5;
     }
 
-    txn_data = data.asset;
+
+    let txn_data = data.asset;
     if (!txn_data.hasOwnProperty("@context")) {
       txn_data["@context"] = "https://schema.org";
     }
 
     dkg_data = {
-      public: JSON.parse(txn_data),
+      public: txn_data,
     };
 
     const environment =
@@ -148,6 +150,7 @@ router.post("/", async function (req, res) {
           publicKey: process.env.PUBLIC_KEY,
           privateKey: process.env.PRIVATE_KEY,
         },
+        bidSuggestionRange: range
       }
     );
 
@@ -209,7 +212,7 @@ router.post("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
-    res.status(200).json(Number(dkg_bid_result));
+    res.status(200).json(Number(dkg_bid_result) ? Number(dkg_bid_result) : dkg_bid_result);
   } catch (e) {
     console.log(e);
     res.status(500).json({

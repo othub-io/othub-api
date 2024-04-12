@@ -17,7 +17,7 @@ router.post("/", async function (req, res) {
         ? data.timeframe
         : null;
     let limit = Number.isInteger(data.limit) ? data.limit : 1000;
-    let order_by = "date"
+    let order_by;
     let conditions = [];
     let params = [];
     let query;
@@ -115,7 +115,7 @@ router.post("/", async function (req, res) {
     }
 
     if (frequency === "hourly") {
-      order_by = "datetime";
+      order_by = "order by datetime";
 
       if (timeframe) {
         conditions.push(`datetime >= (select DATE_ADD(block_ts, interval -${timeframe} HOUR) as t from v_sys_staging_date)`);
@@ -123,26 +123,28 @@ router.post("/", async function (req, res) {
     }
 
     if (frequency === "daily") {
+      order_by = "order by date"
       if (timeframe) {
         conditions.push(`date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} DAY) as date) as t from v_sys_staging_date)`);
       }
     }
 
     if (frequency === "monthly") {
+      order_by = "order by date"
       if (timeframe) {
         conditions.push(`date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} MONTH) as date) as t from v_sys_staging_date)`);
       }
     }
 
     if (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" ||   frequency === "latest") {
-      order_by = "date";
+      order_by = "order by datetime";
     }
 
     query = `select * from v_pubs_stats_${frequency}`;
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` order by ${order_by} LIMIT ${limit}`;
+    query = query + " " + whereClause + ` ${order_by} LIMIT ${limit}`;
 
     let pub_data = [];
 
