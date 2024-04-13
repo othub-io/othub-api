@@ -79,7 +79,7 @@ router.post("/", async function (req, res) {
 
     if (data.owner) {
       if (!ethers.utils.isAddress(data.owner)) {
-        console.log(`Pub activity request with invalid account from ${api_key}`);
+        console.log(`Asset info request with invalid account from ${api_key}`);
 
         res.status(400).json({
           success: false,
@@ -94,7 +94,7 @@ router.post("/", async function (req, res) {
 
     if (data.publisher) {
       if (!ethers.utils.isAddress(data.publisher)) {
-        console.log(`Pub info request with invalid publisher from ${api_key}`);
+        console.log(`Asset info request with invalid publisher from ${api_key}`);
 
         res.status(400).json({
           success: false,
@@ -114,7 +114,7 @@ router.post("/", async function (req, res) {
       const args = argsString.split("/");
 
       if (args.length !== 3) {
-        console.log(`Pub Info request with invalid ual from ${api_key}`);
+        console.log(`Asset Info request with invalid ual from ${api_key}`);
         res.status(400).json({
           success: false,
           msg: "Invalid UAL provided.",

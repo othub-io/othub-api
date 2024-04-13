@@ -53,10 +53,12 @@ const txnCompleteRouter = require('./routes/txn/complete')
 const txnRejectRouter = require('./routes/txn/reject')
 
 //assets
-const assetActivityRouter = require('./routes/assets/activity')
-const assetHistoryRouter = require('./routes/assets/history')
-const assetInventoryRouter = require('./routes/assets/inventory')
+const assetsHistoryRouter = require('./routes/assets/history')
 const assetsInfoRouter = require('./routes/assets/info')
+
+//pubs
+const pubsStatsRouter = require('./routes/pubs/stats')
+const pubsActivityRouter = require('./routes/pubs/activity')
 
 //auth
 const authRegisterRouter = require('./routes/auth/register')
@@ -73,9 +75,6 @@ const nodeStatsRouter = require('./routes/nodes/stats')
 //delegators
 const delegatorsActivityRouter = require('./routes/delegators/activity')
 const delegatorsStatsRouter = require('./routes/delegators/stats')
-
-//pubs
-const pubStatsRouter = require('./routes/pubs/stats')
 
 //notifications
 const telegramEditRouter = require('./routes/notifications/telegram/edit')
@@ -121,14 +120,17 @@ app.use('/app/txn/complete', txnCompleteRouter)
 app.use('/app/txn/reject', txnRejectRouter)
 
 //assets
-app.use('/assets/activity', assetActivityRouter)
-app.use('/assets/history', assetHistoryRouter)
-app.use('/assets/inventory', assetInventoryRouter)
+app.use('/assets/history', assetsHistoryRouter)
 app.use('/assets/info', assetsInfoRouter)
 
 //auth
 app.use('/auth/register', authRegisterRouter)
 app.use('/auth/sign', authSignRouter)
+
+
+//pubs
+app.use('/pubs/activity', pubsActivityRouter)
+app.use('/pubs/stats', pubsStatsRouter)
 
 //othub
 app.use('/othub/home', othubHomeRouter)
@@ -141,9 +143,6 @@ app.use('/nodes/stats', nodeStatsRouter)
 //nodes
 app.use('/delegators/activity', delegatorsActivityRouter)
 app.use('/delegators/stats', delegatorsStatsRouter)
-
-//pubs
-app.use('/pubs/stats', pubStatsRouter)
 
 //notifications
 app.use('/notifications/telegram/edit', telegramEditRouter)

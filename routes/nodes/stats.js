@@ -171,7 +171,9 @@ router.post("/", async function (req, res) {
 
     ques = "";
     if (data.nodeId && grouped !== "_grouped") {
-      nodeIds = !Number(data.nodeId) ? data.nodeId.split(",").map(Number) : [data.nodeId];
+      nodeIds = !Number(data.nodeId)
+        ? data.nodeId.split(",").map(Number)
+        : [data.nodeId];
       for (const nodeid of nodeIds) {
         if (!Number(nodeid)) {
           console.log(`Invalid node id provided by ${api_key}`);
@@ -182,12 +184,12 @@ router.post("/", async function (req, res) {
           return;
         }
         ques = ques + "?,";
+        params.push(Number(nodeid));
       }
 
       ques = ques.substring(0, ques.length - 1);
 
       conditions.push(`nodeId in (${ques})`);
-      params.push(nodeIds);
     }
 
     query = `select * from v_nodes_stats${grouped}_${frequency}`;

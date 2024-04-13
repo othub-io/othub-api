@@ -103,6 +103,7 @@ router.post("/", async function (req, res) {
     query = `select * from v_nodes`;
     ques = "";
 
+    params = []
     if (data.nodeId) {
       nodeIds = !Number(data.nodeId)
         ? data.nodeId.split(",").map(Number)
@@ -117,13 +118,16 @@ router.post("/", async function (req, res) {
           return;
         }
         ques = ques + "?,";
+        params.push(Number(nodeid));
       }
 
       ques = ques.substring(0, ques.length - 1);
 
       conditions.push(`nodeId in (${ques})`);
-      params.push(nodeIds);
-    } else if (data.nodeName) {
+      
+    }
+    
+    if (data.nodeName) {
       conditions.push(`tokenName = ?`);
       params.push(data.nodeName);
     }
@@ -157,7 +161,9 @@ router.post("/", async function (req, res) {
       " " +
       whereClause +
       ` order by chainName,nodeId asc LIMIT ${limit}`;
-      
+
+    console.log(query)
+    console.log(params)
     let node_data = [];
     for (const blockchain of blockchains) {
       data = await queryDB
