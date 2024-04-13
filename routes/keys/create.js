@@ -44,6 +44,7 @@ router.post(
           console.error("Error retrieving data:", error);
         });
 
+        console.log(result)
       if (result.length >= 3) {
         console.log(`Keys already exists from ${account}`);
         res.status(400).json({
@@ -55,7 +56,7 @@ router.post(
       }
 
       api_key = await randomWord(Math.floor(25) + 5);
-      query = `INSERT INTO key_header values (UUID(),?,?,?,?,?)`;
+      query = `INSERT INTO key_header values (UUID(),?,?,?,?)`;
       await queryDB
         .getData(
           query,

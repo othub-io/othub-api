@@ -124,7 +124,6 @@ router.post("/", async function (req, res) {
       ques = ques.substring(0, ques.length - 1);
 
       conditions.push(`nodeId in (${ques})`);
-      
     }
     
     if (data.nodeName) {
@@ -162,8 +161,6 @@ router.post("/", async function (req, res) {
       whereClause +
       ` order by chainName,nodeId asc LIMIT ${limit}`;
 
-    console.log(query)
-    console.log(params)
     let node_data = [];
     for (const blockchain of blockchains) {
       data = await queryDB

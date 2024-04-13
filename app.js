@@ -32,7 +32,6 @@ const createRouter= require('./routes/dkg/create')
 const queryRouter = require('./routes/dkg/query')
 const transferRouter = require('./routes/dkg/transfer')
 const create_n_transferRouter = require('./routes/dkg/create_n_transfer')
-const checkTransactionRouter = require('./routes/dkg/checkTransaction')
 const updateRouter = require('./routes/dkg/update')
 const isValidUALRouter = require('./routes/dkg/isValidUAL')
 
@@ -43,14 +42,14 @@ const appDeleteRouter = require('./routes/app/delete')
 const appEditRouter = require('./routes/app/edit')
 
 //key
-const keyInfoRouter = require('./routes/key/info')
-const keyCreateRouter = require('./routes/key/create')
-const keyDeleteRouter = require('./routes/key/delete')
+const keysInfoRouter = require('./routes/keys/info')
+const keysCreateRouter = require('./routes/keys/create')
+const keysDeleteRouter = require('./routes/keys/delete')
 
 //txn
-const txnInfoRouter = require('./routes/txn/info')
-const txnCompleteRouter = require('./routes/txn/complete')
-const txnRejectRouter = require('./routes/txn/reject')
+const txnsInfoRouter = require('./routes/txns/info')
+const txnsCompleteRouter = require('./routes/txns/complete')
+const txnsRejectRouter = require('./routes/txns/reject')
 
 //assets
 const assetsHistoryRouter = require('./routes/assets/history')
@@ -100,7 +99,6 @@ app.use('/dkg/update', updateRouter)
 app.use('/dkg/query', queryRouter)
 app.use('/dkg/transfer', transferRouter)
 app.use('/dkg/create_n_transfer', create_n_transferRouter)
-app.use('/dkg/checkTransaction', checkTransactionRouter)
 app.use('/dkg/isValidUAL', isValidUALRouter)
 
 //app
@@ -110,14 +108,14 @@ app.use('/app/delete', appDeleteRouter)
 app.use('/app/edit', appEditRouter)
 
 //key
-app.use('/app/key/info', keyInfoRouter)
-app.use('/app/key/create', keyCreateRouter)
-app.use('/app/key/delete', keyDeleteRouter)
+app.use('/keys/info', keysInfoRouter)
+app.use('/keys/create', keysCreateRouter)
+app.use('/keys/delete', keysDeleteRouter)
 
 //txn
-app.use('/app/txn/info', txnInfoRouter)
-app.use('/app/txn/complete', txnCompleteRouter)
-app.use('/app/txn/reject', txnRejectRouter)
+app.use('/txns/info', txnsInfoRouter)
+app.use('/txns/complete', txnsCompleteRouter)
+app.use('/txns/reject', txnsRejectRouter)
 
 //assets
 app.use('/assets/history', assetsHistoryRouter)

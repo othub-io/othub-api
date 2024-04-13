@@ -87,6 +87,7 @@ router.post("/", async function (req, res, next) {
           process.env.JWT_SECRET,
           { expiresIn: "6h" }
         );
+
         res.status(200).json({
           success: true,
           token: `Bearer ${token}`,

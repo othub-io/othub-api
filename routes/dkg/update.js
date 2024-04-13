@@ -255,7 +255,7 @@ router.post("/", async function (req, res) {
     //   return;
     // }
 
-    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, txn_data, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,UUID(),?,?,?,?,?,?,?,?)`;
     params = [
       "PENDING",
       data.approver,
@@ -264,15 +264,14 @@ router.post("/", async function (req, res) {
       data.blockchain,
       app[0].app_name,
       txn_description,
-      typeof data.asset === 'string' || data.asset instanceof String ? (data.asset) : (JSON.stringify(data.asset)),
-      data.ual,
+      null,
       keywords,
       null,
       null,
       null,
       trac_fee,
       epochs,
-      null,
+      data.receiver,
     ];
 
     await queryDB
@@ -298,6 +297,23 @@ router.post("/", async function (req, res) {
     .catch((error) => {
       console.error("Error retrieving data:", error);
     });
+
+    query = `INSERT INTO data_header (data_id, asset_data) VALUES (?,?)`;
+    params = [
+      txn[0].data_id,
+      typeof data.asset === 'string' || data.asset instanceof String ? (data.asset) : (JSON.stringify(data.asset)),
+    ];
+
+    await queryDB
+      .getData(query, params, network, blockchain)
+      .then((results) => {
+        //console.log('Query results:', results);
+        return results;
+        // Use the results in your variable or perform further operations
+      })
+      .catch((error) => {
+        console.error("Error retrieving data:", error);
+      });
 
     res.status(200).json({
       success: true,
