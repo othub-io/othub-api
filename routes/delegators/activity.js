@@ -11,9 +11,8 @@ router.post("/", async function (req, res) {
     data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network && !data.blockchain ? data.network : null;
-    let blockchain = data.blockchain
-    //let frequency = data.frequency ? data.frequency : `1min`;
-    let frequency = `1min`;
+    let blockchain = data.blockchain;
+    let query = `select * from v_delegators_activity`;
     let limit = Number.isInteger(data.limit) ? data.limit : 1000;
     let conditions = [];
     let params = [];
@@ -73,25 +72,27 @@ router.post("/", async function (req, res) {
     }
 
     if (data.delegator) {
-        if (!ethers.utils.isAddress(data.owner)) {
-          console.log(`Delegator stats request with invalid delegator from ${api_key}`);
-  
-          res.status(400).json({
-            success: false,
-            msg: "Invalid delegator (evm address) provided.",
-          });
-          return;
-        }
-  
-        conditions.push(`delegator = ?`);
-        params.push(data.delegator);
+      if (!ethers.utils.isAddress(data.owner)) {
+        console.log(
+          `Delegator stats request with invalid delegator from ${api_key}`
+        );
+
+        res.status(400).json({
+          success: false,
+          msg: "Invalid delegator (evm address) provided.",
+        });
+        return;
       }
 
-    query = `select * from v_delegators_activity`;
-    ques = "";
+      conditions.push(`delegator = ?`);
+      params.push(data.delegator);
+    }
 
+    let ques = "";
     if (data.nodeId) {
-      nodeIds = data.nodeId.split(",").map(Number);
+      nodeIds = !Number(data.nodeId)
+        ? data.nodeId.split(",").map(Number)
+        : [data.nodeId];
       for (const nodeid of nodeIds) {
         if (!Number(nodeid)) {
           console.log(`Invalid node id provided by ${api_key}`);
@@ -102,12 +103,17 @@ router.post("/", async function (req, res) {
           return;
         }
         ques = ques + "?,";
+        params.push(Number(nodeid));
       }
 
       ques = ques.substring(0, ques.length - 1);
 
       conditions.push(`nodeId in (${ques})`);
-      params = nodeIds;
+    }
+
+    if (data.txn_hash) {
+      conditions.push(`transactionHash = ?`);
+      params.push(data.txn_hash);
     }
 
     whereClause =
@@ -115,7 +121,7 @@ router.post("/", async function (req, res) {
     query =
       query + " " + whereClause + ` order by timestamp desc LIMIT ${limit}`;
 
-      result = await queryDB
+    result = await queryDB
       .getData(query, params, network, blockchain)
       .then((results) => {
         //console.log('Query results:', results);

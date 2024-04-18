@@ -12,7 +12,7 @@ router.post("/", async function (req, res) {
     api_key = req.headers["x-api-key"];
     let network = data.network ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
-    let frequency = data.frequency ? data.frequency : `monthly`;
+    let frequency = data.frequency ? data.frequency : `daily`;
     let timeframe =
       Number.isInteger(data.timeframe)
         ? data.timeframe
@@ -77,40 +77,6 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (!blockchain) {
-      blockchain = "othub_db";
-      query = `select chain_name,chain_id from blockchains where environment = ?`;
-      params = [network];
-      network = "";
-      blockchains = await queryDB
-        .getData(query, params, network, blockchain)
-        .then((results) => {
-          //console.log('Query results:', results);
-          return results;
-          // Use the results in your variable or perform further operations
-        })
-        .catch((error) => {
-          console.error("Error retrieving data:", error);
-        });
-    } else {
-      query = `select chain_name,chain_id from blockchains where environment = ? and chain_name = ?`;
-      params = [network, blockchain];
-      blockchain = "othub_db";
-      network = "";
-      blockchains = await queryDB
-        .getData(query, params, network, blockchain)
-        .then((results) => {
-          //console.log('Query results:', results);
-          return results;
-          // Use the results in your variable or perform further operations
-        })
-        .catch((error) => {
-          console.error("Error retrieving data:", error);
-        });
-    }
-
-    params = [];
-
     if (data.delegator) {
       if (!ethers.utils.isAddress(data.owner)) {
         console.log(`Delegator stats request with invalid delegator from ${api_key}`);
@@ -134,16 +100,16 @@ router.post("/", async function (req, res) {
       limit = 2000;
     }
 
-    if (frequency === "hourly") {
-      frequency = "hourly_7d";
-      order_by = "datetime";
+    // if (frequency === "hourly") {
+    //   frequency = "hourly_7d";
+    //   order_by = "datetime";
 
-      if (timeframe) {
-        conditions.push(
-          `datetime >= (select DATE_ADD(block_ts, interval -${timeframe} HOUR) as t from v_sys_staging_date)`
-        );
-      }
-    }
+    //   if (timeframe) {
+    //     conditions.push(
+    //       `datetime >= (select DATE_ADD(block_ts, interval -${timeframe} HOUR) as t from v_sys_staging_date)`
+    //     );
+    //   }
+    // }
 
     if (frequency === "daily") {
       if (timeframe) {
@@ -153,17 +119,23 @@ router.post("/", async function (req, res) {
       }
     }
 
-    if (frequency === "monthly") {
-      if (timeframe) {
-        conditions.push(
-          `date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} MONTH) as date) as t from v_sys_staging_date)`
-        );
-      }
+    // if (frequency === "monthly") {
+    //   if (timeframe) {
+    //     conditions.push(
+    //       `date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} MONTH) as date) as t from v_sys_staging_date)`
+    //     );
+    //   }
+    // }
+
+    if (frequency === "latest") {
+      order_by = "3";
     }
 
-    ques = "";
+    let ques = "";
     if (data.nodeId) {
-      nodeIds = data.nodeId.split(",").map(Number);
+      nodeIds = !Number(data.nodeId)
+        ? data.nodeId.split(",").map(Number)
+        : [data.nodeId];
       for (const nodeid of nodeIds) {
         if (!Number(nodeid)) {
           console.log(`Invalid node id provided by ${api_key}`);
@@ -174,15 +146,15 @@ router.post("/", async function (req, res) {
           return;
         }
         ques = ques + "?,";
+        params.push(Number(nodeid));
       }
 
       ques = ques.substring(0, ques.length - 1);
 
       conditions.push(`nodeId in (${ques})`);
-      params.push(nodeIds);
     }
 
-    query = `select * from v_delegators_${frequency}`;
+    query = `select * from v_delegators_stats_${frequency}`;
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";

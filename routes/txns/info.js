@@ -5,6 +5,11 @@ const web3passport = require("../../util/auth/passport");
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
 
+function isValidGUID(guid) {
+  var regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return regex.test(guid);
+}
+
 router.post(
   "/",
   web3passport.authenticate("jwt", { session: false }),
@@ -15,6 +20,7 @@ router.post(
       account = req.user[0].account;
       let query;
       let data = req.body;
+      let limit = Number.isInteger(data.limit) ? data.limit : 1000;
       let conditions = [];
       let params = [];
       let key_ids;
@@ -93,7 +99,7 @@ router.post(
         params.push(data.ual);
       }
 
-      if (data.txn_id) {
+      if (isValidGUID(data.txn_id)) {
         conditions.push(`th.txn_id = ?`);
         params.push(data.txn_id);
       }
@@ -127,10 +133,8 @@ router.post(
 
       whereClause =
         conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-      query = query + " " + whereClause + ` order by created_at desc`;
+      query = query + " " + whereClause + ` order by created_at desc LIMIT ${limit}`;
 
-      console.log(query);
-      console.log(params);
       let result = await queryDB
         .getData(query, params, "", "othub_db")
         .then((results) => {

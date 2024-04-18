@@ -25,7 +25,6 @@ router.post(
     try {
       data = req.body;
       account = req.user[0].account;
-      access = data.access;
       rights_holder = data.rights_holder;
       msg = ``;
 

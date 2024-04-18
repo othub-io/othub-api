@@ -9,7 +9,7 @@ router.post('/', async function (req, res, next) {
   try{
     type = ""
     api_key = req.headers["x-api-key"];
-    let network = req.body.network;
+    let network = req.body.network ? req.body.network : "DKG Mainnet";
     let blockchain = "othub_db"
   
     let query = `select * from blockchains where environment = ?`
