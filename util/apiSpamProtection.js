@@ -33,34 +33,9 @@ async function getOTHUBData (query, params) {
 module.exports = apiSpam = async (type, api_key) => {
   console.log(`Checking if visitor:${api_key} is spamming.`)
 
-    if (api_key === process.env.NODE_OPS_KEY && type === 'stats') {
-        console.log(`Request received with the node ops key.`)
-
-        //insert a new time stamp
-        time_stamp = new Date()
-        time_stamp = Math.abs(time_stamp) / 1000
-
-        query =
-          'INSERT INTO request_history (request,date_stamp,api_key) VALUES (?,?,?)'
-        params = [type, time_stamp, api_key]
-        await getOTHUBData(query, params)
-          .then(results => {
-            //console.log('Query results:', results);
-            return results
-            // Use the results in your variable or perform further operations
-          })
-          .catch(error => {
-            console.error('Error retrieving data:', error)
-          })
-
-        return {
-          permission: `allow`
-        }
-    }
-
-  query = 'SELECT * FROM app_header WHERE api_key = ?'
+  query = `select * from key_header where api_key = ?`;
   params = [api_key]
-  app = await getOTHUBData(query, params)
+  key = await getOTHUBData(query, params)
     .then(results => {
       //console.log('Query results:', results);
       return results
@@ -70,14 +45,14 @@ module.exports = apiSpam = async (type, api_key) => {
       console.error('Error retrieving data:', error)
     })
 
-  if (app == '') {
+  if (key == '') {
     return {
       permission: `no_app`
     }
   }
 
-  query = 'SELECT * FROM request_history WHERE api_key = ? AND UNIX_TIMESTAMP(NOW()) - date_stamp <= 1;'
-  params = [api_key]
+  query = 'SELECT * FROM request_header WHERE key_id = ? AND UNIX_TIMESTAMP(NOW()) - date_stamp <= 1;'
+  params = [key[0].key_id]
   request_frequency = await getOTHUBData(query, params)
     .then(results => {
       //console.log('Query results:', results);
@@ -90,19 +65,19 @@ module.exports = apiSpam = async (type, api_key) => {
 
     rate = process.env.BASIC_RATE
 
-    if (app[0].access === 'Super') {
+    if (key[0].access === 'Super') {
         rate = process.env.SUPER_RATE
     }
 
-    if (app[0].access === 'Turbo') {
+    if (key[0].access === 'Turbo') {
         rate = process.env.TURBO_RATE
     }
 
-    if (app[0].access === 'Giga') {
+    if (key[0].access === 'Giga') {
         rate = process.env.GIGA_RATE
     }
 
-    if (type === 'Create-n-Transfer') {
+    if (key === 'Create-n-Transfer') {
       rate = process.env.CNT_RATE
     }
 
@@ -116,8 +91,8 @@ module.exports = apiSpam = async (type, api_key) => {
     }
 
     if(type === 'Create-n-Transfer'){
-      query = 'SELECT * FROM txn_header WHERE request = ? AND api_key = ? AND approver is null AND progress = ?'
-      params = [type,api_key,"PENDING"]
+      query = 'SELECT * FROM txn_header WHERE request = ? AND key_id = ? AND approver is null AND progress = ?'
+      params = [type,key[0].key_id,"PENDING"]
       queue_count = await getOTHUBData(query, params)
         .then(results => {
           //console.log('Query results:', results);
@@ -144,8 +119,8 @@ module.exports = apiSpam = async (type, api_key) => {
     time_stamp = Math.abs(time_stamp) / 1000
 
     query =
-        'INSERT INTO request_history (request,date_stamp,api_key) VALUES (?,?,?)'
-    params = [type, time_stamp, api_key]
+        'INSERT INTO request_header (request,date_stamp,key_id) VALUES (?,?,?)'
+    params = [type, time_stamp, key[0].key_id]
     await getOTHUBData(query, params)
         .then(results => {
             //console.log('Query results:', results);

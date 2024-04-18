@@ -1,29 +1,20 @@
 require("dotenv").config();
-var express = require("express");
-var router = express.Router();
+const express = require("express");
+const router = express.Router();
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
 
-router.post("/", async function (req, res) {
+/* GET explore page. */
+router.post("/", async function (req, res, next) {
   try {
-    type = "stats";
-    data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
-    let frequency = data.frequency ? data.frequency : `total`;
-    let timeframe =
-      Number.isInteger(data.timeframe)
-        ? data.timeframe
-        : null;
-    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
-    let order_by;
-    let conditions = [];
     let params = [];
     let query;
 
     if (!api_key || api_key === "") {
-      console.log(`Create request without authorization.`);
+      console.log(`Pub info request without authorization.`);
       res.status(401).json({
         success: false,
         msg: "Authorization key not provided.",
@@ -90,8 +81,8 @@ router.post("/", async function (req, res) {
           console.error("Error retrieving data:", error);
         });
     } else {
-      query = `select chain_name,chain_id from blockchains where chain_name = ?`;
-      params = [blockchain];
+      query = `select chain_name,chain_id from blockchains where environment = ? and chain_name = ?`;
+      params = [network, blockchain];
       blockchains = await queryDB
         .getData(query, params, "", "othub_db")
         .then((results) => {
@@ -104,73 +95,12 @@ router.post("/", async function (req, res) {
         });
     }
 
-    params = [];
-
-    if (!limit) {
-      limit = 1000;
-    }
-
-    if (limit > 100000) {
-      limit = 100000;
-    }
-
-    if (frequency === "hourly") {
-      order_by = "order by datetime";
-
-      if (timeframe) {
-        conditions.push(`datetime >= (select DATE_ADD(block_ts, interval -${timeframe} HOUR) as t from v_sys_staging_date)`);
-      }
-    }
-
-    if (frequency === "daily") {
-      order_by = "order by date"
-      if (timeframe) {
-        conditions.push(`date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} DAY) as date) as t from v_sys_staging_date)`);
-      }
-    }
-
-    if (frequency === "monthly") {
-      order_by = "order by date"
-      if (timeframe) {
-        conditions.push(`date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} MONTH) as date) as t from v_sys_staging_date)`);
-      }
-    }
-
-    if (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" ||   frequency === "latest") {
-      order_by = "order by datetime";
-    }
-
-    query = `select * from v_pubs_stats_${frequency}`;
-
-    whereClause =
-      conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` ${order_by} LIMIT ${limit}`;
-
-    let pub_data = [];
-
-    if(!blockchain){
-      result = await queryDB
-        .getData(query, params, network, "")
-        .then((results) => {
-          //console.log('Query results:', results);
-          return results;
-          // Use the results in your variable or perform further operations
-        })
-        .catch((error) => {
-          console.error("Error retrieving data:", error);
-        });
-
-      chain_data = {
-        blockchain_name: "Total",
-        blockchain_id: "99999",
-        data: result,
-      };
-
-      pub_data.push(chain_data);
-    }
+    let stats_data = [];
 
     for (const blockchain of blockchains) {
-      result = await queryDB
+      query = `select nodeStake from v_nodes where nodeStake >= 50000`;
+      params = [];
+      let nodes = await queryDB
         .getData(query, params, "", blockchain.chain_name)
         .then((results) => {
           //console.log('Query results:', results);
@@ -181,18 +111,63 @@ router.post("/", async function (req, res) {
           console.error("Error retrieving data:", error);
         });
 
+      query = `select sum(totalPubs) as count from v_pubs_stats_daily`;
+      let pub_count = await queryDB
+        .getData(query, params, "", blockchain.chain_name)
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+
+      query = `select totalPubs,totalTracSpent from v_pubs_stats_last24h order by datetime`;
+      let pubs_stats_last24h = await queryDB
+        .getData(query, params, "", blockchain.chain_name)
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+
+      query = `select totalTracSpent from v_pubs_stats_total`;
+      let totalTracSpent = await queryDB
+        .getData(query, params, "", blockchain.chain_name)
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+
+      let totalStake = 0;
+      for (const node of nodes) {
+        totalStake = totalStake + Number(node.nodeStake);
+      }
+
       chain_data = {
         blockchain_name: blockchain.chain_name,
         blockchain_id: blockchain.chain_id,
-        data: result,
+        nodes: nodes.length,
+        pubs_stats_last24h: pubs_stats_last24h,
+        pub_count: pub_count[0].count,
+        totalTracSpent: totalTracSpent[0].totalTracSpent,
+        totalStake: totalStake,
       };
 
-      pub_data.push(chain_data);
+      stats_data.push(chain_data);
     }
 
     res.status(200).json({
       success: true,
-      result: pub_data,
+      result: stats_data,
     });
   } catch (e) {
     console.log(e);

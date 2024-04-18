@@ -32,29 +32,60 @@ const createRouter= require('./routes/dkg/create')
 const queryRouter = require('./routes/dkg/query')
 const transferRouter = require('./routes/dkg/transfer')
 const create_n_transferRouter = require('./routes/dkg/create_n_transfer')
-const checkTransactionRouter = require('./routes/dkg/checkTransaction')
 const updateRouter = require('./routes/dkg/update')
 const isValidUALRouter = require('./routes/dkg/isValidUAL')
 
+//app
+const appInfoRouter = require('./routes/app/info')
+const appCreateRouter = require('./routes/app/create')
+const appDeleteRouter = require('./routes/app/delete')
+const appEditRouter = require('./routes/app/edit')
+
+//key
+const keysInfoRouter = require('./routes/keys/info')
+const keysCreateRouter = require('./routes/keys/create')
+const keysDeleteRouter = require('./routes/keys/delete')
+
+//txn
+const txnsInfoRouter = require('./routes/txns/info')
+const txnsCompleteRouter = require('./routes/txns/complete')
+const txnsRejectRouter = require('./routes/txns/reject')
+
 //assets
-const assetActivityRouter = require('./routes/assets/activity')
-const assetHistoryRouter = require('./routes/assets/history')
-const assetInventoryRouter = require('./routes/assets/inventory')
+const assetsHistoryRouter = require('./routes/assets/history')
+const assetsInfoRouter = require('./routes/assets/info')
+
+//pubs
+const pubsStatsRouter = require('./routes/pubs/stats')
+const pubsActivityRouter = require('./routes/pubs/activity')
+
+//auth
+const authRegisterRouter = require('./routes/auth/register')
+const authSignRouter = require('./routes/auth/sign')
+
+//blockchains
+const othubHomeRouter = require('./routes/othub/home')
 
 //nodes
 const nodeActivityRouter = require('./routes/nodes/activity')
 const nodeInfoRouter = require('./routes/nodes/info')
 const nodeStatsRouter = require('./routes/nodes/stats')
 
-//pubs
-const pubInfoRouter = require('./routes/pubs/info')
-const pubStatsRouter = require('./routes/pubs/stats')
+//delegators
+const delegatorsActivityRouter = require('./routes/delegators/activity')
+const delegatorsStatsRouter = require('./routes/delegators/stats')
+
+//notifications
+const telegramEditRouter = require('./routes/notifications/telegram/edit')
+const telegramInfoRouter = require('./routes/notifications/telegram/info')
+const telegramNotifyRouter = require('./routes/notifications/telegram/notify')
 
 //images
-const imagesRouter = require('./routes/images')
+const imagesRouter = require('./routes/images/index')
 
-//sync
-const syncStatusRouter = require('./routes/sync/status')
+//misc
+const syncStatusRouter = require('./routes/misc/sync_status')
+const blockchainsRouter = require('./routes/misc/blockchains')
 
 //dkg
 app.use('/dkg/get', getRouter)
@@ -68,28 +99,60 @@ app.use('/dkg/update', updateRouter)
 app.use('/dkg/query', queryRouter)
 app.use('/dkg/transfer', transferRouter)
 app.use('/dkg/create_n_transfer', create_n_transferRouter)
-app.use('/dkg/checkTransaction', checkTransactionRouter)
 app.use('/dkg/isValidUAL', isValidUALRouter)
 
+//app
+app.use('/app/info', appInfoRouter)
+app.use('/app/create', appCreateRouter)
+app.use('/app/delete', appDeleteRouter)
+app.use('/app/edit', appEditRouter)
+
+//key
+app.use('/keys/info', keysInfoRouter)
+app.use('/keys/create', keysCreateRouter)
+app.use('/keys/delete', keysDeleteRouter)
+
+//txn
+app.use('/txns/info', txnsInfoRouter)
+app.use('/txns/complete', txnsCompleteRouter)
+app.use('/txns/reject', txnsRejectRouter)
+
 //assets
-app.use('/assets/activity', assetActivityRouter)
-app.use('/assets/history', assetHistoryRouter)
-app.use('/assets/inventory', assetInventoryRouter)
+app.use('/assets/history', assetsHistoryRouter)
+app.use('/assets/info', assetsInfoRouter)
+
+//auth
+app.use('/auth/register', authRegisterRouter)
+app.use('/auth/sign', authSignRouter)
+
+
+//pubs
+app.use('/pubs/activity', pubsActivityRouter)
+app.use('/pubs/stats', pubsStatsRouter)
+
+//othub
+app.use('/othub/home', othubHomeRouter)
 
 //nodes
 app.use('/nodes/activity', nodeActivityRouter)
 app.use('/nodes/info', nodeInfoRouter)
 app.use('/nodes/stats', nodeStatsRouter)
 
-//pubs
-app.use('/pubs/info', pubInfoRouter)
-app.use('/pubs/stats', pubStatsRouter)
+//nodes
+app.use('/delegators/activity', delegatorsActivityRouter)
+app.use('/delegators/stats', delegatorsStatsRouter)
+
+//notifications
+app.use('/notifications/telegram/edit', telegramEditRouter)
+app.use('/notifications/telegram/info', telegramInfoRouter)
+app.use('/notifications/telegram/notify', telegramNotifyRouter)
 
 //images
 app.use('/images', imagesRouter)
 
-//sync
-app.use('/sync/status', syncStatusRouter)
+//misc
+app.use('/misc/sync_status', syncStatusRouter)
+app.use('/misc/blockchains', blockchainsRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

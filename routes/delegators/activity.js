@@ -4,19 +4,18 @@ var router = express.Router();
 const ethers = require("ethers");
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
-const keccak256 = require("keccak256");
 
 router.post("/", async function (req, res) {
   try {
     type = "stats";
     data = req.body;
     api_key = req.headers["x-api-key"];
-    let network = data.network ? data.network : null;
-    let blockchain = data.blockchain ? data.blockchain : null;
+    let network = data.network && !data.blockchain ? data.network : null;
+    let blockchain = data.blockchain;
+    let query = `select * from v_delegators_activity`;
     let limit = Number.isInteger(data.limit) ? data.limit : 1000;
     let conditions = [];
     let params = [];
-    let query;
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -72,38 +71,24 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (!blockchain) {
-      query = `select chain_name,chain_id from blockchains where environment = ?`;
-      params = [network];
-      blockchains = await queryDB
-        .getData(query, params, "", "othub_db")
-        .then((results) => {
-          //console.log('Query results:', results);
-          return results;
-          // Use the results in your variable or perform further operations
-        })
-        .catch((error) => {
-          console.error("Error retrieving data:", error);
+    if (data.delegator) {
+      if (!ethers.utils.isAddress(data.owner)) {
+        console.log(
+          `Delegator stats request with invalid delegator from ${api_key}`
+        );
+
+        res.status(400).json({
+          success: false,
+          msg: "Invalid delegator (evm address) provided.",
         });
-    } else {
-      query = `select chain_name,chain_id from blockchains where chain_name = ?`;
-      params = [blockchain];
-      blockchains = await queryDB
-        .getData(query, params, "", "othub_db")
-        .then((results) => {
-          //console.log('Query results:', results);
-          return results;
-          // Use the results in your variable or perform further operations
-        })
-        .catch((error) => {
-          console.error("Error retrieving data:", error);
-        });
+        return;
+      }
+
+      conditions.push(`delegator = ?`);
+      params.push(data.delegator);
     }
 
-    query = `select * from v_nodes`;
-    ques = "";
-
-    params = []
+    let ques = "";
     if (data.nodeId) {
       nodeIds = !Number(data.nodeId)
         ? data.nodeId.split(",").map(Number)
@@ -125,67 +110,31 @@ router.post("/", async function (req, res) {
 
       conditions.push(`nodeId in (${ques})`);
     }
-    
-    if (data.nodeName) {
-      conditions.push(`tokenName = ?`);
-      params.push(data.nodeName);
+
+    if (data.txn_hash) {
+      conditions.push(`transactionHash = ?`);
+      params.push(data.txn_hash);
     }
-
-    if (data.owner) {
-      if (!ethers.utils.isAddress(data.owner)) {
-        console.log(`Node info request with invalid owner from ${api_key}`);
-
-        res.status(400).json({
-          success: false,
-          msg: "Invalid owner (evm address) provided.",
-        });
-        return;
-      }
-
-      keccak256hash = keccak256(data.owner).toString("hex");
-      keccak256hash = "0x" + keccak256hash;
-      like_keccak256hash = "%" + keccak256hash + "%";
-
-      conditions.push(`current_adminWallet_hashes like ?`);
-      params.push(like_keccak256hash);
-    }
-
-    conditions.push(`nodeId != ?`);
-    params.push(0);
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
     query =
-      query +
-      " " +
-      whereClause +
-      ` order by chainName,nodeId asc LIMIT ${limit}`;
+      query + " " + whereClause + ` order by timestamp desc LIMIT ${limit}`;
 
-    let node_data = [];
-    for (const blockchain of blockchains) {
-      data = await queryDB
-        .getData(query, params, "", blockchain.chain_name)
-        .then((results) => {
-          //console.log('Query results:', results);
-          return results;
-          // Use the results in your variable or perform further operations
-        })
-        .catch((error) => {
-          console.error("Error retrieving data:", error);
-        });
-
-      chain_data = {
-        blockchain_name: blockchain.chain_name,
-        blockchain_id: blockchain.chain_id,
-        data: data,
-      };
-
-      node_data.push(chain_data);
-    }
+    result = await queryDB
+      .getData(query, params, network, blockchain)
+      .then((results) => {
+        //console.log('Query results:', results);
+        return results;
+        // Use the results in your variable or perform further operations
+      })
+      .catch((error) => {
+        console.error("Error retrieving data:", error);
+      });
 
     res.status(200).json({
       success: true,
-      result: node_data,
+      result: result,
     });
   } catch (e) {
     console.log(e);

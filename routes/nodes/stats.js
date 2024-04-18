@@ -10,7 +10,19 @@ router.post("/", async function (req, res) {
     type = "stats";
     data = req.body;
     api_key = req.headers["x-api-key"];
-    let blockchain;
+    let network = data.network ? data.network : null;
+    let blockchain = data.blockchain ? data.blockchain : null;
+    let frequency = data.frequency ? data.frequency : `monthly`;
+    let timeframe =
+      Number.isInteger(data.timeframe)
+        ? data.timeframe
+        : null;
+    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
+    let grouped = data.grouped === "yes" ? "_grouped" : "";
+    let order_by = "date";
+    let conditions = [];
+    let params = [];
+    let query;
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -48,57 +60,76 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    network = "";
     if (
-      data.network !== "mainnet" &&
-      data.network !== "testnet" &&
-      data.network !== "otp:2043" &&
-      data.network !== "otp:20430" &&
-      data.network !== "gnosis:100" &&
-      data.network !== "gnosis:10200"
+      network !== "DKG Mainnet" &&
+      network !== "DKG Testnet" &&
+      blockchain !== "NeuroWeb Mainnet" &&
+      blockchain !== "NeuroWeb Testnet" &&
+      blockchain !== "Gnosis Mainnet" &&
+      blockchain !== "Chiado Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported: mainnet, testnet, otp:20430, otp:2043, gnosis:10200, gnosis:100`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
       );
       res.status(400).json({
         success: false,
-        msg: "Invalid network provided.",
+        msg: "Invalid network or blockchain provided.",
       });
       return;
     }
 
-    grouped = "";
-    if (data.grouped === "yes") {
+    if (!blockchain) {
+      query = `select chain_name,chain_id from blockchains where environment = ?`;
+      params = [network];
+      blockchains = await queryDB
+        .getData(query, params, "", "othub_db")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+    } else {
+      query = `select chain_name,chain_id from blockchains where chain_name = ?`;
+      params = [blockchain];
+      blockchains = await queryDB
+        .getData(query, params, "", "othub_db")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+    }
+
+    params = [];
+
+    if (data.owner) {
+      if (!ethers.utils.isAddress(data.owner)) {
+        console.log(`Node stats request with invalid owner from ${api_key}`);
+
+        res.status(400).json({
+          success: false,
+          msg: "Invalid owner (evm address) provided.",
+        });
+        return;
+      }
+
+      conditions.push(`nodeOwner = ?`);
+      params.push(data.owner);
+    }
+
+    if (
+      (network === "DKG Mainnet" ||
+      network === "DKG Testnet") && (!frequency === "last1h" && !frequency === "last24h" && !frequency === "last7d" && !frequency === "last30d" && !frequency === "latest")
+    ) {
       grouped = "_grouped";
     }
 
-    if (data.network === "mainnet") {
-      network = "DKG Mainnet";
-      grouped = "_grouped";
-    }
-
-    if (data.network === "testnet") {
-      network = "DKG Testnet";
-      grouped = "_grouped";
-    }
-
-    if (data.network === "otp:2043") {
-      blockchain = "NeuroWeb Mainnet";
-    }
-
-    if (data.network === "otp:20430") {
-      blockchain = "NeuroWeb Testnet";
-    }
-
-    if (data.network === "gnosis:100") {
-      blockchain = "Gnosis Mainnet";
-    }
-
-    if (data.network === "gnosis:10200") {
-      blockchain = "Chiado Testnet";
-    }
-
-    limit = data.limit;
     if (!limit) {
       limit = 1000;
     }
@@ -107,23 +138,42 @@ router.post("/", async function (req, res) {
       limit = 2000;
     }
 
-    timeframe = "_monthly";
-    if (data.timeframe === "hourly") {
-      timeframe = "_hourly_7d";
+    if (frequency === "hourly") {
+      frequency = "hourly_7d";
+      order_by = "datetime";
+
+      if (timeframe) {
+        conditions.push(
+          `datetime >= (select DATE_ADD(block_ts, interval -${timeframe} HOUR) as t from v_sys_staging_date)`
+        );
+      }
     }
 
-    if (data.timeframe === "daily") {
-      timeframe = "_daily";
+    if (frequency === "daily") {
+      if (timeframe) {
+        conditions.push(
+          `date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} DAY) as date) as t from v_sys_staging_date)`
+        );
+      }
     }
 
-    query = `select * from v_nodes_stats${grouped}${timeframe}`;
+    if (frequency === "monthly") {
+      if (timeframe) {
+        conditions.push(
+          `date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} MONTH) as date) as t from v_sys_staging_date)`
+        );
+      }
+    }
 
-    conditions = [];
-    params = [];
+    if (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" || frequency === "latest") {
+      order_by = "1";
+    }
+
     ques = "";
-
-    if (data.nodeId && data.grouped !== "yes") {
-        nodeIds = data.nodeId.split(',').map(Number)
+    if (data.nodeId && grouped !== "_grouped") {
+      nodeIds = !Number(data.nodeId)
+        ? data.nodeId.split(",").map(Number)
+        : [data.nodeId];
       for (const nodeid of nodeIds) {
         if (!Number(nodeid)) {
           console.log(`Invalid node id provided by ${api_key}`);
@@ -134,47 +184,45 @@ router.post("/", async function (req, res) {
           return;
         }
         ques = ques + "?,";
+        params.push(Number(nodeid));
       }
 
       ques = ques.substring(0, ques.length - 1);
 
       conditions.push(`nodeId in (${ques})`);
-      params = nodeIds;
     }
 
-    if (data.owner) {
-        if (!ethers.utils.isAddress(data.owner)) {
-          console.log(`Node stats request with invalid owner from ${api_key}`);
-  
-          res.status(400).json({
-            success: false,
-            msg: "Invalid owner (evm address) provided.",
-          });
-          return;
-        }
-  
-        conditions.push(`nodeOwner = ?`);
-        params.push(data.owner);
-      }
+    query = `select * from v_nodes_stats${grouped}_${frequency}`;
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` order by date desc LIMIT ${limit}`;
+    query = query + " " + whereClause + ` order by ${order_by} LIMIT ${limit}`;
 
-    value = await queryDB
-      .getData(query, params, network, blockchain)
-      .then((results) => {
-        //console.log('Query results:', results);
-        return results;
-        // Use the results in your variable or perform further operations
-      })
-      .catch((error) => {
-        console.error("Error retrieving data:", error);
-      });
+    let node_data = [];
+    for (const blockchain of blockchains) {
+      data = await queryDB
+        .getData(query, params, "", blockchain.chain_name)
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+
+      chain_data = {
+        blockchain_name: blockchain.chain_name,
+        blockchain_id: blockchain.chain_id,
+        data: data,
+      };
+
+      node_data.push(chain_data);
+    }
 
     res.status(200).json({
       success: true,
-      data: value,
+      result: node_data,
     });
   } catch (e) {
     console.log(e);

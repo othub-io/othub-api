@@ -1,20 +1,21 @@
 require("dotenv").config();
-const express = require("express");
-const router = express.Router();
+var express = require("express");
+var router = express.Router();
+const ethers = require("ethers");
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
 
 router.post("/", async function (req, res) {
   try {
-    type = "history";
+    type = "stats";
     data = req.body;
     api_key = req.headers["x-api-key"];
-    let network;
+    let network = data.network && !data.blockchain ? data.network : null;
     let blockchain = data.blockchain
-    let query = `SELECT * FROM v_asset_history`;
+    let frequency = data.frequency ? data.frequency : `1min`;
+    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
     let conditions = [];
     let params = [];
-    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -52,37 +53,16 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (!data.ual || data.ual === "") {
-      console.log(`Get request with no ual from ${api_key}`);
-      res.status(400).json({
-        success: false,
-        msg: "No UAL provided.",
-      });
-      return;
-    }
-
-    const segments = data.ual.split(":");
-    const argsString =
-      segments.length === 3 ? segments[2] : segments[2] + segments[3];
-    const args = argsString.split("/");
-
-    if (args.length !== 3) {
-      console.log(`Get request with invalid ual from ${api_key}`);
-      res.status(400).json({
-        success: false,
-        msg: "Invalid UAL provided.",
-      });
-      return;
-    }
-
     if (
+      network !== "DKG Mainnet" &&
+      network !== "DKG Testnet" &&
       blockchain !== "NeuroWeb Mainnet" &&
       blockchain !== "NeuroWeb Testnet" &&
       blockchain !== "Gnosis Mainnet" &&
       blockchain !== "Chiado Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported:NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
       );
       res.status(400).json({
         success: false,
@@ -91,19 +71,32 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    conditions.push(`asset_contract = ?`);
-    params.push(args[1]);
+    query = `select signer,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_pubs_activity_last${frequency} UNION ALL select tokenSymbol,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_nodes_activity_last${frequency}`;
+    ques = "";
 
-    conditions.push(`token_id = ?`);
-    params.push(args[2]);
+    if (data.ual) {
+      const segments = data.ual.split(":");
+      const argsString =
+        segments.length === 3 ? segments[2] : segments[2] + segments[3];
+      const args = argsString.split("/");
 
-    conditions.push(
-      `(transfer_from != '0x0000000000000000000000000000000000000000' or transfer_from is null)`
-    );
+      if (args.length !== 3) {
+        console.log(`Node activity request with invalid ual from ${api_key}`);
+        res.status(400).json({
+          success: false,
+          msg: "Invalid UAL provided.",
+        });
+        return;
+      }
+
+      conditions.push(`UAL = ?`);
+      params.push(data.ual);
+    }
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + `LIMIT ${limit}`;
+    query =
+      query + " " + whereClause + ` order by datetime desc LIMIT ${limit}`;
 
     result = await queryDB
       .getData(query, params, network, blockchain)
@@ -116,10 +109,10 @@ router.post("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
-      res.status(200).json({
-        success: true,
-        result: result,
-      });
+    res.status(200).json({
+      success: true,
+      result: result,
+    });
   } catch (e) {
     console.log(e);
     res.status(500).json({

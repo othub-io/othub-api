@@ -11,15 +11,16 @@ router.post("/", async function (req, res) {
     data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network && !data.blockchain ? data.network : null;
-    let blockchain = data.blockchain
-    //let frequency = data.frequency ? data.frequency : `1min`;
-    let frequency = `1min`;
-    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
+    let blockchain = data.blockchain ? data.blockchain : null;
+    let query = `select * from v_pubs`;
+    let nodeId = Number.isInteger(data.nodeId) ? data.nodeId : null;
+    let limit = Number.isInteger(data.limit) ? data.limit : 100;
+    let order_by = data.order_by ? data.order_by : "block_ts_hour"
     let conditions = [];
     let params = [];
 
     if (!api_key || api_key === "") {
-      console.log(`Create request without authorization.`);
+      console.log(`Pub info request without authorization.`);
       res.status(401).json({
         success: false,
         msg: "Authorization key not provided.",
@@ -72,35 +73,77 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    query = `select signer,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_pubs_activity_last${frequency} UNION ALL select tokenSymbol,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_nodes_activity_last${frequency}`;
-    ques = "";
+    if (limit > 100000) {
+      limit = 100000;
+    }
 
-    if (data.nodeId) {
-      nodeIds = !Number(data.nodeId) ? data.nodeId.split(",").map(Number) : [data.nodeId];
-      for (const nodeid of nodeIds) {
-        if (!Number(nodeid)) {
-          console.log(`Invalid node id provided by ${api_key}`);
-          res.status(400).json({
-            success: false,
-            msg: "Invalid node ID provided.",
-          });
-          return;
-        }
-        ques = ques + "?,";
+    if (data.owner) {
+      if (!ethers.utils.isAddress(data.owner)) {
+        console.log(`Asset info request with invalid account from ${api_key}`);
+
+        res.status(400).json({
+          success: false,
+          msg: "Invalid owner (evm address) provided.",
+        });
+        return;
       }
 
-      ques = ques.substring(0, ques.length - 1);
+      conditions.push(`owner = ?`);
+      params.push(data.owner);
+    }
 
-      conditions.push(`nodeId in (${ques})`);
-      params.push(nodeIds);
+    if (data.publisher) {
+      if (!ethers.utils.isAddress(data.publisher)) {
+        console.log(`Asset info request with invalid publisher from ${api_key}`);
+
+        res.status(400).json({
+          success: false,
+          msg: "Invalid publisher (evm address) provided.",
+        });
+        return;
+      }
+
+      conditions.push(`publisher = ?`);
+      params.push(data.publisher);
+    }
+
+    if (data.ual) {
+      const segments = data.ual.split(":");
+      const argsString =
+        segments.length === 3 ? segments[2] : segments[2] + segments[3];
+      const args = argsString.split("/");
+
+      if (args.length !== 3) {
+        console.log(`Asset Info request with invalid ual from ${api_key}`);
+        res.status(400).json({
+          success: false,
+          msg: "Invalid UAL provided.",
+        });
+        return;
+      }
+
+      conditions.push(`UAL = ?`);
+      params.push(data.ual);
+    }
+
+    if (nodeId) {
+      conditions.push(`winners like ? OR winners like ? OR winners like ?`);
+  
+      nodeId = `%"${nodeId},%`;
+      params.push(nodeId);
+  
+      nodeId = `%,${nodeId},%`;
+      params.push(nodeId);
+  
+      nodeId = `%,${nodeId}"%`;
+      params.push(nodeId);
     }
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query =
-      query + " " + whereClause + ` order by datetime desc LIMIT ${limit}`;
+    query = query + " " + whereClause + ` order by ${order_by} DESC LIMIT ${limit}`;
 
-      result = await queryDB
+    result = await queryDB
       .getData(query, params, network, blockchain)
       .then((results) => {
         //console.log('Query results:', results);

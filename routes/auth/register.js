@@ -8,26 +8,16 @@ const queryDB = queryTypes.queryDB();
 router.post("/", async function (req, res, next) {
   try {
     data = req.body;
-    public_address = data.public_address;
-    api_key = req.headers["x-api-key"];
+    account = data.account;
     blockchain = "othub_db";
     network = "";
 
-    if (!api_key || api_key === "") {
-      console.log(`Create request without authorization.`);
-      res.status(401).json({
-        success: false,
-        msg: "Authorization key not provided.",
-      });
-      return;
-    }
-
     if (
-      !public_address ||
-      public_address === "" ||
-      !ethers.utils.isAddress(public_address)
+      !account ||
+      account === "" ||
+      !ethers.utils.isAddress(account)
     ) {
-      console.log(`Register request without valid public_address.`);
+      console.log(`Register request without valid account.`);
       res.status(400).json({
         success: false,
         msg: "Valid public address not provided.",
@@ -35,8 +25,8 @@ router.post("/", async function (req, res, next) {
       return;
     }
 
-    query = `select * from user_header where public_address = ?`;
-    params = [public_address];
+    query = `select * from user_header where account = ?`;
+    params = [account];
     user_record = await queryDB
       .getData(query, params, network, blockchain)
       .then((results) => {
@@ -47,10 +37,10 @@ router.post("/", async function (req, res, next) {
       });
 
     if (user_record == "") {
-      query = "INSERT INTO user_header values (?,?)";
+      query = "INSERT INTO user_header values (?,?,?)";
       nonce = Math.floor(Math.random() * 1000000);
       await queryDB
-        .getData(query, [public_address, nonce], network, blockchain)
+        .getData(query, [account, nonce, null], network, blockchain)
         .then((results) => {
           return results;
         })
@@ -58,8 +48,8 @@ router.post("/", async function (req, res, next) {
           console.error("Error retrieving data:", error);
         });
 
-      query = `select * from user_header where public_address = ?`;
-      params = [public_address];
+      query = `select * from user_header where account = ?`;
+      params = [account];
       user_record = await queryDB
         .getData(query, params, network, blockchain)
         .then((results) => {
