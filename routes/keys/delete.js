@@ -15,9 +15,18 @@ router.post(
       account = req.user[0].account;
       console.log(`Visitor:${account} is deleting an app.`);
 
+      if (!data.api_key || data.api_key === "") {
+        console.log(`Delete key with no key provided.`);
+        res.status(401).json({
+          success: false,
+          msg: "API key not provided to delete.",
+        });
+        return;
+      }
+
       query = `select ah.app_name,kh.key_id from key_header kh join app_header ah on ah.account = kh.account where kh.api_key = ?`;
       app_header = await queryDB
-        .getData(query, [account, data.api_key], "", "othub_db")
+        .getData(query, [data.api_key], "", "othub_db")
         .then((results) => {
           //console.log('Query results:', results);
           return results;
