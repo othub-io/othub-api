@@ -5,6 +5,11 @@ const web3passport = require("../../util/auth/passport");
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
 
+function isValidGUID(guid) {
+  var regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return regex.test(guid);
+}
+
 router.post(
   "/",
   web3passport.authenticate("jwt", { session: false }),
@@ -12,6 +17,15 @@ router.post(
     try {
       data = req.body;
       account = req.user[0].account;
+
+      if(!isValidGUID(data.txn_id)){
+        console.log(`Get request with invalid ual from ${account}`);
+        res.status(400).json({
+          success: false,
+          msg: "Invalid txn_id provided.",
+        });
+        return;
+      }
 
       console.log(`Visitor:${account} is completing a txn.`);
 
