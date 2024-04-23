@@ -14,8 +14,8 @@ router.post("/", async function (req, res) {
     let frequency = data.frequency ? data.frequency : `total`;
     let timeframe =
       Number.isInteger(data.timeframe)
-        ? data.timeframe
-        : null;
+        ? data.timeframe - 1
+        : Number(data.timeframe) - 1;
     let limit = Number.isInteger(data.limit) ? data.limit : 1000;
     let order_by;
     let conditions = [];
