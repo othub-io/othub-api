@@ -77,8 +77,38 @@ router.post("/", async function (req, res) {
       return;
     }
 
+    if (!blockchain) {
+      query = `select chain_name,chain_id from blockchains where environment = ?`;
+      params = [network];
+      blockchains = await queryDB
+        .getData(query, params, "", "othub_db")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+    } else {
+      query = `select chain_name,chain_id from blockchains where chain_name = ?`;
+      params = [blockchain];
+      blockchains = await queryDB
+        .getData(query, params, "", "othub_db")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+    }
+
+    params = [];
+
     if (data.delegator) {
-      if (!ethers.utils.isAddress(data.owner)) {
+      if (!ethers.utils.isAddress(data.delegator)) {
         console.log(`Delegator stats request with invalid delegator from ${api_key}`);
 
         res.status(400).json({
@@ -163,7 +193,7 @@ router.post("/", async function (req, res) {
     let node_data = [];
     for (const blockchain of blockchains) {
       data = await queryDB
-        .getData(query, params, network, blockchain.chain_name)
+        .getData(query, params, "", blockchain.chain_name)
         .then((results) => {
           //console.log('Query results:', results);
           return results;
