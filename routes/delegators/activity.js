@@ -72,7 +72,7 @@ router.post("/", async function (req, res) {
     }
 
     if (data.delegator) {
-      if (!ethers.utils.isAddress(data.owner)) {
+      if (!ethers.utils.isAddress(data.delegator)) {
         console.log(
           `Delegator stats request with invalid delegator from ${api_key}`
         );
