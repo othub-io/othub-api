@@ -15,7 +15,7 @@ router.post("/", async function (req, res) {
     let timeframe =
       Number.isInteger(data.timeframe)
         ? data.timeframe - 1
-        : Number(data.timeframe) - 1;
+        : null
     let limit = Number.isInteger(data.limit) ? data.limit : 1000;
     let order_by;
     let conditions = [];
