@@ -199,6 +199,34 @@ router.post("/", async function (req, res) {
     query = query + " " + whereClause + ` order by ${order_by} LIMIT ${limit}`;
 
     let node_data = [];
+    if(!blockchain){
+      let total_data = [];
+      for (const blockchain of blockchains) {
+        result = await queryDB
+          .getData(query, params, "", blockchain.chain_name)
+          .then((results) => {
+            //console.log('Query results:', results);
+            return results;
+            // Use the results in your variable or perform further operations
+          })
+          .catch((error) => {
+            console.error("Error retrieving data:", error);
+          });
+  
+          for(const record of result){
+            total_data.push(record)
+          }
+      }
+
+      chain_data = {
+        blockchain_name: "Total",
+        blockchain_id: "99999",
+        data: total_data,
+      };
+
+      node_data.push(chain_data);
+    }
+
     for (const blockchain of blockchains) {
       data = await queryDB
         .getData(query, params, "", blockchain.chain_name)
