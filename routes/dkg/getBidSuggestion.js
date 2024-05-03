@@ -109,7 +109,7 @@ router.post("/", async function (req, res) {
     }
 
     dkg_data = {
-      public: txn_data,
+      public: JSON.parse(txn_data),
     };
 
     const environment =

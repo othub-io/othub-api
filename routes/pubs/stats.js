@@ -136,7 +136,7 @@ router.post("/", async function (req, res) {
       }
     }
 
-    if (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" ||   frequency === "latest") {
+    if (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d") {
       order_by = "order by datetime";
     }
 
