@@ -55,6 +55,9 @@ const txnsRejectRouter = require('./routes/txns/reject')
 const assetsHistoryRouter = require('./routes/assets/history')
 const assetsInfoRouter = require('./routes/assets/info')
 
+//publisherss
+const publishersStatsRouter = require('./routes/publishers/stats')
+
 //pubs
 const pubsStatsRouter = require('./routes/pubs/stats')
 const pubsActivityRouter = require('./routes/pubs/activity')
@@ -125,6 +128,8 @@ app.use('/assets/info', assetsInfoRouter)
 app.use('/auth/register', authRegisterRouter)
 app.use('/auth/sign', authSignRouter)
 
+//pubs
+app.use('/publishers/stats', publishersStatsRouter)
 
 //pubs
 app.use('/pubs/activity', pubsActivityRouter)

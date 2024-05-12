@@ -1,6 +1,7 @@
 require("dotenv").config();
 var express = require("express");
 var router = express.Router();
+const ethers = require("ethers");
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
 
@@ -11,13 +12,13 @@ router.post("/", async function (req, res) {
     api_key = req.headers["x-api-key"];
     let network = data.network ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
-    let frequency = data.frequency ? data.frequency : `total`;
+    let frequency = data.frequency ? data.frequency : `monthly`;
     let timeframe =
       Number.isInteger(data.timeframe)
         ? data.timeframe - 1
         : Number(data.timeframe) - 1;
     let limit = Number.isInteger(data.limit) ? data.limit : 1000;
-    let order_by;
+    let order_by = "date";
     let conditions = [];
     let params = [];
     let query;
@@ -106,69 +107,68 @@ router.post("/", async function (req, res) {
 
     params = [];
 
+    if (data.publisher) {
+      if (!ethers.utils.isAddress(data.publisher)) {
+        console.log(`Node stats request with invalid owner from ${api_key}`);
+
+        res.status(400).json({
+          success: false,
+          msg: "Invalid owner (evm address) provided.",
+        });
+        return;
+      }
+
+      conditions.push(`publisher = ?`);
+      params.push(data.publisher);
+    }
+
     if (!limit) {
       limit = 1000;
     }
 
-    if (limit > 100000) {
-      limit = 100000;
+    if (limit > 2000) {
+      limit = 2000;
     }
 
     if (frequency === "hourly") {
-      order_by = "order by datetime";
+      frequency = "hourly_7d";
+      order_by = "datetime";
 
-      if (timeframe) {
-        conditions.push(`datetime >= (select DATE_ADD(block_ts, interval -${timeframe} HOUR) as t from v_sys_staging_date)`);
+      if (timeframe > 0) {
+        conditions.push(
+          `datetime >= (select DATE_ADD(block_ts, interval -${timeframe} HOUR) as t from v_sys_staging_date)`
+        );
       }
     }
 
     if (frequency === "daily") {
-      order_by = "order by date"
-      if (timeframe) {
-        conditions.push(`date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} DAY) as date) as t from v_sys_staging_date)`);
+      if (timeframe > 0) {
+        conditions.push(
+          `date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} DAY) as date) as t from v_sys_staging_date)`
+        );
       }
     }
 
     if (frequency === "monthly") {
-      order_by = "order by date"
-      if (timeframe) {
-        conditions.push(`date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} MONTH) as date) as t from v_sys_staging_date)`);
+      if (timeframe > 0) {
+        conditions.push(
+          `date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} MONTH) as date) as t from v_sys_staging_date)`
+        );
       }
     }
 
-    if (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d") {
-      order_by = "order by datetime";
+    if (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" || frequency === "last6m" || frequency === "last1y" || frequency === "latest") {
+      order_by = "1";
     }
 
-    query = `select * from v_pubs_stats_${frequency}`;
+    query = `select * from v_publishers_stats_${frequency}`;
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` ${order_by} LIMIT ${limit}`;
+    query = query + " " + whereClause + ` order by ${order_by} LIMIT ${limit}`;
 
-    let pub_data = [];
-    if(!blockchain && (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" || frequency === "last6m" || frequency === "last1y" || frequency === "total")){
-      result = await queryDB
-        .getData(query, params, network, "")
-        .then((results) => {
-          //console.log('Query results:', results);
-          return results;
-          // Use the results in your variable or perform further operations
-        })
-        .catch((error) => {
-          console.error("Error retrieving data:", error);
-        });
-
-      chain_data = {
-        blockchain_name: "Total",
-        blockchain_id: "99999",
-        data: result,
-      };
-
-      pub_data.push(chain_data);
-    }
-
-    if(!blockchain && (frequency === "hourly" || frequency === "daily" || frequency === "monthly")){
+    let publisher_data = [];
+    if(!blockchain){
       let total_data = [];
       for (const blockchain of blockchains) {
         result = await queryDB
@@ -189,10 +189,10 @@ router.post("/", async function (req, res) {
           chain_data = {
             blockchain_name: blockchain.chain_name,
             blockchain_id: blockchain.chain_id,
-            data: result,
+            data: data,
           };
     
-          pub_data.push(chain_data);
+          publisher_data.push(chain_data);
       }
 
       chain_data = {
@@ -201,10 +201,10 @@ router.post("/", async function (req, res) {
         data: total_data,
       };
 
-      pub_data.unshift(chain_data);
+      publisher_data.unshift(chain_data);
     }else{
       for (const blockchain of blockchains) {
-        result = await queryDB
+        data = await queryDB
           .getData(query, params, "", blockchain.chain_name)
           .then((results) => {
             //console.log('Query results:', results);
@@ -218,16 +218,16 @@ router.post("/", async function (req, res) {
         chain_data = {
           blockchain_name: blockchain.chain_name,
           blockchain_id: blockchain.chain_id,
-          data: result,
+          data: data,
         };
   
-        pub_data.push(chain_data);
+        publisher_data.push(chain_data);
       }
     }
 
     res.status(200).json({
       success: true,
-      result: pub_data,
+      result: publisher_data,
     });
   } catch (e) {
     console.log(e);

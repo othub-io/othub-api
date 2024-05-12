@@ -12,9 +12,9 @@ router.post("/", async function (req, res) {
     api_key = req.headers["x-api-key"];
     let network = data.network && !data.blockchain ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
-    let query = `select * from v_pubs`;
+    let query;
     let nodeId = Number.isInteger(data.nodeId) ? data.nodeId : null;
-    let limit = Number.isInteger(data.limit) ? data.limit : 100;
+    let limit = Number(data.limit) < 10000 ? data.limit : 100;
     let order_by = data.order_by ? data.order_by : "block_ts_hour"
     let conditions = [];
     let params = [];
@@ -73,8 +73,32 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (limit > 100000) {
-      limit = 100000;
+    if (!blockchain) {
+      query = `select chain_name,chain_id from blockchains where environment = ?`;
+      params = [network];
+      blockchains = await queryDB
+        .getData(query, params, "", "othub_db")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+    } else {
+      query = `select chain_name,chain_id from blockchains where chain_name = ?`;
+      params = [blockchain];
+      blockchains = await queryDB
+        .getData(query, params, "", "othub_db")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
     }
 
     if (data.owner) {
@@ -139,24 +163,73 @@ router.post("/", async function (req, res) {
       params.push(nodeId);
     }
 
+    query = `select * from v_pubs`;
+
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
     query = query + " " + whereClause + ` order by ${order_by} DESC LIMIT ${limit}`;
 
-    result = await queryDB
-      .getData(query, params, network, blockchain)
-      .then((results) => {
-        //console.log('Query results:', results);
-        return results;
-        // Use the results in your variable or perform further operations
-      })
-      .catch((error) => {
-        console.error("Error retrieving data:", error);
-      });
+    let pub_data = []
+    if(!blockchain){
+      let total_data = [];
+      for (const blockchain of blockchains) {
+        result = await queryDB
+          .getData(query, params, "", blockchain.chain_name)
+          .then((results) => {
+            //console.log('Query results:', results);
+            return results;
+            // Use the results in your variable or perform further operations
+          })
+          .catch((error) => {
+            console.error("Error retrieving data:", error);
+          });
+  
+          for(const record of result){
+            total_data.push(record)
+          }
+
+          chain_data = {
+            blockchain_name: blockchain.chain_name,
+            blockchain_id: blockchain.chain_id,
+            data: result,
+          };
+    
+          pub_data.push(chain_data);
+      }
+
+      chain_data = {
+        blockchain_name: "Total",
+        blockchain_id: "99999",
+        data: total_data,
+      };
+
+      pub_data.unshift(chain_data);
+    }else{
+      for (const blockchain of blockchains) {
+        result = await queryDB
+          .getData(query, params, "", blockchain.chain_name)
+          .then((results) => {
+            //console.log('Query results:', results);
+            return results;
+            // Use the results in your variable or perform further operations
+          })
+          .catch((error) => {
+            console.error("Error retrieving data:", error);
+          });
+  
+        chain_data = {
+          blockchain_name: blockchain.chain_name,
+          blockchain_id: blockchain.chain_id,
+          data: result,
+        };
+  
+        pub_data.push(chain_data);
+      }
+    }
 
     res.status(200).json({
       success: true,
-      result: result,
+      result: pub_data,
     });
   } catch (e) {
     console.log(e);
