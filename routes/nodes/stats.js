@@ -130,6 +130,11 @@ router.post("/", async function (req, res) {
       grouped = "_grouped";
     }
 
+    if (data.nodeName) {
+      conditions.push(`tokenName = ?`);
+      params.push(data.nodeName);
+    }
+
     if (!limit) {
       limit = 1000;
     }

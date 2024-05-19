@@ -122,6 +122,11 @@ router.post("/", async function (req, res) {
       params.push(data.delegator);
     }
 
+    if (data.nodeName) {
+      conditions.push(`tokenName = ?`);
+      params.push(data.nodeName);
+    }
+    
     if (!limit) {
       limit = 1000;
     }

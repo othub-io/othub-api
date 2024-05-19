@@ -12,8 +12,7 @@ router.post("/", async function (req, res) {
     api_key = req.headers["x-api-key"];
     let network = data.network && !data.blockchain ? data.network : null;
     let blockchain = data.blockchain
-    //let frequency = data.frequency ? data.frequency : `1min`;
-    let frequency = `1min`;
+    let frequency = data.frequency ? data.frequency : `1min`;
     let limit = Number.isInteger(data.limit) ? data.limit : 1000;
     let conditions = [];
     let params = [];
@@ -75,6 +74,11 @@ router.post("/", async function (req, res) {
     query = `select signer,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_pubs_activity_last${frequency} UNION ALL select tokenSymbol,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_nodes_activity_last${frequency}`;
     ques = "";
 
+    if (data.nodeName) {
+      conditions.push(`tokenName = ?`);
+      params.push(data.nodeName);
+    }
+    
     if (data.nodeId) {
       nodeIds = !Number(data.nodeId) ? data.nodeId.split(",").map(Number) : [data.nodeId];
       for (const nodeid of nodeIds) {
