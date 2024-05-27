@@ -15,7 +15,6 @@ router.post("/", async function (req, res) {
     let query;
     let nodeId = Number.isInteger(data.nodeId) ? data.nodeId : null;
     let limit = Number(data.limit) < 10000 ? data.limit : 100;
-    let order_by = data.order_by ? data.order_by : "block_ts_hour"
     let conditions = [];
     let params = [];
 
@@ -118,7 +117,9 @@ router.post("/", async function (req, res) {
 
     if (data.publisher) {
       if (!ethers.utils.isAddress(data.publisher)) {
-        console.log(`Asset info request with invalid publisher from ${api_key}`);
+        console.log(
+          `Asset info request with invalid publisher from ${api_key}`
+        );
 
         res.status(400).json({
           success: false,
@@ -146,19 +147,22 @@ router.post("/", async function (req, res) {
         return;
       }
 
-      conditions.push(`UAL = ?`);
-      params.push(data.ual);
+      conditions.push(`asset_contract = ?`);
+      params.push(args[1]);
+
+      conditions.push(`token_id = ?`);
+      params.push(Number(args[2]));
     }
 
     if (nodeId) {
       conditions.push(`winners like ? OR winners like ? OR winners like ?`);
-  
+
       nodeId = `%"${nodeId},%`;
       params.push(nodeId);
-  
+
       nodeId = `%,${nodeId},%`;
       params.push(nodeId);
-  
+
       nodeId = `%,${nodeId}"%`;
       params.push(nodeId);
     }
@@ -167,10 +171,11 @@ router.post("/", async function (req, res) {
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` order by ${order_by} DESC LIMIT ${limit}`;
+    query =
+      query + " " + whereClause + ` order by block_date desc, block_ts_hour DESC LIMIT ${limit}`;
 
-    let pub_data = []
-    if(!blockchain){
+    let pub_data = [];
+    if (!blockchain) {
       let total_data = [];
       for (const blockchain of blockchains) {
         result = await queryDB
@@ -183,18 +188,18 @@ router.post("/", async function (req, res) {
           .catch((error) => {
             console.error("Error retrieving data:", error);
           });
-  
-          for(const record of result){
-            total_data.push(record)
-          }
 
-          chain_data = {
-            blockchain_name: blockchain.chain_name,
-            blockchain_id: blockchain.chain_id,
-            data: result,
-          };
-    
-          pub_data.push(chain_data);
+        for (const record of result) {
+          total_data.push(record);
+        }
+
+        chain_data = {
+          blockchain_name: blockchain.chain_name,
+          blockchain_id: blockchain.chain_id,
+          data: result,
+        };
+
+        pub_data.push(chain_data);
       }
 
       chain_data = {
@@ -204,7 +209,7 @@ router.post("/", async function (req, res) {
       };
 
       pub_data.unshift(chain_data);
-    }else{
+    } else {
       for (const blockchain of blockchains) {
         result = await queryDB
           .getData(query, params, "", blockchain.chain_name)
@@ -216,13 +221,13 @@ router.post("/", async function (req, res) {
           .catch((error) => {
             console.error("Error retrieving data:", error);
           });
-  
+
         chain_data = {
           blockchain_name: blockchain.chain_name,
           blockchain_id: blockchain.chain_id,
           data: result,
         };
-  
+
         pub_data.push(chain_data);
       }
     }

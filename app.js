@@ -83,6 +83,11 @@ const telegramEditRouter = require('./routes/notifications/telegram/edit')
 const telegramInfoRouter = require('./routes/notifications/telegram/info')
 const telegramNotifyRouter = require('./routes/notifications/telegram/notify')
 
+//notifications
+const sentimentInfoRouter = require('./routes/sentiment/info')
+const sentimentEditRouter = require('./routes/sentiment/edit')
+const sentimentDeleteRouter = require('./routes/sentiment/delete')
+
 //images
 const imagesRouter = require('./routes/images/index')
 
@@ -146,6 +151,11 @@ app.use('/nodes/stats', nodeStatsRouter)
 //nodes
 app.use('/delegators/activity', delegatorsActivityRouter)
 app.use('/delegators/stats', delegatorsStatsRouter)
+
+//sentiment
+app.use('/sentiment/info', sentimentInfoRouter)
+app.use('/sentiment/edit', sentimentEditRouter)
+app.use('/sentiment/delete', sentimentDeleteRouter)
 
 //notifications
 app.use('/notifications/telegram/edit', telegramEditRouter)
