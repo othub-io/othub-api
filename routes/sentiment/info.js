@@ -70,6 +70,40 @@ router.post("/", async function (req, res) {
       params.push(data.account);
     }
 
+    if(data.frequency === "last1h"){
+        conditions.push(
+            `updated_at>= date_add(now(), interval -1 HOUR)`
+          );
+    }
+
+    if(data.frequency === "last24h"){
+        conditions.push(
+            `updated_at>= date_add(now(), interval -1 DAY)`
+          );
+    }
+
+    if(data.frequency === "last7d"){
+        conditions.push(
+            `updated_at>= date_add(now(), interval -7 DAY)`
+          );
+    }
+
+    if(data.frequency === "last30d"){
+        conditions.push(
+            `updated_at>= date_add(now(), interval -30 HOUR)`
+          );
+    }
+    if(data.frequency === "last6m"){
+        conditions.push(
+            `updated_at>= date_add(now(), interval -6 MONTH)`
+          );
+    }
+    if(data.frequency === "last1y"){
+        conditions.push(
+            `updated_at>= date_add(now(), interval -12 MONTH)`
+          );
+    }
+
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
     query = query + " " + whereClause + ` order by created_at desc`;
@@ -85,7 +119,6 @@ router.post("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
-    console.log(result)
     res.status(200).json({
       success: true,
       result: result,

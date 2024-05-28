@@ -100,6 +100,7 @@ router.post("/", async function (req, res) {
         });
     }
 
+    params = []
     if (data.owner) {
       if (!ethers.utils.isAddress(data.owner)) {
         console.log(`Asset info request with invalid account from ${api_key}`);
@@ -147,11 +148,21 @@ router.post("/", async function (req, res) {
         return;
       }
 
-      conditions.push(`asset_contract = ?`);
+      conditions.push(`contract_address = ?`);
       params.push(args[1]);
 
       conditions.push(`token_id = ?`);
       params.push(Number(args[2]));
+    }
+
+    if(data.token_id){
+      conditions.push(`token_id = ?`);
+      params.push(Number(data.token_id));
+    }
+
+    if(data.asset_contract){
+      conditions.push(`contract_address = ?`);
+      params.push(data.asset_contract);
     }
 
     if (nodeId) {
@@ -165,6 +176,11 @@ router.post("/", async function (req, res) {
 
       nodeId = `%,${nodeId}"%`;
       params.push(nodeId);
+    }
+
+    if(data.state){
+      conditions.push(`state = ?`);
+      params.push(data.state);
     }
 
     query = `select * from v_pubs`;
