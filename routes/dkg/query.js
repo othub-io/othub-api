@@ -106,7 +106,12 @@ router.post("/", async function (req, res) {
       type = "SELECT";
     }
 
-    queryResult = await dkg.graph.query(sparquery, type, {environment: environment});
+    graphState = data.graphState;
+    if (!data.graphState || data.graphState === "") {
+      graphState = "CURRENT";
+    }
+
+    queryResult = await dkg.graph.query(sparquery, type, {graphState: graphState});
 
     data = JSON.stringify(queryResult.data);
     if (queryResult.status === "FAILED") {
@@ -162,6 +167,7 @@ router.post("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
+      console.log(queryResult)
     res.status(200).send(queryResult);
   } catch (e) {
     console.log(e);

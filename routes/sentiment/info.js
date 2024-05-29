@@ -9,7 +9,7 @@ const keccak256 = require("keccak256");
 router.post("/", async function (req, res) {
   try {
     type = "stats";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
 
     apiSpamProtection = await queryTypes.apiSpamProtection();
@@ -65,43 +65,51 @@ router.post("/", async function (req, res) {
       params.push(Number(args[2]));
     }
 
+    if (data.blockchain === "NeuroWeb Mainnet") {
+      conditions.push(`chain_id = ?`);
+      params.push("2043");
+    }
+
+    if (data.blockchain === "NeuroWeb Testnet") {
+      conditions.push(`chain_id = ?`);
+      params.push("20430");
+    }
+
+    if (data.blockchain === "Gnosis Mainnet") {
+      conditions.push(`chain_id = ?`);
+      params.push("100");
+    }
+
+    if (data.blockchain === "Chiado Testnet") {
+      conditions.push(`chain_id = ?`);
+      params.push("10200");
+    }
+
     if (data.account) {
       conditions.push(`account = ?`);
       params.push(data.account);
     }
 
-    if(data.frequency === "last1h"){
-        conditions.push(
-            `updated_at>= date_add(now(), interval -1 HOUR)`
-          );
+    if (data.frequency === "last1h") {
+      conditions.push(`updated_at>= date_add(now(), interval -1 HOUR)`);
     }
 
-    if(data.frequency === "last24h"){
-        conditions.push(
-            `updated_at>= date_add(now(), interval -1 DAY)`
-          );
+    if (data.frequency === "last24h") {
+      conditions.push(`updated_at>= date_add(now(), interval -1 DAY)`);
     }
 
-    if(data.frequency === "last7d"){
-        conditions.push(
-            `updated_at>= date_add(now(), interval -7 DAY)`
-          );
+    if (data.frequency === "last7d") {
+      conditions.push(`updated_at>= date_add(now(), interval -7 DAY)`);
     }
 
-    if(data.frequency === "last30d"){
-        conditions.push(
-            `updated_at>= date_add(now(), interval -30 HOUR)`
-          );
+    if (data.frequency === "last30d") {
+      conditions.push(`updated_at>= date_add(now(), interval -30 HOUR)`);
     }
-    if(data.frequency === "last6m"){
-        conditions.push(
-            `updated_at>= date_add(now(), interval -6 MONTH)`
-          );
+    if (data.frequency === "last6m") {
+      conditions.push(`updated_at>= date_add(now(), interval -6 MONTH)`);
     }
-    if(data.frequency === "last1y"){
-        conditions.push(
-            `updated_at>= date_add(now(), interval -12 MONTH)`
-          );
+    if (data.frequency === "last1y") {
+      conditions.push(`updated_at>= date_add(now(), interval -12 MONTH)`);
     }
 
     whereClause =

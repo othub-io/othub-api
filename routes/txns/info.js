@@ -12,12 +12,12 @@ function isValidGUID(guid) {
 
 router.post(
   "/",
-  web3passport.authenticate("jwt", { session: false }),
+  //web3passport.authenticate("jwt", { session: false }),
   async function (req, res, next) {
     try {
       type = "txn-info";
       api_key = req.headers["x-api-key"];
-      account = req.user[0].account;
+      //account = req.user[0].account;
       let query;
       let data = req.body;
       let limit = Number.isInteger(data.limit) ? data.limit : 1000;
@@ -69,9 +69,9 @@ router.post(
 
       query = `Select * FROM txn_header th`;
 
-      if (account && (!api_key || api_key === "")) {
-        query = `select * from txn_header th join data_header dh on th.data_id = dh.data_id`;
-      }
+      // if (account && (!api_key || api_key === "")) {
+      //   query = `select * from txn_header th join data_header dh on th.data_id = dh.data_id`;
+      // }
 
       if (data.ual) {
         const segments = data.ual.split(":");
@@ -114,9 +114,9 @@ router.post(
         params.push(data.txn_type);
       }
 
-      if (account && (!api_key || api_key === "")) {
+      if (data.account) {
         conditions.push(`th.approver = ?`);
-        params.push(account);
+        params.push(data.account);
       }
 
     let ques = "";
