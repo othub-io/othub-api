@@ -85,6 +85,18 @@ router.post("/", async function (req, res) {
       params.push("10200");
     }
 
+    if (!data.blockchain && data.network === "DKG Mainnet") {
+      conditions.push(`chain_id = ? OR chain_id = ?`);
+      params.push("2043");
+      params.push("100");
+    }
+
+    if (!data.blockchain && data.network === "DKG Testnet") {
+      conditions.push(`chain_id = ? OR chain_id = ?`);
+      params.push("20430");
+      params.push("10200");
+    }
+
     if (data.account) {
       conditions.push(`account = ?`);
       params.push(data.account);
@@ -116,6 +128,8 @@ router.post("/", async function (req, res) {
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
     query = query + " " + whereClause + ` order by created_at desc`;
 
+    console.log(query)
+    console.log(params)
     result = await queryDB
       .getData(query, params, "", "othub_db")
       .then((results) => {

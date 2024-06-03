@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "@tensorflow/tfjs-node": "^4.19.0",
     "assert": "^2.0.0",
     "better-sqlite3": "^8.0.1",
     "cookie-parser": "~1.4.4",
@@ -26,6 +27,7 @@
     "keccak256": "^1.0.6",
     "morgan": "~1.9.1",
     "mysql": "^2.18.1",
+    "nsfwjs": "^4.1.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "resolve": "^1.22.1",
