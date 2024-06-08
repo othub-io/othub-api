@@ -110,7 +110,7 @@ router.post(
       }
 
       if (data.txn_type) {
-        conditions.push(`th.txn_type = ?`);
+        conditions.push(`th.request = ?`);
         params.push(data.txn_type);
       }
 

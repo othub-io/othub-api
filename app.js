@@ -16,8 +16,8 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.static(path.join(__dirname, 'node_modules')))
 app.use('/dkg', express.static(__dirname + 'node_modules/dkg.js'))
 app.use('/util', express.static(__dirname + 'public/util'))
-app.use(bodyParser.json({limit: '50mb', extended: true}));
-app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}));
+app.use(bodyParser.json({ limit: '50mb', extended: true }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true, parameterLimit: 50000 }));
 app.use(bodyParser.text({ limit: '200mb' }));
 app.use(cors())
 
@@ -65,6 +65,10 @@ const pubsActivityRouter = require('./routes/pubs/activity')
 //auth
 const authRegisterRouter = require('./routes/auth/register')
 const authSignRouter = require('./routes/auth/sign')
+
+//users
+const userInfoRouter = require('./routes/user/info')
+const userEditRouter = require('./routes/user/edit')
 
 //blockchains
 const othubHomeRouter = require('./routes/othub/home')
@@ -115,6 +119,10 @@ app.use('/app/create', appCreateRouter)
 app.use('/app/delete', appDeleteRouter)
 app.use('/app/edit', appEditRouter)
 
+//users
+app.use('/user/info', userInfoRouter)
+app.use('/user/edit', userEditRouter)
+
 //key
 app.use('/keys/info', keysInfoRouter)
 app.use('/keys/create', keysCreateRouter)
@@ -133,7 +141,7 @@ app.use('/assets/info', assetsInfoRouter)
 app.use('/auth/register', authRegisterRouter)
 app.use('/auth/sign', authSignRouter)
 
-//pubs
+//publishers
 app.use('/publishers/stats', publishersStatsRouter)
 
 //pubs

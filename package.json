@@ -6,7 +6,6 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
-    "@tensorflow/tfjs-node": "^4.19.0",
     "assert": "^2.0.0",
     "better-sqlite3": "^8.0.1",
     "cookie-parser": "~1.4.4",
