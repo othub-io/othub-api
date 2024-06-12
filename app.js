@@ -48,6 +48,7 @@ const keysDeleteRouter = require('./routes/keys/delete')
 
 //txn
 const txnsInfoRouter = require('./routes/txns/info')
+const txnsDataRouter = require('./routes/txns/data')
 const txnsCompleteRouter = require('./routes/txns/complete')
 const txnsRejectRouter = require('./routes/txns/reject')
 
@@ -130,6 +131,7 @@ app.use('/keys/delete', keysDeleteRouter)
 
 //txn
 app.use('/txns/info', txnsInfoRouter)
+app.use('/txns/data', txnsDataRouter)
 app.use('/txns/complete', txnsCompleteRouter)
 app.use('/txns/reject', txnsRejectRouter)
 

@@ -12,18 +12,19 @@ function isValidGUID(guid) {
 
 router.post(
   "/",
-  //web3passport.authenticate("jwt", { session: false }),
   async function (req, res, next) {
     try {
       type = "txn-info";
       api_key = req.headers["x-api-key"];
-      //account = req.user[0].account;
       let query;
       let data = req.body;
+      let account = data.account
       let limit = Number.isInteger(data.limit) ? data.limit : 1000;
       let conditions = [];
       let params = [];
       let key_ids;
+
+      console.log(account)
 
       if (api_key && api_key !== "") {
         console.log(`Visitor:${api_key} is getting txn info.`);
@@ -69,9 +70,9 @@ router.post(
 
       query = `Select * FROM txn_header th`;
 
-      // if (account && (!api_key || api_key === "")) {
-      //   query = `select * from txn_header th join data_header dh on th.data_id = dh.data_id`;
-      // }
+      if (account) {
+        query = `select * from txn_header th join data_header dh on th.data_id = dh.data_id`;
+      }
 
       if (data.ual) {
         const segments = data.ual.split(":");
@@ -135,6 +136,7 @@ router.post(
         conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
       query = query + " " + whereClause + ` order by created_at desc LIMIT ${limit}`;
 
+      console.log(query)
       let result = await queryDB
         .getData(query, params, "", "othub_db")
         .then((results) => {

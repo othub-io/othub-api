@@ -9,11 +9,11 @@ const keccak256 = require("keccak256");
 
 router.post("/", web3passport.authenticate("jwt", { session: false }), async function (req, res) {
   try {
-    account = req.user[0].account;
+    const account = req.user[0].account;
 
-    let query = `select * from user_header where account = ?`;
+    let query = `SELECT * FROM user_header WHERE account = ?`;
 
-    result = await queryDB
+    let result = await queryDB
       .getData(query, [account], "", "othub_db")
       .then((results) => {
         //console.log('Query results:', results);
