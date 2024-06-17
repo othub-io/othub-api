@@ -2,6 +2,7 @@ require("dotenv").config();
 var express = require("express");
 var router = express.Router();
 const multer = require("multer");
+const fs = require("fs");
 const ethers = require("ethers");
 const web3passport = require("../../util/auth/passport");
 const queryTypes = require("../../util/queryTypes");
@@ -36,7 +37,30 @@ router.post(
       if (req.file) {
         imageFileName = req.file.filename;
 
-        const query = `UPDATE user_header SET img = ? WHERE account = ?`;
+        // Query the current image from the database
+        let query = `SELECT img FROM user_header WHERE account = ?`;
+        let img = await queryDB
+          .getData(query, [account], "", "othub_db")
+          .then((results) => results)
+          .catch((error) => {
+            console.error("Error retrieving current image:", error);
+            throw error;
+          });
+
+        // If an image exists, delete it from the directory
+        if (img.length > 0 && img[0].img) {
+          const currentImagePath = `${process.env.IMAGE_DIRECTORY}/${img[0].img}`;
+          fs.unlink(currentImagePath, (err) => {
+            if (err) {
+              console.error("Error deleting current image:", err);
+            } else {
+              console.log("Successfully deleted current image");
+            }
+          });
+        }
+
+        // Update the database with the new image
+        query = `UPDATE user_header SET img = ? WHERE account = ?`;
         await queryDB
           .getData(query, [imageFileName, account], "", "othub_db")
           .then((results) => results)
@@ -50,7 +74,9 @@ router.post(
         const query = `UPDATE user_header SET alias = ? WHERE account = ?`;
         await queryDB
           .getData(query, [data.alias, account], "", "othub_db")
-          .then((results) => results)
+          .then((results) => {
+            return results;
+          })
           .catch((error) => {
             console.error("Error updating alias:", error);
           });
@@ -60,7 +86,9 @@ router.post(
         const query = `UPDATE user_header SET twitter = ? WHERE account = ?`;
         await queryDB
           .getData(query, [data.twitter, account], "", "othub_db")
-          .then((results) => results)
+          .then((results) => {
+            return results;
+          })
           .catch((error) => {
             console.error("Error updating twitter:", error);
           });
@@ -70,7 +98,9 @@ router.post(
         const query = `UPDATE user_header SET bio = ? WHERE account = ?`;
         await queryDB
           .getData(query, [data.bio, account], "", "othub_db")
-          .then((results) => results)
+          .then((results) => {
+            return results;
+          })
           .catch((error) => {
             console.error("Error updating bio:", error);
           });

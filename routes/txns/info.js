@@ -24,8 +24,6 @@ router.post(
       let params = [];
       let key_ids;
 
-      console.log(account)
-
       if (api_key && api_key !== "") {
         console.log(`Visitor:${api_key} is getting txn info.`);
         apiSpamProtection = await queryTypes.apiSpamProtection();
@@ -70,10 +68,6 @@ router.post(
 
       query = `Select * FROM txn_header th`;
 
-      if (account) {
-        query = `select * from txn_header th join data_header dh on th.data_id = dh.data_id`;
-      }
-
       if (data.ual) {
         const segments = data.ual.split(":");
         const argsString =
@@ -115,9 +109,9 @@ router.post(
         params.push(data.txn_type);
       }
 
-      if (data.account) {
+      if (data.approver) {
         conditions.push(`th.approver = ?`);
-        params.push(data.account);
+        params.push(data.approver);
       }
 
     let ques = "";

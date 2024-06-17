@@ -189,7 +189,7 @@ router.post("/", async function (req, res) {
           chain_data = {
             blockchain_name: blockchain.chain_name,
             blockchain_id: blockchain.chain_id,
-            data: data,
+            data: result,
           };
     
           publisher_data.push(chain_data);

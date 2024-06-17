@@ -14,7 +14,7 @@ router.post("/", async function (req, res) {
     let blockchain = data.blockchain ? data.blockchain : null;
     let query;
     let nodeId = Number.isInteger(data.nodeId) ? data.nodeId : null;
-    let limit = Number(data.limit) < 10000 ? data.limit : 100;
+    let limit = Number(data.limit) < 100001 ? data.limit : 100;
     let conditions = [];
     let params = [];
 
