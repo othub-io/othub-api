@@ -14,6 +14,7 @@ app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.static(path.join(__dirname, 'node_modules')))
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/dkg', express.static(__dirname + 'node_modules/dkg.js'))
 app.use('/util', express.static(__dirname + 'public/util'))
 app.use(bodyParser.json({ limit: '50mb', extended: true }));
@@ -71,9 +72,6 @@ const authSignRouter = require('./routes/auth/sign')
 const userInfoRouter = require('./routes/user/info')
 const userEditRouter = require('./routes/user/edit')
 
-//blockchains
-const othubHomeRouter = require('./routes/othub/home')
-
 //nodes
 const nodeActivityRouter = require('./routes/nodes/activity')
 const nodeInfoRouter = require('./routes/nodes/info')
@@ -99,6 +97,7 @@ const imagesRouter = require('./routes/images/index')
 //misc
 const syncStatusRouter = require('./routes/misc/sync_status')
 const blockchainsRouter = require('./routes/misc/blockchains')
+const paranetsRouter = require('./routes/misc/paranets')
 
 //dkg
 app.use('/dkg/get', getRouter)
@@ -150,9 +149,6 @@ app.use('/publishers/stats', publishersStatsRouter)
 app.use('/pubs/activity', pubsActivityRouter)
 app.use('/pubs/stats', pubsStatsRouter)
 
-//othub
-app.use('/othub/home', othubHomeRouter)
-
 //nodes
 app.use('/nodes/activity', nodeActivityRouter)
 app.use('/nodes/info', nodeInfoRouter)
@@ -178,6 +174,7 @@ app.use('/images', imagesRouter)
 //misc
 app.use('/misc/sync_status', syncStatusRouter)
 app.use('/misc/blockchains', blockchainsRouter)
+app.use('/misc/paranets', paranetsRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
