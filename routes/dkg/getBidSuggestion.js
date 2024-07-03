@@ -156,6 +156,7 @@ router.post("/", async function (req, res) {
       }
     );
 
+    console.log(dkg_bid_result)
     if (!dkg_bid_result || dkg_bid_result.errorType) {
       console.log(`getBidSuggestion request failed from ${api_key}`);
       res.status(504).json({

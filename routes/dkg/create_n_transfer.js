@@ -101,6 +101,19 @@ router.post("/", async function (req, res) {
       return;
     }
 
+    const segments = data.paranet_ual.split(":");
+    const argsString =
+      segments.length === 3 ? segments[2] : segments[2] + segments[3];
+    const args = argsString.split("/");
+
+    if (args.length !== 3) {
+      console.log(`Get request with invalid ual from ${api_key}`);
+      res.status(400).json({
+        success: false,
+        msg: "Invalid paranet UAL provided.",
+      });
+      return;
+    }
 
     if (!data.keywords || data.keywords === "") {
       keywords = `othub-api`;
