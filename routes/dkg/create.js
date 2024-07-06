@@ -88,13 +88,13 @@ router.post("/", async function (req, res) {
     }
 
     if (
-      data.blockchain !== "otp:20430" && data.blockchain !== "otp:2043" && data.blockchain !== "gnosis:100" && data.blockchain !== "gnosis:10200"
+      data.blockchain !== "otp:20430" && data.blockchain !== "otp:2043" && data.blockchain !== "gnosis:100" && data.blockchain !== "gnosis:10200" && data.blockchain !== "base:8453" && data.blockchain !== "base:84532"
     ) {
       console.log(`Create request with invalid blockchain from ${api_key}`);
 
       res.status(400).json({
         success: false,
-        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, otp:2043, gnosis:100, gnosis:10200.",
+        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, otp:2043, gnosis:100, gnosis:10200, base:8543. base:84532.",
       });
       return;
     }
@@ -120,6 +120,10 @@ router.post("/", async function (req, res) {
     trac_fee = data.trac_fee;
     if (!data.trac_fee || data.trac_fee === "") {
       trac_fee = null;
+    }
+
+    if (!data.asset["@context"]) {
+      data.asset["@context"] = "https://schema.org";
     }
 
     query = `select ah.app_name,kh.key_id from key_header kh join app_header ah on ah.account = kh.account where kh.api_key = ?`;
@@ -225,7 +229,7 @@ router.post("/", async function (req, res) {
       success: true,
       msg: "Create transaction queued successfully.",
       approver: data.approver,
-      url: `${process.env.WEB_HOST}/my-othub/portal?txn_id=${txn[0].txn_id}`,
+      url: `${process.env.WEB_HOST}/publish?txn_id=${txn[0].txn_id}`,
     });
   } catch (e) {
     console.log(e);

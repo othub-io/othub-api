@@ -19,7 +19,7 @@ router.post(
       account = req.user[0].account;
 
       if(!isValidGUID(data.txn_id)){
-        console.log(`Get request with invalid ual from ${account}`);
+        console.log(`Get request with invalid txn id from ${account}`);
         res.status(400).json({
           success: false,
           msg: "Invalid txn_id provided.",

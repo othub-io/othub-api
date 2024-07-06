@@ -19,8 +19,8 @@ router.post("/", async function (req, res) {
     type = `Create-n-Transfer`;
     data = req.body;
     api_key = req.headers["x-api-key"];
-    network = ""
-    blockchain = "othub_db"
+    network = "";
+    blockchain = "othub_db";
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -67,7 +67,11 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (!data.receiver || !ethers.utils.isAddress(data.receiver) || data.receiver === '0x0000000000000000000000000000000000000000') {
+    if (
+      !data.receiver ||
+      !ethers.utils.isAddress(data.receiver) ||
+      data.receiver === "0x0000000000000000000000000000000000000000"
+    ) {
       console.log(`Transfer request with invalid receiver from ${api_key}`);
 
       res.status(400).json({
@@ -77,7 +81,11 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    const valid_json = await isJsonString(typeof data.asset === 'string' || data.asset instanceof String ? (data.asset) : (JSON.stringify(data.asset)));
+    const valid_json = await isJsonString(
+      typeof data.asset === "string" || data.asset instanceof String
+        ? data.asset
+        : JSON.stringify(data.asset)
+    );
     if (valid_json === "false") {
       console.log(`Create request with bad data from ${api_key}`);
       res.status(400).json({
@@ -87,32 +95,39 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if ((data.blockchain !== "gnosis:10200" && 
-        data.blockchain !== "otp:20430" && 
-        data.blockchain !== "gnosis:100" && 
-        data.blockchain !== "otp:2043") || 
-    ((data.blockchain === "gnosis:100" || data.blockchain === "otp:2043") && api_key !== process.env.MASTER_KEY)) {
+    if (
+      (data.blockchain !== "gnosis:10200" &&
+      data.blockchain !== "base:84532" &&
+        data.blockchain !== "otp:20430" &&
+        data.blockchain !== "gnosis:100" &&
+        data.blockchain !== "base:8453" &&
+        data.blockchain !== "otp:2043") ||
+      ((data.blockchain === "gnosis:100" || data.blockchain === "otp:2043" || data.blockchain === "base:8453") &&
+        api_key !== process.env.MASTER_KEY)
+    ) {
       console.log(`Create request with invalid blockchain from ${api_key}`);
 
       res.status(400).json({
         success: false,
-        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, gnosis:10200.",
+        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, gnosis:10200, base:85432",
       });
       return;
     }
 
-    const segments = data.paranet_ual.split(":");
-    const argsString =
-      segments.length === 3 ? segments[2] : segments[2] + segments[3];
-    const args = argsString.split("/");
+    if (data.paranet_ual) {
+      const segments = data.paranet_ual.split(":");
+      const argsString =
+        segments.length === 3 ? segments[2] : segments[2] + segments[3];
+      const args = argsString.split("/");
 
-    if (args.length !== 3) {
-      console.log(`Get request with invalid ual from ${api_key}`);
-      res.status(400).json({
-        success: false,
-        msg: "Invalid paranet UAL provided.",
-      });
-      return;
+      if (args.length !== 3) {
+        console.log(`Get request with invalid ual from ${api_key}`);
+        res.status(400).json({
+          success: false,
+          msg: "Invalid paranet UAL provided.",
+        });
+        return;
+      }
     }
 
     if (!data.keywords || data.keywords === "") {
@@ -138,18 +153,22 @@ router.post("/", async function (req, res) {
       trac_fee = null;
     }
 
+    if (!data.asset["@context"]) {
+      data.asset["@context"] = "https://schema.org";
+    }
+
     query = `select ah.app_name,kh.key_id from key_header kh join app_header ah on ah.account = kh.account where kh.api_key = ?`;
     params = [api_key];
     app = await queryDB
-    .getData(query, params, network, blockchain)
-    .then((results) => {
-      //console.log('Query results:', results);
-      return results;
-      // Use the results in your variable or perform further operations
-    })
-    .catch((error) => {
-      console.error("Error retrieving data:", error);
-    });
+      .getData(query, params, network, blockchain)
+      .then((results) => {
+        //console.log('Query results:', results);
+        return results;
+        // Use the results in your variable or perform further operations
+      })
+      .catch((error) => {
+        console.error("Error retrieving data:", error);
+      });
 
     // query = `select * from enabled_apps where owner = ?`;
     // params = [data.approver];
@@ -176,7 +195,7 @@ router.post("/", async function (req, res) {
     //   return;
     // }
 
-    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,UUID(),?,?,?,?,?,?,?,?)`;
+    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver, paranet_ual, bid) VALUES (UUID(),?,?,?,?,?,?,?,UUID(),?,?,?,?,?,?,?,?,?,?)`;
     params = [
       "PENDING",
       data.approver,
@@ -193,6 +212,8 @@ router.post("/", async function (req, res) {
       trac_fee,
       epochs,
       data.receiver,
+      data.paranet_ual,
+      data.bid,
     ];
 
     await queryDB
@@ -209,20 +230,22 @@ router.post("/", async function (req, res) {
     query = `select * from txn_header where key_id = ? and request = ? order by created_at desc`;
     params = [app[0].key_id, type];
     txn = await queryDB
-    .getData(query, params, network, blockchain)
-    .then((results) => {
-      //console.log('Query results:', results);
-      return results;
-      // Use the results in your variable or perform further operations
-    })
-    .catch((error) => {
-      console.error("Error retrieving data:", error);
-    });
+      .getData(query, params, network, blockchain)
+      .then((results) => {
+        //console.log('Query results:', results);
+        return results;
+        // Use the results in your variable or perform further operations
+      })
+      .catch((error) => {
+        console.error("Error retrieving data:", error);
+      });
 
     query = `INSERT INTO data_header (data_id, asset_data) VALUES (?,?)`;
     params = [
       txn[0].data_id,
-      typeof data.asset === 'string' || data.asset instanceof String ? (data.asset) : (JSON.stringify(data.asset)),
+      typeof data.asset === "string" || data.asset instanceof String
+        ? data.asset
+        : JSON.stringify(data.asset),
     ];
 
     await queryDB

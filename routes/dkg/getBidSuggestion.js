@@ -115,23 +115,23 @@ router.post("/", async function (req, res) {
     };
 
     const environment =
-      data.blockchain === "otp:20430" || data.blockchain === "gnosis:10200"
+      data.blockchain === "otp:20430" || data.blockchain === "gnosis:10200" || data.blockchain === "base:84532"
         ? "testnet"
-        : data.blockchain === "otp:2043" || data.blockchain === "gnosis:100"
+        : data.blockchain === "otp:2043" || data.blockchain === "gnosis:100" || data.blockchain === "base:8453"
         ? "mainnet"
         : "";
 
     const dkg =
-      data.blockchain === "otp:20430" || data.blockchain === "gnosis:10200"
+      data.blockchain === "otp:20430" || data.blockchain === "gnosis:10200" || data.blockchain === "base:84532"
         ? testnet_dkg
-        : data.blockchain === "otp:2043" || data.blockchain === "gnosis:100"
+        : data.blockchain === "otp:2043" || data.blockchain === "gnosis:100" || data.blockchain === "base:8453"
         ? mainnet_dkg
         : "";
 
     if (dkg === "") {
       res.status(400).json({
         success: false,
-        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, otp:2043, gnosis:10200, gnosis:100.",
+        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, otp:2043, gnosis:10200, gnosis:100, base:8453, base:84532.",
       });
       return;
     }
