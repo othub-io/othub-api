@@ -43,7 +43,6 @@ router.post(
           console.error("Error retrieving data:", error);
         });
 
-        console.log(result)
       if (result.length >= 3) {
         console.log(`Keys already exists from ${account}`);
         res.status(400).json({

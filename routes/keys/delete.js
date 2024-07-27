@@ -36,17 +36,17 @@ router.post(
           console.error("Error retrieving data:", error);
         });
 
-      query = `DELETE FROM txn_header WHERE app_name = ? and key_id = ?`;
-      await queryDB
-        .getData(query, [app_header[0].app_name, app_header[0].key_id], "", "othub_db")
-        .then((results) => {
-          //console.log('Query results:', results);
-          return results;
-          // Use the results in your variable or perform further operations
-        })
-        .catch((error) => {
-          console.error("Error retrieving data:", error);
-        });
+      // query = `DELETE FROM txn_header WHERE app_name = ? and key_id = ?`;
+      // await queryDB
+      //   .getData(query, [app_header[0].app_name, app_header[0].key_id], "", "othub_db")
+      //   .then((results) => {
+      //     //console.log('Query results:', results);
+      //     return results;
+      //     // Use the results in your variable or perform further operations
+      //   })
+      //   .catch((error) => {
+      //     console.error("Error retrieving data:", error);
+      //   });
 
       query = `DELETE FROM key_header WHERE account = ? and key_id = ?`;
       await queryDB

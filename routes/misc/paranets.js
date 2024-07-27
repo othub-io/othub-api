@@ -9,11 +9,11 @@ router.post('/', async function (req, res, next) {
   try{
     type = ""
     api_key = req.headers["x-api-key"];
-    let network = req.body.network ? req.body.network : "DKG Mainnet";
+    let network = req.body.network
     let blockchain = "othub_db"
   
-    let query = `select * from paranet_header where network = ?`
-    let params = [network]
+    let query = network ? `select * from paranet_header where network = ?` : `select * from paranet_header`
+    let params = network ? [network] : null
   
     if (!api_key || api_key === "") {
       console.log(`Paranet request without authorization.`);

@@ -126,6 +126,16 @@ router.post("/", async function (req, res) {
       conditions.push(`tokenName = ?`);
       params.push(data.nodeName);
     }
+
+    if (data.node_id) {
+      conditions.push(`nodeId = ?`);
+      params.push(data.node_id);
+    }
+
+    if (data.chain_id) {
+      conditions.push(`chainId = ?`);
+      params.push(data.chain_id);
+    }
     
     if (!limit) {
       limit = 1000;

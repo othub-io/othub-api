@@ -17,22 +17,37 @@ router.post(
       account = req.user[0].account;
       network = "";
       blockchain = "othub_db";
+      let node_id = req.body.node_id;
+      let chain_id = req.body.chain_id;
+      let conditions = []
+      let params = []
 
-      query = `select * from user_header where account = ?`;
-      params = [account];
-      user_header = await queryDB
-        .getData(query, params, network, blockchain)
-        .then((results) => {
-          return results;
-        })
-        .catch((error) => {
-          console.error("Error retrieving data:", error);
-        });
+      conditions.push(`account = ?`);
+      params.push(account);
 
-      query = "Select * from telegram_header where tg_id = ?";
+      if (node_id && node_id !== "") {
+        conditions.push(`node_id = ?`);
+        params.push(Number(node_id));
+      }
+
+      if (chain_id && chain_id !== "") {
+        conditions.push(`chain_id = ?`);
+        params.push(Number(chain_id));
+      }
+
+      query = "Select * from telegram_header";
+      whereClause =
+        conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
+      query =
+        query +
+        " " +
+        whereClause
+
+        console.log(query)
+        console.log(params)
       result = await queryDB.getData(
         query,
-        [user_header[0].tg_id],
+        params,
         network,
         blockchain,
         function (error, results, fields) {
@@ -40,6 +55,7 @@ router.post(
         }
       );
 
+      console.log(result)
       res.status(200).json({
         success: true,
         result: result,

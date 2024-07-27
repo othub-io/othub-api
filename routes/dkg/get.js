@@ -173,7 +173,7 @@ router.post("/", async function (req, res) {
       null,
       app[0].key_id,
       type,
-      data.network,
+      data.blockchain,
       app[0].app_name,
       txn_description,
       null,

@@ -100,7 +100,7 @@ router.post("/", async function (req, res) {
         });
     }
 
-    query = `select * from v_nodes`;
+    query = `select vn.*,vns.pubsCommited as pubs24h,vns.estimatedEarnings as earnings24h from v_nodes vn join v_nodes_stats_last24h vns on vn.nodeId = vns.nodeId`;
     ques = "";
 
     params = []
@@ -123,11 +123,11 @@ router.post("/", async function (req, res) {
 
       ques = ques.substring(0, ques.length - 1);
 
-      conditions.push(`nodeId in (${ques})`);
+      conditions.push(`vn.nodeId in (${ques})`);
     }
     
     if (data.nodeName && data.nodeName !== "") {
-      conditions.push(`tokenName = ?`);
+      conditions.push(`vn.tokenName = ?`);
       params.push(data.nodeName);
     }
 
@@ -150,7 +150,7 @@ router.post("/", async function (req, res) {
       params.push(like_keccak256hash);
     }
 
-    conditions.push(`nodeId != ?`);
+    conditions.push(`vn.nodeId != ?`);
     params.push(0);
 
     whereClause =
