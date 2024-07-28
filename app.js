@@ -76,6 +76,8 @@ const userEditRouter = require('./routes/user/edit')
 const nodeActivityRouter = require('./routes/nodes/activity')
 const nodeInfoRouter = require('./routes/nodes/info')
 const nodeStatsRouter = require('./routes/nodes/stats')
+const nodeEditRouter = require('./routes/nodes/edit')
+const nodeProfileRouter = require('./routes/nodes/profile')
 
 //delegators
 const delegatorsActivityRouter = require('./routes/delegators/activity')
@@ -153,6 +155,8 @@ app.use('/pubs/stats', pubsStatsRouter)
 app.use('/nodes/activity', nodeActivityRouter)
 app.use('/nodes/info', nodeInfoRouter)
 app.use('/nodes/stats', nodeStatsRouter)
+app.use('/nodes/profile', nodeProfileRouter)
+app.use('/nodes/edit', nodeEditRouter)
 
 //nodes
 app.use('/delegators/activity', delegatorsActivityRouter)
