@@ -147,7 +147,7 @@ router.post("/", async function (req, res) {
     query = query + " " + whereClause + ` ${order_by} LIMIT ${limit}`;
 
     let pub_data = [];
-    if(!blockchain && (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" || frequency === "last6m" || frequency === "last1y" || frequency === "total")){
+    if(!blockchain && (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" || frequency === "last6m" || frequency === "last1y" || frequency === "total" || frequency === "records")){
       result = await queryDB
         .getData(query, params, network, "")
         .then((results) => {
