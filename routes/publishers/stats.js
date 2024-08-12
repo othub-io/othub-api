@@ -130,8 +130,9 @@ router.post("/", async function (req, res) {
       limit = 2000;
     }
 
+    console.log(frequency)
     if (frequency === "hourly") {
-      frequency = "hourly_7d";
+      frequency = "hourly";
       order_by = "datetime";
 
       if (timeframe > 0) {

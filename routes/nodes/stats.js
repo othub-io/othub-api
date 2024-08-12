@@ -139,8 +139,8 @@ router.post("/", async function (req, res) {
       limit = 1000;
     }
 
-    if (limit > 2000) {
-      limit = 2000;
+    if (limit > 15000) {
+      limit = 15000;
     }
 
     if (frequency === "hourly") {

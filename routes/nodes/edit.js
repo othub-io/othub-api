@@ -32,7 +32,7 @@ router.post(
       let network = data.network ? data.network : "DKG Mainnet";
       let chain_id = data.chain_id;
       let node_id = data.node_id;
-      let imageFileName = req.file.filename;
+      let imageFileName = req.file.filename ? req.file.filename : null;
       let bio = data.bio;
 
       console.log(`Visitor:${account} is editing their node.`);
@@ -71,7 +71,6 @@ router.post(
       //   return;
       // }
 
-      console.log(node_id)
       query = `SELECT * FROM node_header WHERE node_id = ? AND chain_id = ?`;
       profile_record = await queryDB
         .getData(query, [node_id, chain_id], "", "othub_db")
@@ -81,7 +80,6 @@ router.post(
           throw error;
         });
 
-        console.log(profile_record)
       if (profile_record.length === 0) {
         query = `INSERT INTO node_header VALUES (?,?,?,?,?)`;
         await queryDB
