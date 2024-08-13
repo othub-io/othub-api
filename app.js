@@ -79,6 +79,9 @@ const nodeStatsRouter = require('./routes/nodes/stats')
 const nodeEditRouter = require('./routes/nodes/edit')
 const nodeProfileRouter = require('./routes/nodes/profile')
 
+//paranets
+const paranetInfoRouter = require('./routes/paranets/info')
+
 //delegators
 const delegatorsActivityRouter = require('./routes/delegators/activity')
 const delegatorsStatsRouter = require('./routes/delegators/stats')
@@ -157,6 +160,9 @@ app.use('/nodes/info', nodeInfoRouter)
 app.use('/nodes/stats', nodeStatsRouter)
 app.use('/nodes/profile', nodeProfileRouter)
 app.use('/nodes/edit', nodeEditRouter)
+
+//nodes
+app.use('/paranets/info', paranetInfoRouter)
 
 //nodes
 app.use('/delegators/activity', delegatorsActivityRouter)
