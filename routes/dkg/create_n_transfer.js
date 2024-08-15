@@ -17,7 +17,7 @@ function isJsonString(str) {
 router.post("/", async function (req, res) {
   try {
     type = `Create-n-Transfer`;
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     network = "";
     blockchain = "othub_db";
@@ -109,7 +109,7 @@ router.post("/", async function (req, res) {
 
       res.status(400).json({
         success: false,
-        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, gnosis:10200, base:85432",
+        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, gnosis:10200, base:84532",
       });
       return;
     }

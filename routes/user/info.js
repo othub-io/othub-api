@@ -10,7 +10,7 @@ const keccak256 = require("keccak256");
 router.post("/", async function (req, res) {
   try {
     type="stats"
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     let query = `SELECT * FROM user_header`;
     let conditions = [];

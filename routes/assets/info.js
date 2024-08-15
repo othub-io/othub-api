@@ -8,13 +8,13 @@ const queryDB = queryTypes.queryDB();
 router.post("/", async function (req, res) {
   try {
     type = "stats";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network && !data.blockchain ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
     let query;
     let nodeId = Number.isInteger(data.nodeId) ? data.nodeId : null;
-    let limit = Number(data.limit) < 100001 ? data.limit : 100;
+    let limit = Number(data.limit) < 20000 ? data.limit : 20000;
     let conditions = [];
     let params = [];
 

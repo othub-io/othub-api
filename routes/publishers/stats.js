@@ -8,7 +8,7 @@ const queryDB = queryTypes.queryDB();
 router.post("/", async function (req, res) {
   try {
     type = "stats";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
@@ -130,7 +130,6 @@ router.post("/", async function (req, res) {
       limit = 2000;
     }
 
-    console.log(frequency)
     if (frequency === "hourly") {
       frequency = "hourly";
       order_by = "datetime";

@@ -7,7 +7,7 @@ const queryDB = queryTypes.queryDB();
 router.post("/", async function (req, res) {
   try {
     type = "history";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     let network;
     let blockchain = data.blockchain

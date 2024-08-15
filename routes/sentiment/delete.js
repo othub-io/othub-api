@@ -11,7 +11,7 @@ router.post(
   web3passport.authenticate("jwt", { session: false }),
   async function (req, res, next) {
     try {
-      data = req.body;
+      let data = req.body;
       account = req.user[0].account;
       console.log(`Visitor:${account} is deleting sentiment.`);
 

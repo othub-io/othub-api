@@ -38,7 +38,7 @@ function isJsonString(str) {
 router.post("/", async function (req, res) {
   try {
     type = `Update`;
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     network = ""
     blockchain = "othub_db"
@@ -109,16 +109,16 @@ router.post("/", async function (req, res) {
     }
 
     const environment =
-      data.blockchain === "otp:20430" || data.blockchain === "gnosis:10200" || data.blockchain === "base:85432"
+      data.blockchain === "otp:20430" || data.blockchain === "gnosis:10200" || data.blockchain === "base:84532"
         ? "testnet"
-        : data.blockchain === "otp:2043" || data.blockchain === "gnosis:100" || data.blockchain === "base:8543"
+        : data.blockchain === "otp:2043" || data.blockchain === "gnosis:100" || data.blockchain === "base:8453"
         ? "mainnet"
         : "";
 
     const dkg =
-      data.blockchain === "otp:20430" || data.blockchain === "gnosis:10200" || data.blockchain === "base:85432"
+      data.blockchain === "otp:20430" || data.blockchain === "gnosis:10200" || data.blockchain === "base:84532"
         ? testnet_dkg
-        : data.blockchain === "otp:2043" || data.blockchain === "gnosis:100" || data.blockchain === "base:8543"
+        : data.blockchain === "otp:2043" || data.blockchain === "gnosis:100" || data.blockchain === "base:8453"
         ? mainnet_dkg
         : "";
 

@@ -8,7 +8,7 @@ const queryDB = queryTypes.queryDB();
 router.post("/", async function (req, res) {
   try {
     type = "stats";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network && !data.blockchain ? data.network : null;
     let blockchain = data.blockchain;

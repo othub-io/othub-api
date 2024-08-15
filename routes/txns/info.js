@@ -130,7 +130,6 @@ router.post(
         conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
       query = query + " " + whereClause + ` order by created_at desc LIMIT ${limit}`;
 
-      console.log(query)
       let result = await queryDB
         .getData(query, params, "", "othub_db")
         .then((results) => {

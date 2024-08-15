@@ -183,8 +183,6 @@ router.post("/", async function (req, res) {
     //   node_data.push(chain_data);
     // }
 
-    console.log(query)
-    console.log(params)
     data = await queryDB
       .getData(query, params, network, "")
       .then((results) => {
@@ -196,7 +194,6 @@ router.post("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
-      console.log(data)
     res.status(200).json({
       success: true,
       result: data,

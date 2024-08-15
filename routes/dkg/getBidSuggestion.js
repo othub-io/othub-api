@@ -28,7 +28,7 @@ const mainnet_dkg = new DKGClient(mainnet_node_options);
 router.post("/", async function (req, res) {
   try {
     type = "getBidSuggestion";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     network = ""
     blockchain = "othub_db"
@@ -156,7 +156,6 @@ router.post("/", async function (req, res) {
       }
     );
 
-    console.log(dkg_bid_result)
     if (!dkg_bid_result || dkg_bid_result.errorType) {
       console.log(`getBidSuggestion request failed from ${api_key}`);
       res.status(504).json({

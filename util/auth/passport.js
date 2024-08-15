@@ -10,9 +10,9 @@ opts.secretOrKey = process.env.JWT_SECRET;
 
   passport.use(
     new JwtStrategy(opts, async (jwt_payload, done) => {
-        query = `select * from user_header where account = ?`
-        params = [jwt_payload._id]
-        user_record = await queryDB.getData(query, params, "", "othub_db")
+      let query = `select * from user_header where account = ?`
+      let params = [jwt_payload._id]
+      let user_record = await queryDB.getData(query, params, "", "othub_db")
             .then(results => {
             return results
             })

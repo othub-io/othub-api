@@ -7,8 +7,8 @@ const queryDB = queryTypes.queryDB();
 
 router.post("/", async function (req, res, next) {
   try {
-    data = req.body;
-    account = data.account;
+    let data = req.body;
+    let account = data.account;
     blockchain = "othub_db";
     network = "";
 

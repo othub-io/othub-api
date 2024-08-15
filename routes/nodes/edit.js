@@ -26,7 +26,7 @@ router.post(
   upload.single("image"),
   async function (req, res, next) {
     try {
-      data = req.body;
+      let data = req.body;
       account = req.user[0].account;
       let blockchain = data.blockchain ? data.blockchain : "Gnosis Mainnet";
       let network = data.network ? data.network : "DKG Mainnet";
