@@ -14,7 +14,7 @@ router.post("/", async function (req, res) {
     let blockchain = data.blockchain ? data.blockchain : null;
     let query;
     let nodeId = Number.isInteger(data.nodeId) ? data.nodeId : null;
-    let limit = Number(data.limit) < 20000 ? data.limit : 20000;
+    let limit = Number(data.limit) <= 50000 ? data.limit : 50000;
     let conditions = [];
     let params = [];
 
@@ -60,10 +60,12 @@ router.post("/", async function (req, res) {
       blockchain !== "NeuroWeb Mainnet" &&
       blockchain !== "NeuroWeb Testnet" &&
       blockchain !== "Gnosis Mainnet" &&
-      blockchain !== "Chiado Testnet"
+      blockchain !== "Chiado Testnet" &&
+      blockchain !== "Base Mainnet" &&
+      blockchain !== "Base Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet, Base Mainnet, Base Testnet`
       );
       res.status(400).json({
         success: false,
@@ -152,6 +154,28 @@ router.post("/", async function (req, res) {
       params.push(args[1]);
 
       conditions.push(`token_id = ?`);
+      params.push(Number(args[2]));
+    }
+
+    if (data.paranet_ual) {
+      const segments = data.ual.split(":");
+      const argsString =
+        segments.length === 3 ? segments[2] : segments[2] + segments[3];
+      const args = argsString.split("/");
+
+      if (args.length !== 3) {
+        console.log(`Asset Info request with invalid paranet ual from ${api_key}`);
+        res.status(400).json({
+          success: false,
+          msg: "Invalid paranet UAL provided.",
+        });
+        return;
+      }
+
+      conditions.push(`paranet_ka_storage_contract_id = ?`);
+      params.push(args[1]);
+
+      conditions.push(`paranet_ka_token_id = ?`);
       params.push(Number(args[2]));
     }
 
