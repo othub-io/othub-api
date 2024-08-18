@@ -158,7 +158,7 @@ router.post("/", async function (req, res) {
     }
 
     if (data.paranet_ual) {
-      const segments = data.ual.split(":");
+      const segments = data.paranet_ual.split(":");
       const argsString =
         segments.length === 3 ? segments[2] : segments[2] + segments[3];
       const args = argsString.split("/");
