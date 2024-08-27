@@ -135,7 +135,6 @@ router.post("/", async function (req, res) {
     } else {
       keywords = data.keywords.replace("'", "");
       keywords = keywords.replace('"', "");
-      keywords = keywords + ",othub-api";
     }
 
     epochs = data.epochs;

@@ -170,11 +170,9 @@ router.post("/", async function (req, res) {
     query = query + " " + whereClause + ` order by ${order_by} LIMIT ${limit}`;
 
     let publisher_data = [];
-    if(!blockchain){
-      let total_data = [];
-      for (const blockchain of blockchains) {
-        result = await queryDB
-          .getData(query, params, "", blockchain.chain_name)
+    if(!blockchain && ((frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" || frequency === "last6m" || frequency === "last1y" || frequency === "latest"))){
+      result = await queryDB
+          .getData(query, params, network, "")
           .then((results) => {
             //console.log('Query results:', results);
             return results;
@@ -183,24 +181,11 @@ router.post("/", async function (req, res) {
           .catch((error) => {
             console.error("Error retrieving data:", error);
           });
-  
-          for(const record of result){
-            total_data.push(record)
-          }
-
-          chain_data = {
-            blockchain_name: blockchain.chain_name,
-            blockchain_id: blockchain.chain_id,
-            data: result,
-          };
-    
-          publisher_data.push(chain_data);
-      }
 
       chain_data = {
         blockchain_name: "Total",
         blockchain_id: "99999",
-        data: total_data,
+        data: result,
       };
 
       publisher_data.unshift(chain_data);
