@@ -77,6 +77,7 @@ router.post("/", async function (req, res) {
       return;
     }
 
+    let paranet_name;
     if (data.paranet_ual) {
       const segments = data.paranet_ual.split(":");
       const argsString =
@@ -91,7 +92,26 @@ router.post("/", async function (req, res) {
         });
         return;
       }
+
+      network = "DKG Mainnet"
+      if(args[0] === "base84532" || args[0] === "otp20430" || args[0] === "gnosis10200"){
+        network = "DKG Testnet"
+      }
+
+      query = `select * from v_paranets where paranetKnowledgeAssetUAL = ?`;
+      params = [data.paranet_ual];
+      paranet_name = await queryDB
+        .getData(query, params, network, "")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results[0].paranetName;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
     }
+    network = ""
 
     const valid_json = await isJsonString(typeof data.asset === 'string' || data.asset instanceof String ? (data.asset) : (JSON.stringify(data.asset)));
     if (valid_json === "false") {
@@ -181,7 +201,7 @@ router.post("/", async function (req, res) {
     //   return;
     // }
 
-    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver, paranet_ual) VALUES (UUID(),?,?,?,?,?,?,?,UUID(),?,?,?,?,?,?,?,?,?)`;
+    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver, paranet_ual, paranet_name) VALUES (UUID(),?,?,?,?,?,?,?,UUID(),?,?,?,?,?,?,?,?,?,?)`;
     params = [
       "PENDING",
       data.approver,
@@ -198,7 +218,8 @@ router.post("/", async function (req, res) {
       trac_fee,
       epochs,
       data.receiver,
-      data.paranet_ual
+      data.paranet_ual,
+      paranet_name
     ];
 
     await queryDB

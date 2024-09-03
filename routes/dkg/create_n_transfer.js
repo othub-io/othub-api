@@ -19,8 +19,8 @@ router.post("/", async function (req, res) {
     type = `Create-n-Transfer`;
     let data = req.body;
     api_key = req.headers["x-api-key"];
-    network = "";
-    blockchain = "othub_db";
+    let network = "";
+    let blockchain = "othub_db";
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -114,6 +114,7 @@ router.post("/", async function (req, res) {
       return;
     }
 
+    let paranet_name;
     if (data.paranet_ual) {
       const segments = data.paranet_ual.split(":");
       const argsString =
@@ -128,8 +129,27 @@ router.post("/", async function (req, res) {
         });
         return;
       }
-    }
 
+      network = "DKG Mainnet"
+      if(args[0] === "base84532" || args[0] === "otp20430" || args[0] === "gnosis10200"){
+        network = "DKG Testnet"
+      }
+
+      query = `select * from v_paranets where paranetKnowledgeAssetUAL = ?`;
+      params = [data.paranet_ual];
+      paranet_name = await queryDB
+        .getData(query, params, network, "")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results[0].paranetName;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+    }
+    network = ""
+    
     if (!data.keywords || data.keywords === "") {
       keywords = `othub-api`;
     } else {
@@ -194,7 +214,7 @@ router.post("/", async function (req, res) {
     //   return;
     // }
 
-    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver, paranet_ual, bid) VALUES (UUID(),?,?,?,?,?,?,?,UUID(),?,?,?,?,?,?,?,?,?,?)`;
+    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver, paranet_ual, bid, paranet_name) VALUES (UUID(),?,?,?,?,?,?,?,UUID(),?,?,?,?,?,?,?,?,?,?,?)`;
     params = [
       "PENDING",
       data.approver,
@@ -213,6 +233,7 @@ router.post("/", async function (req, res) {
       data.receiver,
       data.paranet_ual,
       data.bid,
+      paranet_name
     ];
 
     await queryDB

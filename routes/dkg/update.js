@@ -193,6 +193,42 @@ router.post("/", async function (req, res) {
       return;
     }
 
+    let paranet_name;
+    if (data.paranet_ual) {
+      const segments = data.paranet_ual.split(":");
+      const argsString =
+        segments.length === 3 ? segments[2] : segments[2] + segments[3];
+      const args = argsString.split("/");
+
+      if (args.length !== 3) {
+        console.log(`Get request with invalid ual from ${api_key}`);
+        res.status(400).json({
+          success: false,
+          msg: "Invalid paranet UAL provided.",
+        });
+        return;
+      }
+
+      network = "DKG Mainnet"
+      if(args[0] === "base84532" || args[0] === "otp20430" || args[0] === "gnosis10200"){
+        network = "DKG Testnet"
+      }
+
+      query = `select * from v_paranets where paranetKnowledgeAssetUAL = ?`;
+      params = [data.paranet_ual];
+      paranet_name = await queryDB
+        .getData(query, params, network, "")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results[0].paranetName;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+    }
+    network = ""
+
     if (!data.keywords || data.keywords === "") {
       keywords = `othub-api`;
     } else {
@@ -255,7 +291,7 @@ router.post("/", async function (req, res) {
     //   return;
     // }
 
-    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,UUID(),?,?,?,?,?,?,?,?)`;
+    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver, paranet_name) VALUES (UUID(),?,?,?,?,?,?,?,UUID(),?,?,?,?,?,?,?,?,?)`;
     params = [
       "PENDING",
       data.approver,
@@ -272,6 +308,7 @@ router.post("/", async function (req, res) {
       trac_fee,
       epochs,
       data.receiver,
+      paranet_name
     ];
 
     await queryDB

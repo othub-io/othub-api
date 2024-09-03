@@ -73,7 +73,7 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    query = `SELECT signer, UAL, datetime, tokenId, transactionHash, eventName, eventValue1, chain_id, NULL AS node_id FROM v_pubs_activity_last${frequency} WHERE eventName != 'StakeIncreased' UNION ALL SELECT tokenSymbol, UAL, datetime, tokenId, transactionHash, eventName, eventValue1, chain_id, nodeId AS node_id FROM v_nodes_activity_last${frequency} WHERE eventName != 'StakeIncreased'`
+    query = `SELECT * FROM v_pubs_activity_last${frequency} WHERE eventName != 'StakeIncreased'`
     ques = "";
 
     if (data.ual) {
