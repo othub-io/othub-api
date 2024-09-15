@@ -8,7 +8,7 @@ const queryDB = queryTypes.queryDB();
 router.post("/", async function (req, res) {
   try {
     type = "stats";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
@@ -66,10 +66,12 @@ router.post("/", async function (req, res) {
       blockchain !== "NeuroWeb Mainnet" &&
       blockchain !== "NeuroWeb Testnet" &&
       blockchain !== "Gnosis Mainnet" &&
-      blockchain !== "Chiado Testnet"
+      blockchain !== "Chiado Testnet" &&
+      blockchain !== "Base Mainnet" &&
+      blockchain !== "Base Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet, Base Mainnet, Base Testnet`
       );
       res.status(400).json({
         success: false,
@@ -130,19 +132,24 @@ router.post("/", async function (req, res) {
       grouped = "_grouped";
     }
 
+    if (data.nodeName) {
+      conditions.push(`tokenName = ?`);
+      params.push(data.nodeName);
+    }
+
     if (!limit) {
       limit = 1000;
     }
 
-    if (limit > 2000) {
-      limit = 2000;
+    if (limit > 15000) {
+      limit = 15000;
     }
 
     if (frequency === "hourly") {
       frequency = "hourly_7d";
       order_by = "datetime";
 
-      if (timeframe) {
+      if (timeframe > 0) {
         conditions.push(
           `datetime >= (select DATE_ADD(block_ts, interval -${timeframe} HOUR) as t from v_sys_staging_date)`
         );
@@ -150,7 +157,7 @@ router.post("/", async function (req, res) {
     }
 
     if (frequency === "daily") {
-      if (timeframe) {
+      if (timeframe > 0) {
         conditions.push(
           `date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} DAY) as date) as t from v_sys_staging_date)`
         );
@@ -158,14 +165,14 @@ router.post("/", async function (req, res) {
     }
 
     if (frequency === "monthly") {
-      if (timeframe) {
+      if (timeframe > 0) {
         conditions.push(
           `date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} MONTH) as date) as t from v_sys_staging_date)`
         );
       }
     }
 
-    if (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" || frequency === "latest") {
+    if (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" || frequency === "last6m" || frequency === "last1y" || frequency === "latest") {
       order_by = "1";
     }
 
@@ -216,6 +223,14 @@ router.post("/", async function (req, res) {
           for(const record of result){
             total_data.push(record)
           }
+
+          chain_data = {
+            blockchain_name: blockchain.chain_name,
+            blockchain_id: blockchain.chain_id,
+            data: result,
+          };
+    
+          node_data.push(chain_data);
       }
 
       chain_data = {
@@ -224,28 +239,28 @@ router.post("/", async function (req, res) {
         data: total_data,
       };
 
-      node_data.push(chain_data);
-    }
-
-    for (const blockchain of blockchains) {
-      data = await queryDB
-        .getData(query, params, "", blockchain.chain_name)
-        .then((results) => {
-          //console.log('Query results:', results);
-          return results;
-          // Use the results in your variable or perform further operations
-        })
-        .catch((error) => {
-          console.error("Error retrieving data:", error);
-        });
-
-      chain_data = {
-        blockchain_name: blockchain.chain_name,
-        blockchain_id: blockchain.chain_id,
-        data: data,
-      };
-
-      node_data.push(chain_data);
+      node_data.unshift(chain_data);
+    }else{
+      for (const blockchain of blockchains) {
+        result = await queryDB
+          .getData(query, params, "", blockchain.chain_name)
+          .then((results) => {
+            //console.log('Query results:', results);
+            return results;
+            // Use the results in your variable or perform further operations
+          })
+          .catch((error) => {
+            console.error("Error retrieving data:", error);
+          });
+  
+        chain_data = {
+          blockchain_name: blockchain.chain_name,
+          blockchain_id: blockchain.chain_id,
+          data: result,
+        };
+  
+        node_data.push(chain_data);
+      }
     }
 
     res.status(200).json({

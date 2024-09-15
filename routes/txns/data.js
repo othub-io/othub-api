@@ -15,41 +15,26 @@ router.post(
   web3passport.authenticate("jwt", { session: false }),
   async function (req, res, next) {
     try {
+      type = "txn-data";
+      api_key = req.headers["x-api-key"];
       let data = req.body;
-      account = req.user[0].account;
+      let account = req.user[0].account
+      let query;
+      let params = [];
 
-      if(!isValidGUID(data.txn_id)){
-        console.log(`Get request with invalid txn id from ${account}`);
-        res.status(400).json({
-          success: false,
-          msg: "Invalid txn_id provided.",
-        });
-        return;
+
+      query = `select dh.asset_data from data_header dh join txn_header th on th.data_id = dh.data_id where dh.data_id = ? and th.approver = ?`;
+
+      if (isValidGUID(data.data_id)) {
+        params.push(data.data_id);
       }
 
-      console.log(`Visitor:${account} is completing a txn.`);
+      params.push(account)
 
-      query = `select app_name from app_header where account = ?`;
-      params = [account];
-      app = await queryDB
-        .getData(query, params, network, blockchain)
-        .then((results) => {
-          //console.log('Query results:', results);
-          return results;
-          // Use the results in your variable or perform further operations
-        })
-        .catch((error) => {
-          console.error("Error retrieving data:", error);
-        });
-
-      query = `UPDATE txn_header SET progress = ? WHERE app_name = ? and txn_id = ?`;
-      await queryDB
-        .getData(
-          query,
-          ["COMPLETE", app[0].app_name, data.txn_id],
-          "",
-          "othub_db"
-        )
+      console.log(query)
+      console.log(params)
+      let result = await queryDB
+        .getData(query, params, "", "othub_db")
         .then((results) => {
           //console.log('Query results:', results);
           return results;
@@ -61,7 +46,7 @@ router.post(
 
       res.status(200).json({
         success: true,
-        result: [],
+        result: result,
       });
     } catch (e) {
       console.log(e);

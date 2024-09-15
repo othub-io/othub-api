@@ -17,7 +17,7 @@ function isJsonString(str) {
 router.post("/", async function (req, res) {
   try {
     type = `Create`;
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     network = ""
     blockchain = "othub_db"
@@ -77,6 +77,42 @@ router.post("/", async function (req, res) {
       return;
     }
 
+    let paranet_name;
+    if (data.paranet_ual) {
+      const segments = data.paranet_ual.split(":");
+      const argsString =
+        segments.length === 3 ? segments[2] : segments[2] + segments[3];
+      const args = argsString.split("/");
+
+      if (args.length !== 3) {
+        console.log(`Get request with invalid ual from ${api_key}`);
+        res.status(400).json({
+          success: false,
+          msg: "Invalid paranet UAL provided.",
+        });
+        return;
+      }
+
+      network = "DKG Mainnet"
+      if(args[0] === "base84532" || args[0] === "otp20430" || args[0] === "gnosis10200"){
+        network = "DKG Testnet"
+      }
+
+      query = `select * from v_paranets where paranetKnowledgeAssetUAL = ?`;
+      params = [data.paranet_ual];
+      paranet_name = await queryDB
+        .getData(query, params, network, "")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results[0].paranetName;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+    }
+    network = ""
+
     const valid_json = await isJsonString(typeof data.asset === 'string' || data.asset instanceof String ? (data.asset) : (JSON.stringify(data.asset)));
     if (valid_json === "false") {
       console.log(`Create request with bad data from ${api_key}`);
@@ -88,13 +124,13 @@ router.post("/", async function (req, res) {
     }
 
     if (
-      data.blockchain !== "otp:20430" && data.blockchain !== "otp:2043" && data.blockchain !== "gnosis:100" && data.blockchain !== "gnosis:10200"
+      data.blockchain !== "otp:20430" && data.blockchain !== "otp:2043" && data.blockchain !== "gnosis:100" && data.blockchain !== "gnosis:10200" && data.blockchain !== "base:8453" && data.blockchain !== "base:84532"
     ) {
       console.log(`Create request with invalid blockchain from ${api_key}`);
 
       res.status(400).json({
         success: false,
-        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, otp:2043, gnosis:100, gnosis:10200.",
+        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, otp:2043, gnosis:100, gnosis:10200, base:8453. base:84532.",
       });
       return;
     }
@@ -120,6 +156,10 @@ router.post("/", async function (req, res) {
     trac_fee = data.trac_fee;
     if (!data.trac_fee || data.trac_fee === "") {
       trac_fee = null;
+    }
+
+    if (!data.asset["@context"]) {
+      data.asset["@context"] = "https://schema.org";
     }
 
     query = `select ah.app_name,kh.key_id from key_header kh join app_header ah on ah.account = kh.account where kh.api_key = ?`;
@@ -161,7 +201,7 @@ router.post("/", async function (req, res) {
     //   return;
     // }
 
-    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,UUID(),?,?,?,?,?,?,?,?)`;
+    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver, paranet_ual, paranet_name) VALUES (UUID(),?,?,?,?,?,?,?,UUID(),?,?,?,?,?,?,?,?,?,?)`;
     params = [
       "PENDING",
       data.approver,
@@ -178,6 +218,8 @@ router.post("/", async function (req, res) {
       trac_fee,
       epochs,
       data.receiver,
+      data.paranet_ual,
+      paranet_name
     ];
 
     await queryDB
@@ -225,7 +267,7 @@ router.post("/", async function (req, res) {
       success: true,
       msg: "Create transaction queued successfully.",
       approver: data.approver,
-      url: `${process.env.WEB_HOST}/my-othub/portal?txn_id=${txn[0].txn_id}`,
+      url: `${process.env.WEB_HOST}/publish?txn_id=${txn[0].txn_id}`,
     });
   } catch (e) {
     console.log(e);

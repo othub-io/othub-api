@@ -11,7 +11,7 @@ router.post(
   web3passport.authenticate("jwt", { session: false }),
   async function (req, res, next) {
     try {
-      data = req.body;
+      let data = req.body;
       account = req.user[0].account;
       console.log(`Visitor:${account} is deleting an app.`);
 
@@ -36,17 +36,17 @@ router.post(
           console.error("Error retrieving data:", error);
         });
 
-      query = `DELETE FROM txn_header WHERE app_name = ? and key_id = ?`;
-      await queryDB
-        .getData(query, [app_header[0].app_name, app_header[0].key_id], "", "othub_db")
-        .then((results) => {
-          //console.log('Query results:', results);
-          return results;
-          // Use the results in your variable or perform further operations
-        })
-        .catch((error) => {
-          console.error("Error retrieving data:", error);
-        });
+      // query = `DELETE FROM txn_header WHERE app_name = ? and key_id = ?`;
+      // await queryDB
+      //   .getData(query, [app_header[0].app_name, app_header[0].key_id], "", "othub_db")
+      //   .then((results) => {
+      //     //console.log('Query results:', results);
+      //     return results;
+      //     // Use the results in your variable or perform further operations
+      //   })
+      //   .catch((error) => {
+      //     console.error("Error retrieving data:", error);
+      //   });
 
       query = `DELETE FROM key_header WHERE account = ? and key_id = ?`;
       await queryDB

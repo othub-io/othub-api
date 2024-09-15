@@ -5,19 +5,21 @@ const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
 
 const DKGClient = require("dkg.js");
+const OT_NODE_TESTNET_PORT = process.env.OT_NODE_TESTNET_PORT;
+const OT_NODE_MAINNET_PORT = process.env.OT_NODE_MAINNET_PORT;
 
 const testnet_node_options = {
-  endpoint: process.env.OT_NODE_HOSTNAME,
-  port: process.env.OT_NODE_TESTNET_PORT,
+  endpoint: process.env.OT_NODE_TESTNET_HOSTNAME,
+  port: OT_NODE_TESTNET_PORT,
   useSSL: true,
-  maxNumberOfRetries: 100
+  maxNumberOfRetries: 100,
 };
 
 const mainnet_node_options = {
-  endpoint: process.env.OT_NODE_HOSTNAME,
-  port: process.env.OT_NODE_MAINNET_PORT,
+  endpoint: process.env.OT_NODE_MAINNET_HOSTNAME,
+  port: OT_NODE_MAINNET_PORT,
   useSSL: true,
-  maxNumberOfRetries: 100
+  maxNumberOfRetries: 100,
 };
 
 const testnet_dkg = new DKGClient(testnet_node_options);
@@ -26,7 +28,7 @@ const mainnet_dkg = new DKGClient(mainnet_node_options);
 router.post("/", async function (req, res) {
   try {
     type = "getBidSuggestion";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     network = ""
     blockchain = "othub_db"
@@ -113,23 +115,23 @@ router.post("/", async function (req, res) {
     };
 
     const environment =
-      data.blockchain === "otp:20430" || data.blockchain === "gnosis:10200"
+      data.blockchain === "otp:20430" || data.blockchain === "gnosis:10200" || data.blockchain === "base:84532"
         ? "testnet"
-        : data.blockchain === "otp:2043" || data.blockchain === "gnosis:100"
+        : data.blockchain === "otp:2043" || data.blockchain === "gnosis:100" || data.blockchain === "base:8453"
         ? "mainnet"
         : "";
 
     const dkg =
-      data.blockchain === "otp:20430" || data.blockchain === "gnosis:10200"
+      data.blockchain === "otp:20430" || data.blockchain === "gnosis:10200" || data.blockchain === "base:84532"
         ? testnet_dkg
-        : data.blockchain === "otp:2043" || data.blockchain === "gnosis:100"
+        : data.blockchain === "otp:2043" || data.blockchain === "gnosis:100" || data.blockchain === "base:8453"
         ? mainnet_dkg
         : "";
 
     if (dkg === "") {
       res.status(400).json({
         success: false,
-        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, otp:2043, gnosis:10200, gnosis:100.",
+        msg: "Invalid blockchain provided. Current supported blockchains are: otp:20430, otp:2043, gnosis:10200, gnosis:100, base:8453, base:84532.",
       });
       return;
     }
@@ -181,7 +183,7 @@ router.post("/", async function (req, res) {
       console.error("Error retrieving data:", error);
     });
 
-    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+    query = `INSERT INTO txn_header (txn_id, progress, approver, key_id, request, blockchain, app_name, txn_description, data_id, ual, keywords, state, txn_hash, txn_fee, trac_fee, epochs, receiver, paranet_name) VALUES (UUID(),?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
     params = [
       "COMPLETE",
       null,
@@ -199,6 +201,7 @@ router.post("/", async function (req, res) {
       0,
       null,
       null,
+      null
     ]
 
     await queryDB

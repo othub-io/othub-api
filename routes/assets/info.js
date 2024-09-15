@@ -8,14 +8,13 @@ const queryDB = queryTypes.queryDB();
 router.post("/", async function (req, res) {
   try {
     type = "stats";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network && !data.blockchain ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
-    let query = `select * from v_pubs`;
+    let query;
     let nodeId = Number.isInteger(data.nodeId) ? data.nodeId : null;
-    let limit = Number.isInteger(data.limit) ? data.limit : 100;
-    let order_by = data.order_by ? data.order_by : "block_ts_hour"
+    let limit = Number(data.limit) <= 50000 ? data.limit : 50000;
     let conditions = [];
     let params = [];
 
@@ -61,10 +60,12 @@ router.post("/", async function (req, res) {
       blockchain !== "NeuroWeb Mainnet" &&
       blockchain !== "NeuroWeb Testnet" &&
       blockchain !== "Gnosis Mainnet" &&
-      blockchain !== "Chiado Testnet"
+      blockchain !== "Chiado Testnet" &&
+      blockchain !== "Base Mainnet" &&
+      blockchain !== "Base Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet, Base Mainnet, Base Testnet`
       );
       res.status(400).json({
         success: false,
@@ -73,10 +74,35 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (limit > 100000) {
-      limit = 100000;
+    if (!blockchain) {
+      query = `select chain_name,chain_id from blockchains where environment = ?`;
+      params = [network];
+      blockchains = await queryDB
+        .getData(query, params, "", "othub_db")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
+    } else {
+      query = `select chain_name,chain_id from blockchains where chain_name = ?`;
+      params = [blockchain];
+      blockchains = await queryDB
+        .getData(query, params, "", "othub_db")
+        .then((results) => {
+          //console.log('Query results:', results);
+          return results;
+          // Use the results in your variable or perform further operations
+        })
+        .catch((error) => {
+          console.error("Error retrieving data:", error);
+        });
     }
 
+    params = []
     if (data.owner) {
       if (!ethers.utils.isAddress(data.owner)) {
         console.log(`Asset info request with invalid account from ${api_key}`);
@@ -94,7 +120,9 @@ router.post("/", async function (req, res) {
 
     if (data.publisher) {
       if (!ethers.utils.isAddress(data.publisher)) {
-        console.log(`Asset info request with invalid publisher from ${api_key}`);
+        console.log(
+          `Asset info request with invalid publisher from ${api_key}`
+        );
 
         res.status(400).json({
           success: false,
@@ -122,41 +150,131 @@ router.post("/", async function (req, res) {
         return;
       }
 
-      conditions.push(`UAL = ?`);
-      params.push(data.ual);
+      conditions.push(`contract_address = ?`);
+      params.push(args[1]);
+
+      conditions.push(`token_id = ?`);
+      params.push(Number(args[2]));
+    }
+
+    if (data.paranet_ual) {
+      const segments = data.paranet_ual.split(":");
+      const argsString =
+        segments.length === 3 ? segments[2] : segments[2] + segments[3];
+      const args = argsString.split("/");
+
+      if (args.length !== 3) {
+        console.log(`Asset Info request with invalid paranet ual from ${api_key}`);
+        res.status(400).json({
+          success: false,
+          msg: "Invalid paranet UAL provided.",
+        });
+        return;
+      }
+
+      conditions.push(`paranet_ka_storage_contract_id = ?`);
+      params.push(args[1]);
+
+      conditions.push(`paranet_ka_token_id = ?`);
+      params.push(Number(args[2]));
+    }
+
+    if(data.token_id){
+      conditions.push(`token_id = ?`);
+      params.push(Number(data.token_id));
+    }
+
+    if(data.asset_contract){
+      conditions.push(`contract_address = ?`);
+      params.push(data.asset_contract);
     }
 
     if (nodeId) {
       conditions.push(`winners like ? OR winners like ? OR winners like ?`);
-  
+
       nodeId = `%"${nodeId},%`;
       params.push(nodeId);
-  
+
       nodeId = `%,${nodeId},%`;
       params.push(nodeId);
-  
+
       nodeId = `%,${nodeId}"%`;
       params.push(nodeId);
     }
 
+    if(data.state){
+      conditions.push(`state = ?`);
+      params.push(data.state);
+    }
+
+    query = `select * from v_pubs`;
+
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` order by ${order_by} DESC LIMIT ${limit}`;
+    query =
+      query + " " + whereClause + ` order by block_date desc, block_ts_hour DESC LIMIT ${limit}`;
 
-    result = await queryDB
-      .getData(query, params, network, blockchain)
-      .then((results) => {
-        //console.log('Query results:', results);
-        return results;
-        // Use the results in your variable or perform further operations
-      })
-      .catch((error) => {
-        console.error("Error retrieving data:", error);
-      });
+    let pub_data = [];
+    if (!blockchain) {
+      let total_data = [];
+      for (const blockchain of blockchains) {
+        result = await queryDB
+          .getData(query, params, "", blockchain.chain_name)
+          .then((results) => {
+            //console.log('Query results:', results);
+            return results;
+            // Use the results in your variable or perform further operations
+          })
+          .catch((error) => {
+            console.error("Error retrieving data:", error);
+          });
+
+        for (const record of result) {
+          total_data.push(record);
+        }
+
+        chain_data = {
+          blockchain_name: blockchain.chain_name,
+          blockchain_id: blockchain.chain_id,
+          data: result,
+        };
+
+        pub_data.push(chain_data);
+      }
+
+      chain_data = {
+        blockchain_name: "Total",
+        blockchain_id: "99999",
+        data: total_data,
+      };
+
+      pub_data.unshift(chain_data);
+    } else {
+      for (const blockchain of blockchains) {
+        result = await queryDB
+          .getData(query, params, "", blockchain.chain_name)
+          .then((results) => {
+            //console.log('Query results:', results);
+            return results;
+            // Use the results in your variable or perform further operations
+          })
+          .catch((error) => {
+            console.error("Error retrieving data:", error);
+          });
+
+        chain_data = {
+          blockchain_name: blockchain.chain_name,
+          blockchain_id: blockchain.chain_id,
+          data: result,
+        };
+
+        pub_data.push(chain_data);
+      }
+    }
 
     res.status(200).json({
       success: true,
-      result: result,
+      result: pub_data,
     });
   } catch (e) {
     console.log(e);

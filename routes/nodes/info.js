@@ -9,7 +9,7 @@ const keccak256 = require("keccak256");
 router.post("/", async function (req, res) {
   try {
     type = "stats";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
@@ -60,10 +60,12 @@ router.post("/", async function (req, res) {
       blockchain !== "NeuroWeb Mainnet" &&
       blockchain !== "NeuroWeb Testnet" &&
       blockchain !== "Gnosis Mainnet" &&
-      blockchain !== "Chiado Testnet"
+      blockchain !== "Chiado Testnet" &&
+      blockchain !== "Base Mainnet" &&
+      blockchain !== "Base Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet, Base Mainnet, Base Testnet`
       );
       res.status(400).json({
         success: false,
@@ -100,7 +102,7 @@ router.post("/", async function (req, res) {
         });
     }
 
-    query = `select * from v_nodes`;
+    query = `select vn.*,vns.pubsCommited as pubs24h,vns.estimatedEarnings as earnings24h from v_nodes vn join v_nodes_stats_last24h vns on vn.nodeId = vns.nodeId`;
     ques = "";
 
     params = []
@@ -123,11 +125,11 @@ router.post("/", async function (req, res) {
 
       ques = ques.substring(0, ques.length - 1);
 
-      conditions.push(`nodeId in (${ques})`);
+      conditions.push(`vn.nodeId in (${ques})`);
     }
     
-    if (data.nodeName) {
-      conditions.push(`tokenName = ?`);
+    if (data.nodeName && data.nodeName !== "") {
+      conditions.push(`vn.tokenName = ?`);
       params.push(data.nodeName);
     }
 
@@ -150,7 +152,7 @@ router.post("/", async function (req, res) {
       params.push(like_keccak256hash);
     }
 
-    conditions.push(`nodeId != ?`);
+    conditions.push(`vn.nodeId != ?`);
     params.push(0);
 
     whereClause =

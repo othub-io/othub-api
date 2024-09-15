@@ -7,8 +7,8 @@ const queryDB = queryTypes.queryDB();
 
 router.post("/", async function (req, res, next) {
   try {
-    data = req.body;
-    account = data.account;
+    let data = req.body;
+    let account = data.account;
     blockchain = "othub_db";
     network = "";
 
@@ -37,10 +37,10 @@ router.post("/", async function (req, res, next) {
       });
 
     if (user_record == "") {
-      query = "INSERT INTO user_header values (?,?,?)";
+      query = "INSERT INTO user_header values (?,?,?,?,?,?,?)";
       nonce = Math.floor(Math.random() * 1000000);
       await queryDB
-        .getData(query, [account, nonce, null], network, blockchain)
+        .getData(query, [account, nonce, null, null, null, null, null], network, blockchain)
         .then((results) => {
           return results;
         })

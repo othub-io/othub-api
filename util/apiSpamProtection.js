@@ -104,8 +104,8 @@ module.exports = apiSpam = async (type, api_key) => {
         })
 
         console.log(queue_count.length)
-        if (50 <= Number(queue_count.length)) {
-          console.log(`Create-n-Transfer rate limit has been reached.`)
+        if (50000 <= Number(queue_count.length)) {
+          console.log(`Create-n-Transfer queue rate limit has been reached.`)
           return {
               permission: `block`
           }

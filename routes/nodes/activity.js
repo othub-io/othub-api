@@ -8,12 +8,11 @@ const queryDB = queryTypes.queryDB();
 router.post("/", async function (req, res) {
   try {
     type = "stats";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network && !data.blockchain ? data.network : null;
     let blockchain = data.blockchain
-    //let frequency = data.frequency ? data.frequency : `1min`;
-    let frequency = `1min`;
+    let frequency = data.frequency ? data.frequency : `1min`;
     let limit = Number.isInteger(data.limit) ? data.limit : 1000;
     let conditions = [];
     let params = [];
@@ -60,10 +59,12 @@ router.post("/", async function (req, res) {
       blockchain !== "NeuroWeb Mainnet" &&
       blockchain !== "NeuroWeb Testnet" &&
       blockchain !== "Gnosis Mainnet" &&
-      blockchain !== "Chiado Testnet"
+      blockchain !== "Chiado Testnet" &&
+      blockchain !== "Base Mainnet" &&
+      blockchain !== "Base Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet, Base Mainnet, Base Testnet`
       );
       res.status(400).json({
         success: false,
@@ -75,6 +76,11 @@ router.post("/", async function (req, res) {
     query = `select signer,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_pubs_activity_last${frequency} UNION ALL select tokenSymbol,UAL,datetime,tokenId,transactionHash,eventName,eventValue1,chain_id from v_nodes_activity_last${frequency}`;
     ques = "";
 
+    if (data.nodeName) {
+      conditions.push(`tokenName = ?`);
+      params.push(data.nodeName);
+    }
+    
     if (data.nodeId) {
       nodeIds = !Number(data.nodeId) ? data.nodeId.split(",").map(Number) : [data.nodeId];
       for (const nodeid of nodeIds) {

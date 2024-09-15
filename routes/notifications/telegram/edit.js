@@ -17,23 +17,31 @@ router.post(
       account = req.user[0].account;
       network = "";
       blockchain = "othub_db";
-      let botToken = req.body.botToken;
-      let telegramID = req.body.telegramID;
+      let bot_token = req.body.bot_token;
+      let telegram_id = req.body.telegram_id;
+      let node_id = req.body.node_id;
+      let chain_id = req.body.chain_id;
+      let daily_report = req.body.daily_report;
+      let total_shares = req.body.total_shares;
+      let operator_fee = req.body.operator_fee;
+      let node_ask = req.body.node_ask;
+      let active_status = req.body.active_status;
 
-      try{
-        await axios.get(`https://api.telegram.org/bot${botToken}/getChat?chat_id=${telegramID}`);
-      }catch(e){
-        console.log(e)
+      try {
+        await axios.get(
+          `https://api.telegram.org/bot${bot_token}/getChat?chat_id=${telegram_id}`
+        );
+      } catch (e) {
         res.status(400).json({
-            success: false,
-            msg: "Invalid telegram credentials provided.",
-          });
-          return;
+          success: false,
+          msg: "Invalid telegram credentials provided.",
+        });
+        return;
       }
 
-      query = `select * from user_header where account = ?`;
-      params = [account];
-      user_header = await queryDB
+      query = `select * from telegram_header where account = ? and node_id = ? and chain_id = ?`;
+      params = [account, node_id, chain_id];
+      telegram_header = await queryDB
         .getData(query, params, network, blockchain)
         .then((results) => {
           return results;
@@ -42,22 +50,23 @@ router.post(
           console.error("Error retrieving data:", error);
         });
 
-      if (user_header[0].tg_id) {
-        query = "UPDATE telegram_header set bot_token = ? where tg_id = ?";
+      if (telegram_header) {
+        query =
+          "UPDATE telegram_header set bot_token = ?, telegram_id = ?, daily_report = ?, total_shares = ?, operator_fee = ?, node_ask = ?, active_status = ? where account = ? and node_id = ? and chain_id = ?";
         await queryDB.getData(
           query,
-          [botToken, user_header[0].tg_id],
-          network,
-          blockchain,
-          function (error, results, fields) {
-            if (error) throw error;
-          }
-        );
-
-        query = "UPDATE telegram_header set telegram_id = ? where tg_id = ?";
-        await queryDB.getData(
-          query,
-          [telegramID, user_header[0].tg_id],
+          [
+            bot_token,
+            telegram_id,
+            daily_report,
+            total_shares,
+            operator_fee,
+            node_ask,
+            active_status,
+            account,
+            node_id,
+            chain_id
+          ],
           network,
           blockchain,
           function (error, results, fields) {
@@ -66,33 +75,11 @@ router.post(
         );
       }
 
-      if (!user_header[0].tg_id) {
-        query = "INSERT INTO telegram_header values (UUID(),?,?)";
+      if (telegram_header.length === 0) {
+        query = "INSERT INTO telegram_header values (?,?,?,?,?,?,?,?,?,?)";
         await queryDB.getData(
           query,
-          [botToken, telegramID],
-          network,
-          blockchain,
-          function (error, results, fields) {
-            if (error) throw error;
-          }
-        );
-
-        query = `select * from telegram_header where telegram_id = ?`;
-        params = [telegramID];
-        telegram_header = await queryDB
-          .getData(query, params, network, blockchain)
-          .then((results) => {
-            return results;
-          })
-          .catch((error) => {
-            console.error("Error retrieving data:", error);
-          });
-
-        query = "UPDATE user_header set tg_id = ? where account = ?";
-        await queryDB.getData(
-          query,
-          [telegram_header[0].tg_id, user_header[0].account],
+          [account, bot_token, telegram_id, daily_report, total_shares, operator_fee, node_ask, active_status, chain_id, node_id],
           network,
           blockchain,
           function (error, results, fields) {

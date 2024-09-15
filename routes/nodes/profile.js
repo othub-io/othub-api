@@ -2,20 +2,21 @@ require("dotenv").config();
 var express = require("express");
 var router = express.Router();
 const ethers = require("ethers");
+const web3passport = require("../../util/auth/passport");
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
+const keccak256 = require("keccak256");
 
 router.post("/", async function (req, res) {
   try {
     type = "stats";
     let data = req.body;
     api_key = req.headers["x-api-key"];
-    let network = data.network && !data.blockchain ? data.network : null;
-    let blockchain = data.blockchain
-    let frequency = data.frequency ? data.frequency : `1min`;
-    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
+    let query = `SELECT * FROM node_header`;
     let conditions = [];
     let params = [];
+    let node_id = data.node_id
+    let chain_id = data.chain_id
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -53,55 +54,22 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (
-      network !== "DKG Mainnet" &&
-      network !== "DKG Testnet" &&
-      blockchain !== "NeuroWeb Mainnet" &&
-      blockchain !== "NeuroWeb Testnet" &&
-      blockchain !== "Gnosis Mainnet" &&
-      blockchain !== "Chiado Testnet" &&
-      blockchain !== "Base Mainnet" &&
-      blockchain !== "Base Testnet"
-    ) {
-      console.log(
-        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet, Base Mainnet, Base Testnet`
-      );
-      res.status(400).json({
-        success: false,
-        msg: "Invalid network or blockchain provided.",
-      });
-      return;
+    if (node_id) {
+      conditions.push(`node_id = ?`);
+      params.push(node_id);
     }
 
-    query = `SELECT * FROM v_pubs_activity_last${frequency} WHERE eventName != 'StakeIncreased'`
-    ques = "";
-
-    if (data.ual) {
-      const segments = data.ual.split(":");
-      const argsString =
-        segments.length === 3 ? segments[2] : segments[2] + segments[3];
-      const args = argsString.split("/");
-
-      if (args.length !== 3) {
-        console.log(`Node activity request with invalid ual from ${api_key}`);
-        res.status(400).json({
-          success: false,
-          msg: "Invalid UAL provided.",
-        });
-        return;
-      }
-
-      conditions.push(`UAL = ?`);
-      params.push(data.ual);
+    if (chain_id) {
+      conditions.push(`chain_id = ?`);
+      params.push(chain_id);
     }
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query =
-      query + " " + whereClause + ` order by datetime desc LIMIT ${limit}`;
+    query = query + " " + whereClause;
 
-    result = await queryDB
-      .getData(query, params, network, blockchain)
+    let result = await queryDB
+      .getData(query, params, "", "othub_db")
       .then((results) => {
         //console.log('Query results:', results);
         return results;

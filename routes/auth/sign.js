@@ -9,7 +9,7 @@ const queryDB = queryTypes.queryDB()
 
 router.post("/", async function (req, res, next) {
   try{
-    data = req.body;
+    let data = req.body;
     let account = data.account;
     let signature = data.signature;
     let blockchain = "othub_db"

@@ -4,27 +4,13 @@ var router = express.Router();
 const ethers = require("ethers");
 const queryTypes = require("../../util/queryTypes");
 const queryDB = queryTypes.queryDB();
+const keccak256 = require("keccak256");
 
 router.post("/", async function (req, res) {
   try {
     type = "stats";
     let data = req.body;
     api_key = req.headers["x-api-key"];
-    let network = data.network && !data.blockchain ? data.network : null;
-    let blockchain = data.blockchain
-    let frequency = data.frequency ? data.frequency : `1min`;
-    let limit = Number.isInteger(data.limit) ? data.limit : 1000;
-    let conditions = [];
-    let params = [];
-
-    if (!api_key || api_key === "") {
-      console.log(`Create request without authorization.`);
-      res.status(401).json({
-        success: false,
-        msg: "Authorization key not provided.",
-      });
-      return;
-    }
 
     apiSpamProtection = await queryTypes.apiSpamProtection();
 
@@ -53,28 +39,9 @@ router.post("/", async function (req, res) {
       return;
     }
 
-    if (
-      network !== "DKG Mainnet" &&
-      network !== "DKG Testnet" &&
-      blockchain !== "NeuroWeb Mainnet" &&
-      blockchain !== "NeuroWeb Testnet" &&
-      blockchain !== "Gnosis Mainnet" &&
-      blockchain !== "Chiado Testnet" &&
-      blockchain !== "Base Mainnet" &&
-      blockchain !== "Base Testnet"
-    ) {
-      console.log(
-        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet, Base Mainnet, Base Testnet`
-      );
-      res.status(400).json({
-        success: false,
-        msg: "Invalid network or blockchain provided.",
-      });
-      return;
-    }
-
-    query = `SELECT * FROM v_pubs_activity_last${frequency} WHERE eventName != 'StakeIncreased'`
-    ques = "";
+    let query = `select * from sentiment_header`;
+    let params = [];
+    let conditions = [];
 
     if (data.ual) {
       const segments = data.ual.split(":");
@@ -83,7 +50,7 @@ router.post("/", async function (req, res) {
       const args = argsString.split("/");
 
       if (args.length !== 3) {
-        console.log(`Node activity request with invalid ual from ${api_key}`);
+        console.log(`Asset Info request with invalid ual from ${api_key}`);
         res.status(400).json({
           success: false,
           msg: "Invalid UAL provided.",
@@ -91,17 +58,78 @@ router.post("/", async function (req, res) {
         return;
       }
 
-      conditions.push(`UAL = ?`);
-      params.push(data.ual);
+      conditions.push(`asset_contract = ?`);
+      params.push(args[1]);
+
+      conditions.push(`token_id = ?`);
+      params.push(Number(args[2]));
+    }
+
+    if (data.blockchain === "NeuroWeb Mainnet") {
+      conditions.push(`chain_id = ?`);
+      params.push("2043");
+    }
+
+    if (data.blockchain === "NeuroWeb Testnet") {
+      conditions.push(`chain_id = ?`);
+      params.push("20430");
+    }
+
+    if (data.blockchain === "Gnosis Mainnet") {
+      conditions.push(`chain_id = ?`);
+      params.push("100");
+    }
+
+    if (data.blockchain === "Chiado Testnet") {
+      conditions.push(`chain_id = ?`);
+      params.push("10200");
+    }
+
+    if (!data.blockchain && data.network === "DKG Mainnet") {
+      conditions.push(`chain_id = ? OR chain_id = ?`);
+      params.push("2043");
+      params.push("100");
+    }
+
+    if (!data.blockchain && data.network === "DKG Testnet") {
+      conditions.push(`chain_id = ? OR chain_id = ?`);
+      params.push("20430");
+      params.push("10200");
+    }
+
+    if (data.account) {
+      conditions.push(`account = ?`);
+      params.push(data.account);
+    }
+
+    if (data.frequency === "last1h") {
+      conditions.push(`updated_at>= date_add(now(), interval -1 HOUR)`);
+    }
+
+    if (data.frequency === "last24h") {
+      conditions.push(`updated_at>= date_add(now(), interval -1 DAY)`);
+    }
+
+    if (data.frequency === "last7d") {
+      conditions.push(`updated_at>= date_add(now(), interval -7 DAY)`);
+    }
+
+    if (data.frequency === "last30d") {
+      conditions.push(`updated_at>= date_add(now(), interval -30 HOUR)`);
+    }
+    if (data.frequency === "last6m") {
+      conditions.push(`updated_at>= date_add(now(), interval -6 MONTH)`);
+    }
+    if (data.frequency === "last1y") {
+      conditions.push(`updated_at>= date_add(now(), interval -12 MONTH)`);
     }
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query =
-      query + " " + whereClause + ` order by datetime desc LIMIT ${limit}`;
+    query = query + " " + whereClause + ` order by created_at desc`;
 
     result = await queryDB
-      .getData(query, params, network, blockchain)
+      .getData(query, params, "", "othub_db")
       .then((results) => {
         //console.log('Query results:', results);
         return results;

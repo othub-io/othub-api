@@ -8,7 +8,7 @@ const queryDB = queryTypes.queryDB();
 router.post("/", async function (req, res) {
   try {
     type = "stats";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
@@ -65,10 +65,12 @@ router.post("/", async function (req, res) {
       blockchain !== "NeuroWeb Mainnet" &&
       blockchain !== "NeuroWeb Testnet" &&
       blockchain !== "Gnosis Mainnet" &&
-      blockchain !== "Chiado Testnet"
+      blockchain !== "Chiado Testnet" &&
+      blockchain !== "Base Mainnet" &&
+      blockchain !== "Base Testnet"
     ) {
       console.log(
-        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet`
+        `Create request without valid network. Supported: DKG Mainnet, DKG Testnet, NeuroWeb Mainnet, NeuroWeb Testnet, Gnosis Mainnet, Chiado Testnet, Base Mainnet, Base Testnet`
       );
       res.status(400).json({
         success: false,
@@ -122,6 +124,21 @@ router.post("/", async function (req, res) {
       params.push(data.delegator);
     }
 
+    if (data.nodeName) {
+      conditions.push(`tokenName = ?`);
+      params.push(data.nodeName);
+    }
+
+    if (data.node_id) {
+      conditions.push(`nodeId = ?`);
+      params.push(data.node_id);
+    }
+
+    if (data.chain_id) {
+      conditions.push(`chainId = ?`);
+      params.push(data.chain_id);
+    }
+    
     if (!limit) {
       limit = 1000;
     }
