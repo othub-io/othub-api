@@ -85,7 +85,7 @@ router.post("/", async function (req, res, next) {
             address: account,
           },
           process.env.JWT_SECRET,
-          { expiresIn: "6h" }
+          { expiresIn: process.env.JWT_EXPIRES }
         );
 
         res.status(200).json({

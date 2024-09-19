@@ -8,7 +8,7 @@ const queryDB = queryTypes.queryDB();
 router.post("/", async function (req, res) {
   try {
     type = "stats";
-    let data = req.body;
+    data = req.body;
     api_key = req.headers["x-api-key"];
     let network = data.network ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
@@ -110,6 +110,7 @@ router.post("/", async function (req, res) {
 
     params = [];
 
+    console.log(data.owner)
     if (data.owner) {
       if (!ethers.utils.isAddress(data.owner)) {
         console.log(`Node stats request with invalid owner from ${api_key}`);
