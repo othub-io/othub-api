@@ -43,8 +43,6 @@ router.post(
         " " +
         whereClause
 
-        console.log(query)
-        console.log(params)
       result = await queryDB.getData(
         query,
         params,

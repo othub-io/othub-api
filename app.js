@@ -78,6 +78,7 @@ const nodeInfoRouter = require('./routes/nodes/info')
 const nodeStatsRouter = require('./routes/nodes/stats')
 const nodeEditRouter = require('./routes/nodes/edit')
 const nodeProfileRouter = require('./routes/nodes/profile')
+const nodesEvents = require('./routes/nodes/events')
 
 //paranets
 const paranetInfoRouter = require('./routes/paranets/info')
@@ -89,7 +90,6 @@ const delegatorsStatsRouter = require('./routes/delegators/stats')
 //notifications
 const telegramEditRouter = require('./routes/notifications/telegram/edit')
 const telegramInfoRouter = require('./routes/notifications/telegram/info')
-const telegramNotifyRouter = require('./routes/notifications/telegram/notify')
 
 //notifications
 const sentimentInfoRouter = require('./routes/sentiment/info')
@@ -160,6 +160,7 @@ app.use('/nodes/info', nodeInfoRouter)
 app.use('/nodes/stats', nodeStatsRouter)
 app.use('/nodes/profile', nodeProfileRouter)
 app.use('/nodes/edit', nodeEditRouter)
+app.use('/nodes/events', nodesEvents)
 
 //nodes
 app.use('/paranets/info', paranetInfoRouter)
@@ -176,7 +177,6 @@ app.use('/sentiment/delete', sentimentDeleteRouter)
 //notifications
 app.use('/notifications/telegram/edit', telegramEditRouter)
 app.use('/notifications/telegram/info', telegramInfoRouter)
-app.use('/notifications/telegram/notify', telegramNotifyRouter)
 
 //images
 app.use('/images', imagesRouter)

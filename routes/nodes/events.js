@@ -8,21 +8,14 @@ const queryDB = queryTypes.queryDB();
 router.post("/", async function (req, res) {
   try {
     type = "stats";
-    data = req.body;
+    let data = req.body;
     api_key = req.headers["x-api-key"];
-    let network = data.network ? data.network : null;
-    let blockchain = data.blockchain ? data.blockchain : null;
-    let frequency = data.frequency ? data.frequency : `monthly`;
-    let timeframe =
-      Number.isInteger(data.timeframe)
-        ? data.timeframe - 1
-        : Number(data.timeframe) - 1;
+    let network = data.network && !data.blockchain ? data.network : null;
+    let blockchain = data.blockchain;
+    let frequency = data.frequency ? data.frequency : `1min`;
     let limit = Number.isInteger(data.limit) ? data.limit : 1000;
-    let grouped = data.grouped === "yes" ? "_grouped" : "";
-    let order_by = "date";
     let conditions = [];
     let params = [];
-    let query;
 
     if (!api_key || api_key === "") {
       console.log(`Create request without authorization.`);
@@ -108,76 +101,10 @@ router.post("/", async function (req, res) {
         });
     }
 
-    params = [];
-
-    if (data.owner) {
-      if (!ethers.utils.isAddress(data.owner)) {
-        console.log(`Node stats request with invalid owner from ${api_key}`);
-
-        res.status(400).json({
-          success: false,
-          msg: "Invalid owner (evm address) provided.",
-        });
-        return;
-      }
-
-      conditions.push(`nodeOwner = ?`);
-      params.push(data.owner);
-    }
-
-    if (
-      (network === "DKG Mainnet" ||
-      network === "DKG Testnet") && (!frequency === "last1h" && !frequency === "last24h" && !frequency === "last7d" && !frequency === "last30d" && !frequency === "latest")
-    ) {
-      grouped = "_grouped";
-    }
-
-    if (data.nodeName) {
-      conditions.push(`tokenName = ?`);
-      params.push(data.nodeName);
-    }
-
-    if (!limit) {
-      limit = 1000;
-    }
-
-    if (limit > 15000) {
-      limit = 15000;
-    }
-
-    if (frequency === "hourly") {
-      frequency = "hourly_7d";
-      order_by = "datetime";
-
-      if (timeframe > 0) {
-        conditions.push(
-          `datetime >= (select DATE_ADD(block_ts, interval -${timeframe} HOUR) as t from v_sys_staging_date)`
-        );
-      }
-    }
-
-    if (frequency === "daily") {
-      if (timeframe > 0) {
-        conditions.push(
-          `date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} DAY) as date) as t from v_sys_staging_date)`
-        );
-      }
-    }
-
-    if (frequency === "monthly") {
-      if (timeframe > 0) {
-        conditions.push(
-          `date >= (select cast(DATE_ADD(block_ts, interval -${timeframe} MONTH) as date) as t from v_sys_staging_date)`
-        );
-      }
-    }
-
-    if (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" || frequency === "last6m" || frequency === "last1y" || frequency === "latest") {
-      order_by = "1";
-    }
-
+    query = `select * from v_nodes_notify`;
     ques = "";
-    if (data.nodeId && grouped !== "_grouped") {
+
+    if (data.nodeId) {
       nodeIds = !Number(data.nodeId)
         ? data.nodeId.split(",").map(Number)
         : [data.nodeId];
@@ -191,23 +118,26 @@ router.post("/", async function (req, res) {
           return;
         }
         ques = ques + "?,";
-        params.push(Number(nodeid));
       }
 
       ques = ques.substring(0, ques.length - 1);
 
       conditions.push(`nodeId in (${ques})`);
+      params.push(nodeIds);
     }
 
-    query = `select * from v_nodes_stats${grouped}_${frequency}`;
+    conditions.push(
+      `datetime >= (select cast(DATE_ADD(block_ts, interval 7 DAY) as datetime) as t from v_sys_staging_date)`
+    );
 
     whereClause =
       conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
-    query = query + " " + whereClause + ` order by ${order_by} LIMIT ${limit}`;
+    query =
+      query + " " + whereClause + ` order by datetime desc LIMIT ${limit}`;
 
-    let node_data = [];
-    if(!blockchain){
-      let total_data = [];
+    let event_data = [];
+    if (!blockchain) {
+      let total_event_data = [];
       for (const blockchain of blockchains) {
         result = await queryDB
           .getData(query, params, "", blockchain.chain_name)
@@ -219,54 +149,54 @@ router.post("/", async function (req, res) {
           .catch((error) => {
             console.error("Error retrieving data:", error);
           });
-  
-          for(const record of result){
-            total_data.push(record)
-          }
 
-          chain_data = {
-            blockchain_name: blockchain.chain_name,
-            blockchain_id: blockchain.chain_id,
-            data: result,
-          };
-    
-          node_data.push(chain_data);
-      }
+        for (const record of result) {
+          total_event_data.push(record);
+        }
 
-      chain_data = {
-        blockchain_name: "Total",
-        blockchain_id: "99999",
-        data: total_data,
-      };
-
-      node_data.unshift(chain_data);
-    }else{
-      for (const blockchain of blockchains) {
-        result = await queryDB
-          .getData(query, params, "", blockchain.chain_name)
-          .then((results) => {
-            //console.log('Query results:', results);
-            return results;
-            // Use the results in your variable or perform further operations
-          })
-          .catch((error) => {
-            console.error("Error retrieving data:", error);
-          });
-  
         chain_data = {
           blockchain_name: blockchain.chain_name,
           blockchain_id: blockchain.chain_id,
           data: result,
         };
-  
-        node_data.push(chain_data);
+
+        event_data.push(chain_data);
+      }
+
+      chain_data = {
+        blockchain_name: "Total",
+        blockchain_id: "99999",
+        data: total_event_data,
+      };
+
+      event_data.unshift(chain_data);
+    } else {
+      for (const blockchain of blockchains) {
+        result = await queryDB
+          .getData(query, params, "", blockchain.chain_name)
+          .then((results) => {
+            //console.log('Query results:', results);
+            return results;
+            // Use the results in your variable or perform further operations
+          })
+          .catch((error) => {
+            console.error("Error retrieving data:", error);
+          });
+
+        chain_data = {
+          blockchain_name: blockchain.chain_name,
+          blockchain_id: blockchain.chain_id,
+          data: result,
+        };
+
+        event_data.push(chain_data);
       }
     }
 
     res.status(200).json({
-      success: true,
-      result: node_data,
-    });
+        success: true,
+        result: event_data,
+      });
   } catch (e) {
     console.log(e);
     res.status(500).json({

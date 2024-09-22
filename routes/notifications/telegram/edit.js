@@ -32,6 +32,7 @@ router.post(
           `https://api.telegram.org/bot${bot_token}/getChat?chat_id=${telegram_id}`
         );
       } catch (e) {
+        console.log(e)
         res.status(400).json({
           success: false,
           msg: "Invalid telegram credentials provided.",

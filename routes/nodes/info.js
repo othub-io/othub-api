@@ -102,7 +102,7 @@ router.post("/", async function (req, res) {
         });
     }
 
-    query = `select vn.*,vns.pubsCommited as pubs24h,vns.estimatedEarnings as earnings24h from v_nodes vn join v_nodes_stats_last24h vns on vn.nodeId = vns.nodeId`;
+    query = `select vn.*,vns.pubsCommited1stEpochOnly as pubs24h,vns.estimatedEarnings1stEpochOnly as earnings24h from v_nodes vn join v_nodes_stats_last24h vns on vn.nodeId = vns.nodeId`;
     ques = "";
 
     params = []
