@@ -13,10 +13,9 @@ router.post("/", async function (req, res) {
     let network = data.network ? data.network : null;
     let blockchain = data.blockchain ? data.blockchain : null;
     let frequency = data.frequency ? data.frequency : `monthly`;
-    let timeframe =
-      Number.isInteger(data.timeframe)
-        ? data.timeframe - 1
-        : Number(data.timeframe) - 1;
+    let timeframe = Number.isInteger(data.timeframe)
+      ? data.timeframe - 1
+      : Number(data.timeframe) - 1;
     let limit = Number.isInteger(data.limit) ? data.limit : 1000;
     let grouped = data.grouped === "yes" ? "_grouped" : "";
     let order_by = "date";
@@ -126,8 +125,12 @@ router.post("/", async function (req, res) {
     }
 
     if (
-      (network === "DKG Mainnet" ||
-      network === "DKG Testnet") && (!frequency === "last1h" && !frequency === "last24h" && !frequency === "last7d" && !frequency === "last30d" && !frequency === "latest")
+      (network === "DKG Mainnet" || network === "DKG Testnet") &&
+      !frequency === "last1h" &&
+      !frequency === "last24h" &&
+      !frequency === "last7d" &&
+      !frequency === "last30d" &&
+      !frequency === "latest"
     ) {
       grouped = "_grouped";
     }
@@ -172,7 +175,15 @@ router.post("/", async function (req, res) {
       }
     }
 
-    if (frequency === "last1h" || frequency === "last24h" || frequency === "last7d" || frequency === "last30d" || frequency === "last6m" || frequency === "last1y" || frequency === "latest") {
+    if (
+      frequency === "last1h" ||
+      frequency === "last24h" ||
+      frequency === "last7d" ||
+      frequency === "last30d" ||
+      frequency === "last6m" ||
+      frequency === "last1y" ||
+      frequency === "latest"
+    ) {
       order_by = "1";
     }
 
@@ -206,7 +217,7 @@ router.post("/", async function (req, res) {
     query = query + " " + whereClause + ` order by ${order_by} LIMIT ${limit}`;
 
     let node_data = [];
-    if(!blockchain){
+    if (!blockchain) {
       let total_data = [];
       for (const blockchain of blockchains) {
         result = await queryDB
@@ -219,18 +230,45 @@ router.post("/", async function (req, res) {
           .catch((error) => {
             console.error("Error retrieving data:", error);
           });
-  
-          for(const record of result){
-            total_data.push(record)
+
+        for (const record of result) {
+          total_data.push(record);
+        }
+
+        //dumb emoji shit
+        result.map((data) => {
+          if (data.nodeId === 192 && data.chainId === 2043) {
+            data.tokenName = `🚀event-horizon🌑`;
+            data.tokenSymbol = `🚀🌑`;
+          }
+          if (data.nodeId === 30 && data.chainId === 8453) {
+            data.tokenName = `🚀event-horizon🌑`;
+            data.tokenSymbol = `🚀🌑`;
           }
 
-          chain_data = {
-            blockchain_name: blockchain.chain_name,
-            blockchain_id: blockchain.chain_id,
-            data: result,
-          };
-    
-          node_data.push(chain_data);
+          if (data.nodeId === 187 && data.chainId === 2043) {
+            data.tokenName = "🔥HOT🔥";
+            data.tokenSymbol = "🔥HOT🔥";
+          }
+
+          if (data.nodeId === 40 && data.chainId === 100) {
+            data.tokenName = "🐔";
+            data.tokenSymbol = "🐔";
+          }
+
+          if (data.nodeId === 43 && data.chainId === 100) {
+            data.tokenName = "🐋";
+            data.tokenSymbol = "🐋";
+          }
+        });
+
+        chain_data = {
+          blockchain_name: blockchain.chain_name,
+          blockchain_id: blockchain.chain_id,
+          data: result,
+        };
+
+        node_data.push(chain_data);
       }
 
       chain_data = {
@@ -240,7 +278,7 @@ router.post("/", async function (req, res) {
       };
 
       node_data.unshift(chain_data);
-    }else{
+    } else {
       for (const blockchain of blockchains) {
         result = await queryDB
           .getData(query, params, "", blockchain.chain_name)
@@ -252,13 +290,40 @@ router.post("/", async function (req, res) {
           .catch((error) => {
             console.error("Error retrieving data:", error);
           });
-  
+
+        //dumb emoji shit
+        result.map((data) => {
+          if (data.nodeId === 192 && data.chainId === 2043) {
+            data.tokenName = `🚀event-horizon🌑`;
+            data.tokenSymbol = `🚀🌑`;
+          }
+          if (data.nodeId === 30 && data.chainId === 8453) {
+            data.tokenName = `🚀event-horizon🌑`;
+            data.tokenSymbol = `🚀🌑`;
+          }
+
+          if (data.nodeId === 187 && data.chainId === 2043) {
+            data.tokenName = "🔥HOT🔥";
+            data.tokenSymbol = "🔥HOT🔥";
+          }
+
+          if (data.nodeId === 40 && data.chainId === 100) {
+            data.tokenName = "🐔";
+            data.tokenSymbol = "🐔";
+          }
+
+          if (data.nodeId === 43 && data.chainId === 100) {
+            data.tokenName = "🐋";
+            data.tokenSymbol = "🐋";
+          }
+        });
+
         chain_data = {
           blockchain_name: blockchain.chain_name,
           blockchain_id: blockchain.chain_id,
           data: result,
         };
-  
+
         node_data.push(chain_data);
       }
     }

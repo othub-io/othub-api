@@ -105,7 +105,7 @@ router.post("/", async function (req, res) {
     query = `select vn.*,vns.pubsCommited1stEpochOnly as pubs24h,vns.estimatedEarnings1stEpochOnly as earnings24h from v_nodes vn join v_nodes_stats_last24h vns on vn.nodeId = vns.nodeId`;
     ques = "";
 
-    params = []
+    params = [];
     if (data.nodeId) {
       nodeIds = !Number(data.nodeId)
         ? data.nodeId.split(",").map(Number)
@@ -127,7 +127,7 @@ router.post("/", async function (req, res) {
 
       conditions.push(`vn.nodeId in (${ques})`);
     }
-    
+
     if (data.nodeName && data.nodeName !== "") {
       conditions.push(`vn.tokenName = ?`);
       params.push(data.nodeName);
@@ -175,6 +175,33 @@ router.post("/", async function (req, res) {
         .catch((error) => {
           console.error("Error retrieving data:", error);
         });
+
+      //dumb emoji shit
+      data.map((data) => {
+        if (data.nodeId === 192 && data.chainId === 2043) {
+          data.tokenName = `🚀event-horizon🌑`;
+          data.tokenSymbol = `🚀🌑`;
+        }
+        if (data.nodeId === 30 && data.chainId === 8453) {
+          data.tokenName = `🚀event-horizon🌑`;
+          data.tokenSymbol = `🚀🌑`;
+        }
+
+        if (data.nodeId === 187 && data.chainId === 2043) {
+          data.tokenName = "🔥HOT🔥";
+          data.tokenSymbol = "🔥HOT🔥";
+        }
+
+        if (data.nodeId === 40 && data.chainId === 100) {
+          data.tokenName = "🐔";
+          data.tokenSymbol = "🐔";
+        }
+
+        if (data.nodeId === 43 && data.chainId === 100) {
+          data.tokenName = "🐋";
+          data.tokenSymbol = "🐋";
+        }
+      });
 
       chain_data = {
         blockchain_name: blockchain.chain_name,
