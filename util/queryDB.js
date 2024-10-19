@@ -11,49 +11,35 @@ const base_testnet = require("../config/sync_base_testnet");
 module.exports = executeQuery = async (query, params, network, blockchain) => {
   return new Promise(async (resolve, reject) => {
     let pool;
-    
-    if (blockchain === "othub_db") {
-      pool = othub_db;
-    }
 
-    if (blockchain === "Chiado Testnet") {
-      pool = gnosis_testnet;
-    }
+    // Assign the pool based on the blockchain or network
+    if (blockchain === "othub_db") pool = othub_db;
+    if (blockchain === "Chiado Testnet") pool = gnosis_testnet;
+    if (blockchain === "Gnosis Mainnet") pool = gnosis_mainnet;
+    if (blockchain === "NeuroWeb Testnet") pool = neuroweb_testnet;
+    if (blockchain === "NeuroWeb Mainnet") pool = neuroweb_mainnet;
+    if (blockchain === "Base Testnet") pool = base_testnet;
+    if (blockchain === "Base Mainnet") pool = base_mainnet;
+    if (network === "DKG Mainnet") pool = dkg_mainnet;
+    if (network === "DKG Testnet") pool = dkg_testnet;
 
-    if (blockchain === "Gnosis Mainnet") {
-      pool = gnosis_mainnet;
-    }
-
-    if (blockchain === "NeuroWeb Testnet") {
-      pool = neuroweb_testnet;
-    }
-
-    if (blockchain === "NeuroWeb Mainnet") {
-      pool = neuroweb_mainnet;
-    }
-
-    if (blockchain === "Base Testnet") {
-      pool = base_testnet;
-    }
-
-    if (blockchain === "Base Mainnet") {
-      pool = base_mainnet;
-    }
-
-    if (network === "DKG Mainnet") {
-      pool = dkg_mainnet;
-    }
-
-    if (network === "DKG Testnet") {
-      pool = dkg_testnet;
-    }
-
-    await pool.query(query, params, (error, results) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(results);
+    // Get a connection from the pool
+    pool.getConnection((err, connection) => {
+      if (err) {
+        return reject(err); // Handle connection error
       }
+
+      // Perform the query using the connection
+      connection.query(query, params, (error, results) => {
+        // Release the connection back to the pool
+        connection.release();
+
+        if (error) {
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      });
     });
   });
 };

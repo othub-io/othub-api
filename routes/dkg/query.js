@@ -168,7 +168,6 @@ router.post("/", async function (req, res) {
         console.error("Error retrieving data:", error);
       });
 
-      console.log(queryResult)
     res.status(200).send(queryResult);
   } catch (e) {
     console.log(e);
